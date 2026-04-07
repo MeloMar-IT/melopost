@@ -11,7 +11,7 @@ This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**
 The application uses an H2 relational database. The core entities and their relationships are:
 
 - **Postmortem**: The primary entity representing an incident analysis.
-  - Contains: title, description, incident date, start date, due date, meeting date, incident reference, and tags.
+  - Contains: title, description, department, failed application, incident date, start date, due date, meeting date, incident reference, and tags.
   - Relationships: 1-to-Many with `CheeseLayer`, 1-to-Many with `TimelineEvent`.
 - **CheeseLayer**: Represents a specific layer of defense (e.g., Software Design, Training, Monitoring).
   - Contains: name, description.
@@ -86,7 +86,7 @@ The application provides a RESTful API for integration and programmatic access. 
 #### Default Credentials
 The application is initialized with a default administrator account:
 - **Username**: `admin`
-- **Password**: `admin123`
+- **Password**: `admin`
 
 ## 🛠️ Tech Stack
 - **Framework**: Spring Boot 3.4.4

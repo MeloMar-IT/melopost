@@ -26,6 +26,8 @@ public class Postmortem {
     private String incidentRef; // ServiceNow or Jira ID
     private String incidentSource; // e.g., "ServiceNow", "Jira"
     private String storyApplication; // Application where stories are made
+    private String department;
+    private String failedApplication;
     
     @ElementCollection
     @CollectionTable(name = "postmortem_tags", joinColumns = @JoinColumn(name = "postmortem_id"))
@@ -96,6 +98,13 @@ public class Postmortem {
     public void setIncidentSource(String incidentSource) { this.incidentSource = incidentSource; }
     public String getStoryApplication() { return storyApplication; }
     public void setStoryApplication(String storyApplication) { this.storyApplication = storyApplication; }
+
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
+
+    public String getFailedApplication() { return failedApplication; }
+    public void setFailedApplication(String failedApplication) { this.failedApplication = failedApplication; }
+
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
     public List<TimelineEvent> getTimelineEvents() { return timelineEvents; }
@@ -106,6 +115,11 @@ public class Postmortem {
 
     public List<PostmortemDocument> getDocuments() { return documents; }
     public void setDocuments(List<PostmortemDocument> documents) { this.documents = documents; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     public int getTotalHoles() {
         if (layers == null) return 0;

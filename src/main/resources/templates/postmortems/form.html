@@ -83,6 +83,21 @@
                         </div>
                     </div>
 
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label for="department" class="block text-sm font-semibold text-gray-700">Department</label>
+                            <input type="text" id="department" th:field="*{department}"
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                                   placeholder="e.g. IT Operations">
+                        </div>
+                        <div class="space-y-2">
+                            <label for="failedApplication" class="block text-sm font-semibold text-gray-700">Application that failed</label>
+                            <input type="text" id="failedApplication" th:field="*{failedApplication}"
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                                   placeholder="e.g. Payment Gateway">
+                        </div>
+                    </div>
+
                     <div class="space-y-2">
                         <label for="tags" class="block text-sm font-semibold text-gray-700">Tags</label>
                         <input type="text" id="tags" th:field="*{tags}"

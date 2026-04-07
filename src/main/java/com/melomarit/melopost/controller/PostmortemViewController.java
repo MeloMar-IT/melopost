@@ -70,6 +70,7 @@ public class PostmortemViewController {
             Postmortem existing = service.findById(postmortem.getId());
             postmortem.setDocuments(existing.getDocuments());
             postmortem.setQuestions(existing.getQuestions());
+            postmortem.setCreatedAt(existing.getCreatedAt());
             // Re-attach items to the new model instance to maintain bidirectional integrity
             if (postmortem.getDocuments() != null) {
                 for (PostmortemDocument doc : postmortem.getDocuments()) {

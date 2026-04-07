@@ -47,9 +47,11 @@ public class ReportService {
         Map<String, Object> context = new HashMap<>();
         context.put("title", postmortem.getTitle());
         context.put("description", postmortem.getDescription());
-        context.put("incidentRef", postmortem.getIncidentRef());
-        context.put("incidentSource", postmortem.getIncidentSource());
-        context.put("storyApplication", postmortem.getStoryApplication());
+        context.put("incidentRef", postmortem.getIncidentRef() != null ? postmortem.getIncidentRef() : "N/A");
+        context.put("incidentSource", postmortem.getIncidentSource() != null ? postmortem.getIncidentSource() : "N/A");
+        context.put("storyApplication", postmortem.getStoryApplication() != null ? postmortem.getStoryApplication() : "N/A");
+        context.put("department", postmortem.getDepartment() != null ? postmortem.getDepartment() : "N/A");
+        context.put("failedApplication", postmortem.getFailedApplication() != null ? postmortem.getFailedApplication() : "N/A");
         context.put("startDate", postmortem.getStartDate() != null ? postmortem.getStartDate().format(DATE_FORMATTER) : "N/A");
         context.put("incidentDate", postmortem.getIncidentDate() != null ? postmortem.getIncidentDate().format(DATE_FORMATTER) : "N/A");
         context.put("postMortemMeetingDate", postmortem.getPostMortemMeetingDate() != null ? postmortem.getPostMortemMeetingDate().format(DATE_FORMATTER) : "N/A");

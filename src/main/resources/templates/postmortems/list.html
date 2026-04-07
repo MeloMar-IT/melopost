@@ -35,7 +35,8 @@
                             <div class="flex flex-col">
                                 <a th:href="@{/postmortems/details/{id}(id=${pm.id})}" class="font-semibold text-gray-900 hover:text-blue-600 transition-colors" th:text="${pm.title}">Title</a>
                                 <div class="flex flex-wrap gap-1 mt-1">
-                                    <span class="text-[10px] text-gray-500 mr-2 uppercase tracking-wide font-bold" th:text="${pm.storyApplication ?: 'N/A'}">Application</span>
+                                    <span class="text-[10px] text-gray-500 mr-2 uppercase tracking-wide font-bold" th:text="${pm.failedApplication ?: 'N/A'}">Application</span>
+                                    <span class="text-[10px] text-gray-400 mr-2 uppercase tracking-wide font-bold" th:text="${pm.department ?: 'N/A'}">Department</span>
                                     <span th:each="tag : ${pm.tags}" th:if="${!#strings.isEmpty(tag)}" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-700 border border-green-100" th:text="${tag}">
                                         Tag
                                     </span>

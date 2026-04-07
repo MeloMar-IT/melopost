@@ -58,7 +58,7 @@ public class TestDataInitializer {
             if (userRepository.count() == 0) {
                 User admin = new User();
                 admin.setUsername("admin");
-                admin.setPassword(passwordEncoder.encode("admin123"));
+                admin.setPassword(passwordEncoder.encode("admin"));
                 admin.setEmail("admin@example.com");
                 admin.setRoles(Set.of("ADMIN", "USER"));
                 admin.setActive(true);
@@ -132,6 +132,8 @@ public class TestDataInitializer {
         pm.setIncidentRef(template.getType().substring(0, 1).toUpperCase() + "-" + (1000 + random.nextInt(9000)));
         pm.setIncidentSource(template.getType());
         pm.setStoryApplication(template.getType()); // Using the same platform for stories as incident source
+        pm.setDepartment(departments[random.nextInt(departments.length)]);
+        pm.setFailedApplication("Application " + (char)('A' + random.nextInt(26)));
 
         // Add 1-3 random tags
         int pmTagCount = 1 + random.nextInt(3);

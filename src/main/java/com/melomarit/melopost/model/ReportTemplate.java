@@ -15,7 +15,8 @@ public class ReportTemplate {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    private boolean defaultTemplate;
+    @Column(name = "is_default", nullable = false)
+    private boolean isDefault;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -23,6 +24,6 @@ public class ReportTemplate {
     public void setName(String name) { this.name = name; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
-    public boolean isDefault() { return defaultTemplate; }
-    public void setDefault(boolean aDefault) { defaultTemplate = aDefault; }
+    public boolean isDefault() { return isDefault; }
+    public void setDefault(boolean aDefault) { this.isDefault = aDefault; }
 }

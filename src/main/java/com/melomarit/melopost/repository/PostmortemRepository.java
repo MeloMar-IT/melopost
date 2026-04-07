@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface PostmortemRepository extends JpaRepository<Postmortem, Long> {
 
-    @EntityGraph(attributePaths = {"layers", "layers.holes", "layers.holes.story", "tags", "layers.holes.tags"})
+    @EntityGraph(attributePaths = {"layers", "layers.holes", "layers.holes.story", "tags", "layers.holes.tags", "layers.holes.story.tags"})
     Optional<Postmortem> findById(Long id);
 
     List<Postmortem> findTop5ByOrderByCreatedAtDesc();
@@ -23,11 +23,13 @@ public interface PostmortemRepository extends JpaRepository<Postmortem, Long> {
            "LEFT JOIN h.story s " +
            "LEFT JOIN p.tags pt " +
            "LEFT JOIN h.tags ht " +
+           "LEFT JOIN s.tags st " +
            "WHERE p.title LIKE %:keyword% " +
            "OR p.description LIKE %:keyword% " +
            "OR h.description LIKE %:keyword% " +
            "OR pt LIKE %:keyword% " +
            "OR ht LIKE %:keyword% " +
+           "OR st LIKE %:keyword% " +
            "OR s.storyNumber LIKE %:keyword% " +
            "OR s.platform LIKE %:keyword% " +
            "OR s.foundByDepartment LIKE %:keyword% " +

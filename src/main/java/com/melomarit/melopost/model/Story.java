@@ -2,6 +2,8 @@ package com.melo.melopost.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.util.List;
+import java.util.ArrayList;
 
 @Data
 @Entity
@@ -22,6 +24,11 @@ public class Story {
     private String storyLink; // URL to story
     private String status;
     private String notes;
+
+    @ElementCollection
+    @CollectionTable(name = "story_tags", joinColumns = @JoinColumn(name = "story_id"))
+    @Column(name = "tag")
+    private List<String> tags = new ArrayList<>();
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -49,4 +56,6 @@ public class Story {
     public void setStatus(String status) { this.status = status; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags; }
 }

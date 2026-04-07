@@ -24,8 +24,13 @@ public class PostmortemViewController {
     }
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("postmortems", service.findAll());
+    public String list(@RequestParam(required = false) String keyword, Model model) {
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            model.addAttribute("postmortems", service.search(keyword));
+            model.addAttribute("keyword", keyword);
+        } else {
+            model.addAttribute("postmortems", service.findAll());
+        }
         return "postmortems/list";
     }
 

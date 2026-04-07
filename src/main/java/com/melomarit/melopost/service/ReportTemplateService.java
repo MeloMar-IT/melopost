@@ -26,13 +26,13 @@ public class ReportTemplateService {
     }
 
     public Optional<ReportTemplate> findDefault() {
-        return repository.findByDefaultTemplateTrue();
+        return repository.findByIsDefaultTrue();
     }
 
     @Transactional
     public ReportTemplate save(ReportTemplate template) {
         if (template.isDefault()) {
-            repository.findByDefaultTemplateTrue().ifPresent(t -> {
+            repository.findByIsDefaultTrue().ifPresent(t -> {
                 if (!t.getId().equals(template.getId())) {
                     t.setDefault(false);
                     repository.save(t);

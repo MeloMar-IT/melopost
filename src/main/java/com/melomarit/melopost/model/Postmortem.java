@@ -9,6 +9,10 @@ import java.util.ArrayList;
 @Data
 @Entity
 public class Postmortem {
+    public static final List<String> STANDARD_LAYERS = List.of(
+            "Define", "Design", "Build", "Test", "Release", "Run", "Resilience", "Observability", "Incident Handling", "Human"
+    );
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

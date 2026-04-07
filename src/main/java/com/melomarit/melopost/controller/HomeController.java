@@ -1,6 +1,6 @@
-package com.melo.melopost.controller;
+package com.melomarit.melopost.controller;
 
-import com.melo.melopost.service.PostmortemService;
+import com.melomarit.melopost.service.PostmortemService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;

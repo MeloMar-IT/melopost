@@ -1,6 +1,6 @@
-package com.melo.melopost.repository;
+package com.melomarit.melopost.repository;
 
-import com.melo.melopost.model.DataSource;
+import com.melomarit.melopost.model.DataSource;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

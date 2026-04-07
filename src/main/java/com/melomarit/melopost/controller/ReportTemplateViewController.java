@@ -1,7 +1,7 @@
-package com.melo.melopost.controller;
+package com.melomarit.melopost.controller;
 
-import com.melo.melopost.model.ReportTemplate;
-import com.melo.melopost.service.ReportTemplateService;
+import com.melomarit.melopost.model.ReportTemplate;
+import com.melomarit.melopost.service.ReportTemplateService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;

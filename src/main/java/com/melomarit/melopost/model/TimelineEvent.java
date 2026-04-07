@@ -1,4 +1,4 @@
-package com.melo.melopost.model;
+package com.melomarit.melopost.model;
 
 import jakarta.persistence.*;
 import lombok.Data;

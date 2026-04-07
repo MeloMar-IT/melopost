@@ -1,7 +1,7 @@
-package com.melo.melopost.controller;
+package com.melomarit.melopost.controller;
 
-import com.melo.melopost.model.Postmortem;
-import com.melo.melopost.service.PostmortemService;
+import com.melomarit.melopost.model.Postmortem;
+import com.melomarit.melopost.service.PostmortemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

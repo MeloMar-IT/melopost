@@ -17,7 +17,7 @@
 
     <div layout:fragment="content">
         <div class="max-w-5xl mx-auto">
-            <form th:action="@{/postmortems/save}" th:object="${postmortem}" method="post" class="space-y-8">
+            <form th:action="@{/postmortems/save}" th:object="${postmortem}" method="post" enctype="multipart/form-data" class="space-y-8">
                 <input type="hidden" th:field="*{id}"/>
                 
                 <!-- Basic Info -->
@@ -88,6 +88,38 @@
                         <input type="text" id="tags" th:field="*{tags}"
                                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
                                placeholder="e.g. database, performance, outage (comma separated)">
+                    </div>
+
+                    <!-- Document Upload in Form -->
+                    <div class="space-y-4 pt-4 border-t border-gray-100">
+                        <label class="block text-sm font-semibold text-gray-700">Attach Documents</label>
+                        <div class="flex items-center space-x-4">
+                            <label class="flex-1 cursor-pointer">
+                                <span class="sr-only">Choose files</span>
+                                <input type="file" name="files" multiple 
+                                       class="block w-full text-sm text-slate-500
+                                              file:mr-4 file:py-2 file:px-4
+                                              file:rounded-full file:border-0
+                                              file:text-sm file:font-semibold
+                                              file:bg-blue-50 file:text-blue-700
+                                              hover:file:bg-blue-100 transition-all">
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 italic">You can select multiple files at once.</p>
+                        
+                        <!-- List existing documents if editing -->
+                        <div th:if="*{!documents.isEmpty()}" class="mt-4 space-y-2">
+                            <p class="text-xs font-bold text-gray-400 uppercase">Existing Documents</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div th:each="doc : *{documents}" class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-100">
+                                    <div class="flex items-center min-w-0">
+                                        <i data-lucide="file" class="w-4 h-4 text-blue-500 mr-2 flex-shrink-0"></i>
+                                        <span class="text-xs text-gray-600 truncate" th:text="${doc.fileName}">filename.pdf</span>
+                                    </div>
+                                    <span class="text-[10px] text-gray-400" th:text="${#numbers.formatInteger(doc.size / 1024, 0) + ' KB'}">12 KB</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -206,7 +238,7 @@
                                             <textarea th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.whatToFix}" 
                                                       class="w-full border border-slate-200 rounded px-3 py-1.5 text-sm focus:border-blue-500 outline-none" rows="2"></textarea>
                                         </div>
-                                        <div class="space-y-1" th:if="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.tags != null && !*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.tags.empty}}">
+                                        <div class="space-y-1" th:if="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.tags != null && !layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.tags.empty}">
                                             <label class="text-[10px] font-bold text-slate-400 uppercase">System Tags</label>
                                             <div class="flex flex-wrap gap-1">
                                                 <span th:each="tag, tagStat : *{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.tags}" 

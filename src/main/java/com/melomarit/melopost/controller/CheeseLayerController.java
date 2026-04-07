@@ -1,7 +1,7 @@
-package com.melo.melopost.controller;
+package com.melomarit.melopost.controller;
 
-import com.melo.melopost.model.CheeseLayer;
-import com.melo.melopost.service.CheeseLayerService;
+import com.melomarit.melopost.model.CheeseLayer;
+import com.melomarit.melopost.service.CheeseLayerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

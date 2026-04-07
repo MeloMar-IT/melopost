@@ -1,6 +1,6 @@
-package com.melo.melopost.repository;
+package com.melomarit.melopost.repository;
 
-import com.melo.melopost.model.ReportTemplate;
+import com.melomarit.melopost.model.ReportTemplate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

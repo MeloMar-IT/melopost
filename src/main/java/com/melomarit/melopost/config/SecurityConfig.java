@@ -1,4 +1,4 @@
-package com.melo.melopost.config;
+package com.melomarit.melopost.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

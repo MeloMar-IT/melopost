@@ -1,7 +1,7 @@
-package com.melo.melopost.service;
+package com.melomarit.melopost.service;
 
-import com.melo.melopost.model.DataSource;
-import com.melo.melopost.repository.DataSourceRepository;
+import com.melomarit.melopost.model.DataSource;
+import com.melomarit.melopost.repository.DataSourceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;

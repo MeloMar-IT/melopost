@@ -1,7 +1,7 @@
-package com.melo.melopost.controller;
+package com.melomarit.melopost.controller;
 
-import com.melo.melopost.model.Story;
-import com.melo.melopost.service.StoryService;
+import com.melomarit.melopost.model.Story;
+import com.melomarit.melopost.service.StoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

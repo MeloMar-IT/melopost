@@ -1,6 +1,6 @@
-package com.melo.melopost.repository;
+package com.melomarit.melopost.repository;
 
-import com.melo.melopost.model.User;
+import com.melomarit.melopost.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

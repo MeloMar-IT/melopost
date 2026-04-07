@@ -1,4 +1,4 @@
-package com.melo.melopost.model;
+package com.melomarit.melopost.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -42,6 +42,9 @@ public class Postmortem {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "postmortem")
     private List<PostmortemQuestion> questions = new ArrayList<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "postmortem")
+    private List<PostmortemDocument> documents = new ArrayList<>();
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -100,6 +103,9 @@ public class Postmortem {
 
     public List<PostmortemQuestion> getQuestions() { return questions; }
     public void setQuestions(List<PostmortemQuestion> questions) { this.questions = questions; }
+
+    public List<PostmortemDocument> getDocuments() { return documents; }
+    public void setDocuments(List<PostmortemDocument> documents) { this.documents = documents; }
 
     public int getTotalHoles() {
         if (layers == null) return 0;

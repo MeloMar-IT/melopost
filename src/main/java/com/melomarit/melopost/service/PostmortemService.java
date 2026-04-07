@@ -1,12 +1,12 @@
-package com.melo.melopost.service;
+package com.melomarit.melopost.service;
 
-import com.melo.melopost.model.CheeseLayer;
-import com.melo.melopost.model.Hole;
-import com.melo.melopost.model.Postmortem;
-import com.melo.melopost.model.Story;
-import com.melo.melopost.repository.HoleRepository;
-import com.melo.melopost.repository.PostmortemRepository;
-import com.melo.melopost.repository.StoryRepository;
+import com.melomarit.melopost.model.CheeseLayer;
+import com.melomarit.melopost.model.Hole;
+import com.melomarit.melopost.model.Postmortem;
+import com.melomarit.melopost.model.Story;
+import com.melomarit.melopost.repository.HoleRepository;
+import com.melomarit.melopost.repository.PostmortemRepository;
+import com.melomarit.melopost.repository.StoryRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;

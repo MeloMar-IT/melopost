@@ -1,7 +1,7 @@
-package com.melo.melopost.service;
+package com.melomarit.melopost.service;
 
-import com.melo.melopost.model.ReportTemplate;
-import com.melo.melopost.repository.ReportTemplateRepository;
+import com.melomarit.melopost.model.ReportTemplate;
+import com.melomarit.melopost.repository.ReportTemplateRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

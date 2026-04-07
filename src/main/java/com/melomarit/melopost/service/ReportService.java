@@ -1,6 +1,6 @@
-package com.melo.melopost.service;
+package com.melomarit.melopost.service;
 
-import com.melo.melopost.model.Postmortem;
+import com.melomarit.melopost.model.Postmortem;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Template;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;

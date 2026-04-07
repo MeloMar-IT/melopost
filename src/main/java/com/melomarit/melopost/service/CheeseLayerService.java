@@ -1,7 +1,7 @@
-package com.melo.melopost.service;
+package com.melomarit.melopost.service;
 
-import com.melo.melopost.model.CheeseLayer;
-import com.melo.melopost.repository.CheeseLayerRepository;
+import com.melomarit.melopost.model.CheeseLayer;
+import com.melomarit.melopost.repository.CheeseLayerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

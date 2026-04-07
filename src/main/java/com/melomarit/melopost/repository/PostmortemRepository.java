@@ -1,6 +1,6 @@
-package com.melo.melopost.repository;
+package com.melomarit.melopost.repository;
 
-import com.melo.melopost.model.Postmortem;
+import com.melomarit.melopost.model.Postmortem;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

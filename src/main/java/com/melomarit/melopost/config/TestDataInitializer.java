@@ -1,11 +1,11 @@
-package com.melo.melopost.config;
+package com.melomarit.melopost.config;
 
-import com.melo.melopost.model.*;
-import com.melo.melopost.repository.DataSourceRepository;
-import com.melo.melopost.repository.PostmortemRepository;
-import com.melo.melopost.repository.ReportTemplateRepository;
-import com.melo.melopost.repository.UserRepository;
-import com.melo.melopost.service.DataSourceService;
+import com.melomarit.melopost.model.*;
+import com.melomarit.melopost.repository.DataSourceRepository;
+import com.melomarit.melopost.repository.PostmortemRepository;
+import com.melomarit.melopost.repository.ReportTemplateRepository;
+import com.melomarit.melopost.repository.UserRepository;
+import com.melomarit.melopost.service.DataSourceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;

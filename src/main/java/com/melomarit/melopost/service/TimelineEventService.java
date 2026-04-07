@@ -1,7 +1,7 @@
-package com.melo.melopost.service;
+package com.melomarit.melopost.service;
 
-import com.melo.melopost.model.TimelineEvent;
-import com.melo.melopost.repository.TimelineEventRepository;
+import com.melomarit.melopost.model.TimelineEvent;
+import com.melomarit.melopost.repository.TimelineEventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

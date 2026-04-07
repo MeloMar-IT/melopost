@@ -1,4 +1,4 @@
-package com.melo.melopost.external;
+package com.melomarit.melopost.external;
 
 import lombok.Data;
 import java.time.LocalDateTime;

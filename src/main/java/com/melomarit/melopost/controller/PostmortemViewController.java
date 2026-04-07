@@ -1,26 +1,33 @@
-package com.melo.melopost.controller;
+package com.melomarit.melopost.controller;
 
-import com.melo.melopost.model.CheeseLayer;
-import com.melo.melopost.model.Postmortem;
-import com.melo.melopost.model.PostmortemQuestion;
-import com.melo.melopost.service.PostmortemService;
-import com.melo.melopost.service.ReportService;
+import com.melomarit.melopost.model.CheeseLayer;
+import com.melomarit.melopost.model.Postmortem;
+import com.melomarit.melopost.model.PostmortemDocument;
+import com.melomarit.melopost.model.PostmortemQuestion;
+import com.melomarit.melopost.service.PostmortemDocumentService;
+import com.melomarit.melopost.service.PostmortemService;
+import com.melomarit.melopost.service.ReportService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @Controller
 @RequestMapping("/postmortems")
 public class PostmortemViewController {
     private final PostmortemService service;
     private final ReportService reportService;
+    private final PostmortemDocumentService documentService;
 
-    public PostmortemViewController(PostmortemService service, ReportService reportService) {
+    public PostmortemViewController(PostmortemService service, ReportService reportService, PostmortemDocumentService documentService) {
         this.service = service;
         this.reportService = reportService;
+        this.documentService = documentService;
     }
 
     @GetMapping
@@ -58,7 +65,26 @@ public class PostmortemViewController {
     }
 
     @PostMapping("/save")
-    public String save(@ModelAttribute Postmortem postmortem) {
+    public String save(@ModelAttribute Postmortem postmortem, @RequestParam(value = "files", required = false) MultipartFile[] files) throws IOException {
+        if (postmortem.getId() != null) {
+            Postmortem existing = service.findById(postmortem.getId());
+            postmortem.setDocuments(existing.getDocuments());
+            postmortem.setQuestions(existing.getQuestions());
+            // Re-attach items to the new model instance to maintain bidirectional integrity
+            if (postmortem.getDocuments() != null) {
+                for (PostmortemDocument doc : postmortem.getDocuments()) {
+                    doc.setPostmortem(postmortem);
+                }
+            }
+            if (postmortem.getQuestions() != null) {
+                for (PostmortemQuestion q : postmortem.getQuestions()) {
+                    q.setPostmortem(postmortem);
+                }
+            }
+        }
+        if (files != null) {
+            documentService.processFiles(postmortem, files);
+        }
         service.save(postmortem);
         return "redirect:/postmortems";
     }

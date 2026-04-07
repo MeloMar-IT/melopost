@@ -1,7 +1,7 @@
-package com.melo.melopost.service;
+package com.melomarit.melopost.service;
 
-import com.melo.melopost.model.Story;
-import com.melo.melopost.repository.StoryRepository;
+import com.melomarit.melopost.model.Story;
+import com.melomarit.melopost.repository.StoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

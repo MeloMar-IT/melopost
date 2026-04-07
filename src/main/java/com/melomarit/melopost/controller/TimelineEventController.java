@@ -1,7 +1,7 @@
-package com.melo.melopost.controller;
+package com.melomarit.melopost.controller;
 
-import com.melo.melopost.model.TimelineEvent;
-import com.melo.melopost.service.TimelineEventService;
+import com.melomarit.melopost.model.TimelineEvent;
+import com.melomarit.melopost.service.TimelineEventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

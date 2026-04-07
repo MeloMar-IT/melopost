@@ -41,6 +41,7 @@ The application provides a RESTful API for integration and programmatic access. 
 - `PUT /api/postmortems/{id}`: Update an existing postmortem.
 - `DELETE /api/postmortems/{id}`: Delete a postmortem.
 - `GET /api/postmortems/search?keyword={keyword}`: Search for postmortems by keyword.
+- `GET /postmortems/{id}/report`: Download a PDF report for a postmortem.
 
 ### Data Sources
 - `GET /api/datasources`: Retrieve all data sources.

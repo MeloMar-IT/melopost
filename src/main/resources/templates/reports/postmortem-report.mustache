@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>{{title}}</title>
+    <style>
+        body { font-family: 'Helvetica', 'Arial', sans-serif; line-height: 1.6; color: #333; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; }
+        h2 { color: #2980b9; margin-top: 30px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .section { margin-bottom: 20px; }
+        .label { font-weight: bold; color: #7f8c8d; width: 150px; display: inline-block; }
+        .value { display: inline-block; }
+        .tag { background: #ecf0f1; border-radius: 3px; padding: 2px 8px; margin-right: 5px; font-size: 0.9em; }
+        .layer { margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-left: 5px solid #3498db; }
+        .hole { margin-left: 20px; margin-top: 10px; border-left: 3px solid #e74c3c; padding-left: 10px; }
+        .timeline-event { margin-bottom: 10px; }
+        .event-time { font-weight: bold; color: #16a085; width: 120px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <h1>Postmortem: {{title}}</h1>
+
+    <div class="section">
+        <div><span class="label">Incident Ref:</span> <span class="value">{{incidentRef}} ({{incidentSource}})</span></div>
+        <div><span class="label">Incident Date:</span> <span class="value">{{incidentDate}}</span></div>
+        <div><span class="label">Start Date:</span> <span class="value">{{startDate}}</span></div>
+        <div><span class="label">Meeting Date:</span> <span class="value">{{postMortemMeetingDate}}</span></div>
+        <div><span class="label">Due Date:</span> <span class="value">{{dueDate}}</span></div>
+        <div><span class="label">Story App:</span> <span class="value">{{storyApplication}}</span></div>
+    </div>
+
+    <div class="section">
+        <h2>Description</h2>
+        <p>{{description}}</p>
+    </div>
+
+    <div class="section">
+        <h2>Tags</h2>
+        {{#tags}}
+            <span class="tag">{{.}}</span>
+        {{/tags}}
+        {{^tags}}
+            <p>No tags</p>
+        {{/tags}}
+    </div>
+
+    <div class="section">
+        <h2>Timeline</h2>
+        {{#timelineEvents}}
+            <div class="timeline-event">
+                <span class="event-time">{{eventTime}}</span>
+                <span class="value">{{description}}</span>
+            </div>
+        {{/timelineEvents}}
+        {{^timelineEvents}}
+            <p>No timeline events recorded.</p>
+        {{/timelineEvents}}
+    </div>
+
+    <div class="section">
+        <h2>Swiss Cheese Analysis</h2>
+        {{#layers}}
+            <div class="layer">
+                <h3>{{name}}</h3>
+                <p>{{description}}</p>
+                
+                {{#holes}}
+                    <div class="hole">
+                        <strong>Hole:</strong> {{description}}<br/>
+                        <strong>Team:</strong> {{teamName}}<br/>
+                        <strong>Remedial Action:</strong> {{remedialAction}} ({{actionStatus}})
+                        {{#tags}}
+                            <span class="tag">{{.}}</span>
+                        {{/tags}}
+                        {{#story}}
+                            <br/><strong>Story:</strong> {{storyNumber}} - {{status}}
+                        {{/story}}
+                    </div>
+                {{/holes}}
+                {{^holes}}
+                    <p>No holes identified in this layer.</p>
+                {{/holes}}
+            </div>
+        {{/layers}}
+    </div>
+
+    <div class="section">
+        <h2>Analysis Questions</h2>
+        {{#questions}}
+            <div class="timeline-event">
+                <strong>[{{cheeseLayer}}] {{question}}</strong><br/>
+                <em>Answer:</em> {{answer}}
+            </div>
+        {{/questions}}
+        {{^questions}}
+            <p>No analysis questions recorded.</p>
+        {{/questions}}
+    </div>
+</body>
+</html>

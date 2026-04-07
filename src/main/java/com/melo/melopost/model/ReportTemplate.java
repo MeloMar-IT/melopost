@@ -1,0 +1,28 @@
+package com.melo.melopost.model;
+
+import jakarta.persistence.*;
+import lombok.Data;
+
+@Data
+@Entity
+public class ReportTemplate {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    private boolean defaultTemplate;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public boolean isDefault() { return defaultTemplate; }
+    public void setDefault(boolean aDefault) { defaultTemplate = aDefault; }
+}

@@ -2,7 +2,10 @@ package com.melomarit.melopost.controller;
 
 import com.melomarit.melopost.model.Postmortem;
 import com.melomarit.melopost.service.PostmortemService;
+import com.melomarit.melopost.service.ReportService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -11,14 +14,21 @@ import java.util.List;
 @RequestMapping("/api/postmortems")
 public class PostmortemController {
     private final PostmortemService service;
+    private final ReportService reportService;
 
-    public PostmortemController(PostmortemService service) {
+    public PostmortemController(PostmortemService service, ReportService reportService) {
         this.service = service;
+        this.reportService = reportService;
     }
 
     @GetMapping
     public List<Postmortem> getAll() {
         return service.findAll();
+    }
+
+    @GetMapping("/recent")
+    public List<Postmortem> getRecent() {
+        return service.findRecent();
     }
 
     @GetMapping("/{id}")
@@ -60,6 +70,14 @@ public class PostmortemController {
                 existing.getTimelineEvents().clear();
                 existing.getTimelineEvents().addAll(postmortem.getTimelineEvents());
             }
+
+            if (postmortem.getQuestions() != null) {
+                existing.getQuestions().clear();
+                existing.getQuestions().addAll(postmortem.getQuestions());
+                for (var q : existing.getQuestions()) {
+                    q.setPostmortem(existing);
+                }
+            }
             
             return ResponseEntity.ok(service.save(existing));
         } catch (RuntimeException e) {
@@ -76,5 +94,20 @@ public class PostmortemController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/report")
+    public ResponseEntity<byte[]> downloadReport(@PathVariable Long id) {
+        try {
+            Postmortem postmortem = service.findById(id);
+            byte[] pdfBytes = reportService.generatePostmortemPdf(postmortem);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=postmortem-report-" + id + ".pdf")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.melomarit.melopost.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -16,6 +17,7 @@ public class PostmortemQuestion {
 
     @ManyToOne
     @JoinColumn(name = "postmortem_id")
+    @JsonIgnore
     private Postmortem postmortem;
 
     public Long getId() { return id; }

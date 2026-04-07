@@ -36,17 +36,39 @@ The application provides a RESTful API for integration and programmatic access. 
 
 ### Postmortems
 - `GET /api/postmortems`: Retrieve all postmortems.
+- `GET /api/postmortems/recent`: Retrieve recent postmortems.
 - `GET /api/postmortems/{id}`: Get a specific postmortem by ID.
 - `POST /api/postmortems`: Create a new postmortem.
 - `PUT /api/postmortems/{id}`: Update an existing postmortem.
 - `DELETE /api/postmortems/{id}`: Delete a postmortem.
 - `GET /api/postmortems/search?keyword={keyword}`: Search for postmortems by keyword.
-- `GET /postmortems/{id}/report`: Download a PDF report for a postmortem.
+- `GET /api/postmortems/{id}/report`: Download a PDF report for a postmortem.
 
 ### Data Sources
 - `GET /api/datasources`: Retrieve all data sources.
 - `POST /api/datasources`: Create a new data source.
 - `DELETE /api/datasources/{id}`: Delete a data source.
+
+### Report Templates
+- `GET /api/report-templates`: List all report templates.
+- `GET /api/report-templates/default`: Get the default template.
+- `POST /api/report-templates`: Create a new template.
+- `PUT /api/report-templates/{id}`: Update a template.
+- `DELETE /api/report-templates/{id}`: Delete a template.
+
+### Postmortem Questions
+- `GET /api/postmortem-questions`: List all questions.
+- `GET /api/postmortem-questions/postmortem/{id}`: List questions for a postmortem.
+- `POST /api/postmortem-questions`: Create a question.
+- `PUT /api/postmortem-questions/{id}`: Update a question.
+- `DELETE /api/postmortem-questions/{id}`: Delete a question.
+
+### Postmortem Documents
+- `GET /api/postmortem-documents`: List all documents.
+- `GET /api/postmortem-documents/postmortem/{id}`: List documents for a postmortem.
+- `GET /api/postmortem-documents/{id}/download`: Download a document.
+- `POST /api/postmortem-documents/upload/{postmortemId}`: Upload a document.
+- `DELETE /api/postmortem-documents/{id}`: Delete a document.
 
 ### Users
 - `GET /api/users`: List all users.

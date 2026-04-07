@@ -81,17 +81,17 @@ public class ReportService {
         }).toList());
 
         context.put("timelineEvents", postmortem.getTimelineEvents().stream().map(e -> {
-            Map<String, String> event = new HashMap<>();
+            Map<String, Object> event = new HashMap<>();
             event.put("eventTime", e.getEventTime() != null ? e.getEventTime().format(DATE_FORMATTER) : "N/A");
-            event.put("description", e.getDescription());
+            event.put("description", e.getDescription() != null ? e.getDescription() : "");
             return event;
         }).toList());
 
         context.put("questions", postmortem.getQuestions().stream().map(q -> {
-            Map<String, String> question = new HashMap<>();
-            question.put("cheeseLayer", q.getCheeseLayer());
-            question.put("question", q.getQuestion());
-            question.put("answer", q.getAnswer());
+            Map<String, Object> question = new HashMap<>();
+            question.put("cheeseLayer", q.getCheeseLayer() != null ? q.getCheeseLayer() : "N/A");
+            question.put("question", q.getQuestion() != null ? q.getQuestion() : "N/A");
+            question.put("answer", q.getAnswer() != null ? q.getAnswer() : "");
             return question;
         }).toList());
 

@@ -16,6 +16,14 @@
     </div>
 
     <div layout:fragment="content">
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 z-[100]">
+            <div class="bg-gray-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center space-x-3">
+                <i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i>
+                <span id="toastMessage" class="text-sm font-medium">Link copied to clipboard!</span>
+            </div>
+        </div>
+
         <!-- Header Actions -->
         <div class="flex justify-between items-start mb-8">
             <div>
@@ -62,10 +70,24 @@
                     <i data-lucide="edit-3" class="w-4 h-4 mr-2"></i>
                     Edit
                 </a>
-                <button class="inline-flex items-center px-4 py-2 bg-blue-600 text-sm font-medium rounded-lg text-white hover:bg-blue-700 shadow-sm transition-colors">
-                    <i data-lucide="share-2" class="w-4 h-4 mr-2"></i>
-                    Share
-                </button>
+                <div class="relative inline-block text-left" id="shareDropdown">
+                    <button type="button" onclick="toggleShareDropdown()" class="inline-flex items-center px-4 py-2 bg-blue-600 text-sm font-medium rounded-lg text-white hover:bg-blue-700 shadow-sm transition-colors">
+                        <i data-lucide="share-2" class="w-4 h-4 mr-2"></i>
+                        Share
+                    </button>
+                    <div id="shareMenu" class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 z-50">
+                        <div class="py-1">
+                            <button onclick="copyToClipboard()" class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">
+                                <i data-lucide="link" class="w-4 h-4 mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                Copy Link
+                            </button>
+                            <button onclick="shareViaEmail()" class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">
+                                <i data-lucide="mail" class="w-4 h-4 mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                Share via Email
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -414,5 +436,70 @@
             </div>
         </div>
     </div>
+    <th:block layout:fragment="script">
+        <script>
+            function toggleShareDropdown() {
+                const menu = document.getElementById('shareMenu');
+                menu.classList.toggle('hidden');
+            }
+
+            // Close dropdown when clicking outside
+            window.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('shareDropdown');
+                const menu = document.getElementById('shareMenu');
+                if (!dropdown.contains(e.target)) {
+                    menu.classList.add('hidden');
+                }
+            });
+
+            function shareViaEmail() {
+                const title = "[[${postmortem.title}]]";
+                const description = "[[${postmortem.description}]]";
+                const incidentRef = "[[${postmortem.incidentRef}]]";
+                const source = "[[${postmortem.incidentSource}]]";
+                const app = "[[${postmortem.storyStore}]]";
+                const tags = "[[${#strings.listJoin(postmortem.tags, ', ')}]]";
+                const url = window.location.href;
+
+                let body = `Check out this postmortem: ${url}\n\n`;
+                body += `Overview:\n${description}\n\n`;
+                body += `Metadata:\n`;
+                body += `- Reference: ${incidentRef}\n`;
+                body += `- Source: ${source}\n`;
+                body += `- Application: ${app}\n`;
+                if (tags) {
+                    body += `- Tags: ${tags}\n`;
+                }
+
+                const mailtoLink = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+                window.location.href = mailtoLink;
+                document.getElementById('shareMenu').classList.add('hidden');
+            }
+
+            function copyToClipboard() {
+                const url = window.location.href;
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('Link copied to clipboard!');
+                    document.getElementById('shareMenu').classList.add('hidden');
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            }
+
+            function showToast(message) {
+                const toast = document.getElementById('toast');
+                const toastMsg = document.getElementById('toastMessage');
+                toastMsg.textContent = message;
+                
+                // Show toast
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            }
+        </script>
+    </th:block>
 </body>
 </html>

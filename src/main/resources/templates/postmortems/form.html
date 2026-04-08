@@ -71,19 +71,40 @@
                         </div>
                         <div class="space-y-2">
                             <label for="incidentSource" class="block text-sm font-semibold text-gray-700">Source</label>
-                            <input type="text" id="incidentSource" th:field="*{incidentSource}"
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-                                   placeholder="Jira / Azure">
+                            <select id="incidentSource" th:field="*{incidentSource}"
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-white">
+                                <option value="">-- Select Source --</option>
+                                <option th:each="ds : ${readDataSources}" th:value="${ds.name}" th:text="${ds.name}">Source Name</option>
+                            </select>
                         </div>
                         <div class="space-y-2">
-                            <label for="storyApplication" class="block text-sm font-semibold text-gray-700">Target App</label>
-                            <input type="text" id="storyApplication" th:field="*{storyApplication}"
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-                                   placeholder="Checkout API">
+                            <label for="storyStore" class="block text-sm font-semibold text-gray-700">Story Store</label>
+                            <select id="storyStore" th:field="*{storyStore}"
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-white">
+                                <option value="">-- Select Story Store --</option>
+                                <option th:each="ds : ${writeDataSources}" th:value="${ds.name}" th:text="${ds.name}">Source Name</option>
+                            </select>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label for="type" class="block text-sm font-semibold text-gray-700">Postmortem Type</label>
+                            <select id="type" th:field="*{type}"
+                                    onchange="toggleLocalPostmortems()"
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-white">
+                                <option value="">-- Select Type --</option>
+                                <option th:each="t : ${T(com.melomarit.melopost.model.Postmortem).POSTMORTEM_TYPES}" th:value="${t}" th:text="${t}">Type</option>
+                            </select>
+                        </div>
+                        <div id="local-postmortems-section" class="space-y-2 col-span-full" style="display: none;">
+                            <label for="localPostmortems" class="block text-sm font-semibold text-gray-700">Include Local Postmortems</label>
+                            <select id="localPostmortems" th:field="*{localPostmortems}" multiple
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-white h-32">
+                                <option th:each="pm : ${localPostmortems}" th:value="${pm.id}" th:text="|${pm.incidentRef != null ? pm.incidentRef + ' - ' : ''}${pm.title}|">Local Postmortem Title</option>
+                            </select>
+                            <p class="text-[10px] text-gray-400">Hold Ctrl (Cmd) to select multiple records.</p>
+                        </div>
                         <div class="space-y-2">
                             <label for="department" class="block text-sm font-semibold text-gray-700">Department</label>
                             <input type="text" id="department" th:field="*{department}"
@@ -286,7 +307,18 @@
     <script layout:fragment="scripts">
         document.addEventListener('DOMContentLoaded', function() {
             updateDueDate();
+            toggleLocalPostmortems();
         });
+
+        function toggleLocalPostmortems() {
+            const typeSelect = document.getElementById('type');
+            const localSection = document.getElementById('local-postmortems-section');
+            if (typeSelect.value === 'Major Post Mortem' || typeSelect.value === 'Major Postmortem') {
+                localSection.style.display = 'block';
+            } else {
+                localSection.style.display = 'none';
+            }
+        }
 
         function updateDueDate() {
             const incidentDateInput = document.getElementById('incidentDate');

@@ -65,9 +65,11 @@
                         </div>
                         <div class="space-y-2">
                             <label for="operation" class="block text-sm font-semibold text-gray-700">Operation</label>
-                            <input type="text" id="operation" th:field="*{operation}" required
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-                                   placeholder="e.g. GET_INCIDENTS">
+                            <select id="operation" th:field="*{operation}" required
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-white">
+                                <option value="Read">Read</option>
+                                <option value="Create">Write</option>
+                            </select>
                         </div>
                     </div>
 

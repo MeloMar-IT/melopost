@@ -151,10 +151,11 @@ public class TestDataInitializer {
         pm.setStartDate(pm.getIncidentDate().minusHours(random.nextInt(12)));
         pm.setPostMortemMeetingDate(pm.getIncidentDate().plusDays(3 + random.nextInt(10)));
         pm.setIncidentRef(template.getType().substring(0, 1).toUpperCase() + "-" + (1000 + random.nextInt(9000)));
-        pm.setIncidentSource(template.getType());
-        pm.setStoryApplication(template.getType()); // Using the same platform for stories as incident source
+        pm.setIncidentSource(template.getName());
+        pm.setStoryStore(template.getName()); // Using the same platform for stories as incident source
         pm.setDepartment(departments[random.nextInt(departments.length)]);
         pm.setFailedApplication(failedApplications[random.nextInt(failedApplications.length)]);
+        pm.setType(Postmortem.POSTMORTEM_TYPES.get(random.nextInt(Postmortem.POSTMORTEM_TYPES.size())));
 
         // Add 1-3 random tags
         int pmTagCount = 1 + random.nextInt(3);

@@ -4,6 +4,7 @@ import com.melomarit.melopost.model.CheeseLayer;
 import com.melomarit.melopost.model.Postmortem;
 import com.melomarit.melopost.model.PostmortemDocument;
 import com.melomarit.melopost.model.PostmortemQuestion;
+import com.melomarit.melopost.service.DataSourceService;
 import com.melomarit.melopost.service.PostmortemDocumentService;
 import com.melomarit.melopost.service.PostmortemService;
 import com.melomarit.melopost.service.ReportService;
@@ -23,11 +24,13 @@ public class PostmortemViewController {
     private final PostmortemService service;
     private final ReportService reportService;
     private final PostmortemDocumentService documentService;
+    private final DataSourceService dataSourceService;
 
-    public PostmortemViewController(PostmortemService service, ReportService reportService, PostmortemDocumentService documentService) {
+    public PostmortemViewController(PostmortemService service, ReportService reportService, PostmortemDocumentService documentService, DataSourceService dataSourceService) {
         this.service = service;
         this.reportService = reportService;
         this.documentService = documentService;
+        this.dataSourceService = dataSourceService;
     }
 
     @GetMapping
@@ -55,6 +58,9 @@ public class PostmortemViewController {
         pm.addLayer(createLayer("Incident Handling"));
         pm.addLayer(createLayer("Human"));
         model.addAttribute("postmortem", pm);
+        model.addAttribute("readDataSources", dataSourceService.getDataSourcesByOperation("Read"));
+        model.addAttribute("writeDataSources", dataSourceService.getDataSourcesByOperation("Create"));
+        model.addAttribute("localPostmortems", service.findByType("Local postmortem"));
         return "postmortems/form";
     }
 
@@ -93,6 +99,9 @@ public class PostmortemViewController {
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
         model.addAttribute("postmortem", service.findById(id));
+        model.addAttribute("readDataSources", dataSourceService.getDataSourcesByOperation("Read"));
+        model.addAttribute("writeDataSources", dataSourceService.getDataSourcesByOperation("Create"));
+        model.addAttribute("localPostmortems", service.findByType("Local postmortem"));
         return "postmortems/form";
     }
 

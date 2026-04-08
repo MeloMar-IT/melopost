@@ -11,7 +11,7 @@ This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**
 The application uses an H2 relational database. The core entities and their relationships are:
 
 - **Postmortem**: The primary entity representing an incident analysis.
-  - Contains: title, description, department, failed application, incident date, start date, due date, meeting date, incident reference, incident source, story application, and tags.
+  - Contains: title, description, department, failed application, incident date, start date, due date, meeting date, incident reference, incident source, story store, and tags.
   - Relationships: 1-to-Many with `CheeseLayer`, 1-to-Many with `TimelineEvent`, 1-to-Many with `PostmortemQuestion`, 1-to-Many with `PostmortemDocument`.
 - **CheeseLayer**: Represents a specific layer of defense (e.g., Software Design, Training, Monitoring).
   - Contains: name, description.

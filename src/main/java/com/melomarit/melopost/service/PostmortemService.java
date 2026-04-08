@@ -127,4 +127,8 @@ public class PostmortemService {
                 .filter(p -> allowedDepts.contains(p.getDepartment()))
                 .collect(Collectors.toList());
     }
+
+    public List<Postmortem> findByType(String type) {
+        return repository.findByType(type);
+    }
 }

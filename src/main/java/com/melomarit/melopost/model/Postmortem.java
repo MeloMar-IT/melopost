@@ -25,9 +25,14 @@ public class Postmortem {
     private LocalDateTime dueDate;
     private String incidentRef; // ServiceNow or Jira ID
     private String incidentSource; // e.g., "ServiceNow", "Jira"
-    private String storyApplication; // Application where stories are made
+    private String storyStore; // Application where stories are made
     private String department;
     private String failedApplication;
+    private String type;
+    
+    public static final List<String> POSTMORTEM_TYPES = List.of(
+            "Local postmortem", "Major Postmortem", "Orchestrated P1"
+    );
     
     @ElementCollection
     @CollectionTable(name = "postmortem_tags", joinColumns = @JoinColumn(name = "postmortem_id"))
@@ -47,6 +52,14 @@ public class Postmortem {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "postmortem")
     private List<PostmortemDocument> documents = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+        name = "major_local_postmortems",
+        joinColumns = @JoinColumn(name = "major_postmortem_id"),
+        inverseJoinColumns = @JoinColumn(name = "local_postmortem_id")
+    )
+    private List<Postmortem> localPostmortems = new ArrayList<>();
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -96,14 +109,17 @@ public class Postmortem {
     public void setIncidentRef(String incidentRef) { this.incidentRef = incidentRef; }
     public String getIncidentSource() { return incidentSource; }
     public void setIncidentSource(String incidentSource) { this.incidentSource = incidentSource; }
-    public String getStoryApplication() { return storyApplication; }
-    public void setStoryApplication(String storyApplication) { this.storyApplication = storyApplication; }
+    public String getStoryStore() { return storyStore; }
+    public void setStoryStore(String storyStore) { this.storyStore = storyStore; }
 
     public String getDepartment() { return department; }
     public void setDepartment(String department) { this.department = department; }
 
     public String getFailedApplication() { return failedApplication; }
     public void setFailedApplication(String failedApplication) { this.failedApplication = failedApplication; }
+
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
@@ -115,6 +131,9 @@ public class Postmortem {
 
     public List<PostmortemDocument> getDocuments() { return documents; }
     public void setDocuments(List<PostmortemDocument> documents) { this.documents = documents; }
+
+    public List<Postmortem> getLocalPostmortems() { return localPostmortems; }
+    public void setLocalPostmortems(List<Postmortem> localPostmortems) { this.localPostmortems = localPostmortems; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

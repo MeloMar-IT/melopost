@@ -30,6 +30,12 @@ public class DataSourceService {
         dataSourceRepository.deleteById(id);
     }
 
+    public List<DataSource> getDataSourcesByOperation(String operation) {
+        return dataSourceRepository.findAll().stream()
+                .filter(ds -> operation.equalsIgnoreCase(ds.getOperation()))
+                .toList();
+    }
+
     public List<DataSource> getTemplates() {
         List<DataSource> templates = new ArrayList<>();
         

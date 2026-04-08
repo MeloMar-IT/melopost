@@ -21,12 +21,13 @@
     <h1>Postmortem: {{title}}</h1>
 
     <div class="section">
+        <div><span class="label">Postmortem Type:</span> <span class="value">{{type}}</span></div>
         <div><span class="label">Incident Ref:</span> <span class="value">{{incidentRef}} ({{incidentSource}})</span></div>
         <div><span class="label">Incident Date:</span> <span class="value">{{incidentDate}}</span></div>
         <div><span class="label">Start Date:</span> <span class="value">{{startDate}}</span></div>
         <div><span class="label">Meeting Date:</span> <span class="value">{{postMortemMeetingDate}}</span></div>
         <div><span class="label">Due Date:</span> <span class="value">{{dueDate}}</span></div>
-        <div><span class="label">Story App:</span> <span class="value">{{storyApplication}}</span></div>
+        <div><span class="label">Story Store:</span> <span class="value">{{storyStore}}</span></div>
         <div><span class="label">Department:</span> <span class="value">{{department}}</span></div>
         <div><span class="label">Failed App:</span> <span class="value">{{failedApplication}}</span></div>
     </div>
@@ -98,5 +99,16 @@
             <p>No analysis questions recorded.</p>
         {{/questions}}
     </div>
+
+    {{#localPostmortems.0}}
+    <div class="section">
+        <h2>Included Local Postmortems</h2>
+        <ul>
+        {{#localPostmortems}}
+            <li><strong>{{title}}</strong> ({{incidentRef}}) - {{incidentDate}}</li>
+        {{/localPostmortems}}
+        </ul>
+    </div>
+    {{/localPostmortems.0}}
 </body>
 </html>

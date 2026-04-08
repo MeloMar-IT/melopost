@@ -49,7 +49,7 @@ public class ReportService {
         context.put("description", postmortem.getDescription());
         context.put("incidentRef", postmortem.getIncidentRef() != null ? postmortem.getIncidentRef() : "N/A");
         context.put("incidentSource", postmortem.getIncidentSource() != null ? postmortem.getIncidentSource() : "N/A");
-        context.put("storyApplication", postmortem.getStoryApplication() != null ? postmortem.getStoryApplication() : "N/A");
+        context.put("storyStore", postmortem.getStoryStore() != null ? postmortem.getStoryStore() : "N/A");
         context.put("department", postmortem.getDepartment() != null ? postmortem.getDepartment() : "N/A");
         context.put("failedApplication", postmortem.getFailedApplication() != null ? postmortem.getFailedApplication() : "N/A");
         context.put("startDate", postmortem.getStartDate() != null ? postmortem.getStartDate().format(DATE_FORMATTER) : "N/A");
@@ -93,6 +93,14 @@ public class ReportService {
             question.put("question", q.getQuestion() != null ? q.getQuestion() : "N/A");
             question.put("answer", q.getAnswer() != null ? q.getAnswer() : "");
             return question;
+        }).toList());
+
+        context.put("localPostmortems", postmortem.getLocalPostmortems().stream().map(lp -> {
+            Map<String, Object> pm = new HashMap<>();
+            pm.put("title", lp.getTitle());
+            pm.put("incidentRef", lp.getIncidentRef() != null ? lp.getIncidentRef() : "N/A");
+            pm.put("incidentDate", lp.getIncidentDate() != null ? lp.getIncidentDate().format(DATE_FORMATTER) : "N/A");
+            return pm;
         }).toList());
 
         String html = template.execute(context);

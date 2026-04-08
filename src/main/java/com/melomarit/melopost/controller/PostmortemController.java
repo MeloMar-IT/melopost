@@ -53,9 +53,10 @@ public class PostmortemController {
             if (postmortem.getDueDate() != null) existing.setDueDate(postmortem.getDueDate());
             if (postmortem.getIncidentRef() != null) existing.setIncidentRef(postmortem.getIncidentRef());
             if (postmortem.getIncidentSource() != null) existing.setIncidentSource(postmortem.getIncidentSource());
-            if (postmortem.getStoryApplication() != null) existing.setStoryApplication(postmortem.getStoryApplication());
+            if (postmortem.getStoryStore() != null) existing.setStoryStore(postmortem.getStoryStore());
             if (postmortem.getDepartment() != null) existing.setDepartment(postmortem.getDepartment());
             if (postmortem.getFailedApplication() != null) existing.setFailedApplication(postmortem.getFailedApplication());
+            if (postmortem.getType() != null) existing.setType(postmortem.getType());
             
             if (postmortem.getTags() != null) {
                 existing.getTags().clear();

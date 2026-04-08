@@ -27,7 +27,7 @@
                     </span>
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
                         <i data-lucide="cpu" class="w-4 h-4 mr-1"></i>
-                        <span th:text="${postmortem.storyApplication}">App</span>
+                        <span th:text="${postmortem.storyStore}">App</span>
                     </span>
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
                         <i data-lucide="hash" class="w-4 h-4 mr-1"></i>
@@ -170,6 +170,10 @@
                     <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Metadata</h3>
                     <dl class="space-y-4">
                         <div>
+                            <dt class="text-xs text-gray-400">Postmortem Type</dt>
+                            <dd class="text-sm font-medium text-gray-900" th:text="${postmortem.type ?: 'N/A'}">Type</dd>
+                        </div>
+                        <div>
                             <dt class="text-xs text-gray-400">Start Date</dt>
                             <dd class="text-sm font-medium text-gray-900" th:text="${postmortem.startDate != null ? #temporals.format(postmortem.startDate, 'MMM dd, yyyy HH:mm') : 'N/A'}">Date</dd>
                         </div>
@@ -186,8 +190,8 @@
                             <dd class="text-sm font-bold text-red-600" th:text="${postmortem.dueDate != null ? #temporals.format(postmortem.dueDate, 'MMM dd, yyyy') : 'N/A'}">Date</dd>
                         </div>
                         <div>
-                            <dt class="text-xs text-gray-400">Application</dt>
-                            <dd class="text-sm font-medium text-gray-900" th:text="${postmortem.storyApplication}">App</dd>
+                            <dt class="text-xs text-gray-400">Story Store</dt>
+                            <dd class="text-sm font-medium text-gray-900" th:text="${postmortem.storyStore}">App</dd>
                         </div>
                         <div>
                             <dt class="text-xs text-gray-400">Department</dt>
@@ -202,6 +206,24 @@
                             <dd class="text-sm font-medium text-gray-900" th:text="${postmortem.incidentSource}">Source</dd>
                         </div>
                     </dl>
+                </div>
+
+                <!-- Linked Local Postmortems Card -->
+                <div th:if="${(postmortem.type == 'Major Post Mortem' || postmortem.type == 'Major Postmortem') && !postmortem.localPostmortems.isEmpty()}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Included Local Postmortems</h3>
+                        <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-bold" th:text="${postmortem.localPostmortems.size()}">0</span>
+                    </div>
+                    <div class="space-y-3">
+                        <a th:each="lp : ${postmortem.localPostmortems}" th:href="@{/postmortems/details/{id}(id=${lp.id})}" 
+                           class="block p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-100">
+                            <p class="text-sm font-bold text-gray-900 truncate" th:text="${lp.title}">Local Postmortem Title</p>
+                            <div class="flex items-center justify-between mt-1">
+                                <span class="text-[10px] text-gray-500" th:text="${lp.incidentRef}">INC-123</span>
+                                <span class="text-[10px] text-gray-400" th:text="${lp.incidentDate != null ? #temporals.format(lp.incidentDate, 'MMM dd, yyyy') : ''}">Date</span>
+                            </div>
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Documents Card -->

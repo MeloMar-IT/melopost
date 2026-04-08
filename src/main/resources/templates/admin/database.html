@@ -2,152 +2,537 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{fragments/layout}">
 <head>
-    <title>Database Administration - Melopost</title>
+    <title>Database Admin - Melopost</title>
+    <style>
+        .sql-editor {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+            resize: vertical;
+        }
+        .table-list-item:hover .table-actions {
+            opacity: 1;
+        }
+        .table-actions {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .loading-overlay {
+            background: rgba(255, 255, 255, 0.7);
+            display: none;
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+    </style>
 </head>
 <body>
-<div layout:fragment="content" class="p-6">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Database Administration</h1>
-    </div>
+<div layout:fragment="header-title">Database Administration</div>
 
-    <!-- SQL Query Section -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 mb-6">
-        <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
-            <h3 class="font-semibold text-gray-700">Execute SQL Query</h3>
+<div layout:fragment="content" class="h-full flex flex-col p-0 overflow-hidden">
+    <div class="flex h-full overflow-hidden">
+        <!-- Left Sidebar: Tables -->
+        <div class="w-72 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+            <div class="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                <h3 class="font-bold text-gray-700 uppercase text-xs tracking-wider">Tables</h3>
+                <button onclick="loadTables()" class="text-gray-400 hover:text-blue-600 transition-colors" title="Refresh Tables">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto" id="tables-list">
+                <!-- Tables will be loaded here -->
+                <div class="p-4 text-center text-gray-400 italic text-sm">Loading tables...</div>
+            </div>
         </div>
-        <div class="p-4">
-            <form th:action="@{/admin/database/query}" method="post" class="space-y-4">
-                <textarea name="sql" rows="4" class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
-                          placeholder="SELECT * FROM USERS" th:text="${query}"></textarea>
-                <div class="flex justify-end">
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded transition duration-150">
-                        Run Query
-                    </button>
-                </div>
-            </form>
-        </div>
-        
-        <!-- Query Results -->
-        <div th:if="${queryError}" class="px-4 py-3 bg-red-100 text-red-700 border-t border-red-200">
-            <p th:text="${queryError}"></p>
-        </div>
-        <div th:if="${queryMessage}" class="px-4 py-3 bg-green-100 text-green-700 border-t border-green-200">
-            <p th:text="${queryMessage}"></p>
-        </div>
-        <div th:if="${queryRows}" class="p-0 overflow-x-auto border-t border-gray-200">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th th:each="col : ${queryColumns}" scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" th:text="${col}">
-                            Column
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    <tr th:each="row : ${queryRows}">
-                        <td th:each="cell : ${row}" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${cell}">
-                            Value
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
 
-    <!-- Table List Section -->
-    <div class="mb-6">
-        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <i data-lucide="table" class="w-6 h-6 mr-2 text-indigo-600"></i>
-            Database Tables
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div th:each="table : ${tables}" class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-                <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                    <h3 class="font-semibold text-gray-700" th:text="${table.name}">Table Name</h3>
-                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded" th:text="${table.rowCount + ' rows'}">0 rows</span>
+        <!-- Main Area -->
+        <div class="flex-1 flex flex-col bg-gray-50 overflow-hidden relative">
+            <div id="loading-overlay" class="loading-overlay absolute inset-0 z-50 items-center justify-center">
+                <div class="flex flex-col items-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <span class="mt-2 text-sm text-gray-600 font-medium">Executing...</span>
                 </div>
-                <div class="p-4">
-                    <div class="text-sm text-gray-600 mb-4">
-                        <p class="font-medium mb-1">Columns:</p>
-                        <div class="flex flex-wrap gap-1">
-                            <span th:each="col : ${table.columns}" 
-                                  class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded" 
-                                  th:text="${col}">column</span>
+            </div>
+
+            <!-- Top: SQL Editor -->
+            <div class="p-4 bg-white border-b border-gray-200">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-sm font-semibold text-gray-600">SQL Query</label>
+                    <div class="flex space-x-2">
+                        <button onclick="clearEditor()" class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1">Clear</button>
+                        <button onclick="runQuery()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded shadow-sm transition-all flex items-center">
+                            <i data-lucide="play" class="w-4 h-4 mr-1"></i> Run
+                        </button>
+                    </div>
+                </div>
+                <textarea id="sql-editor" rows="6" 
+                          class="sql-editor w-full px-3 py-2 text-sm text-gray-800 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" 
+                          placeholder="SELECT * FROM USERS LIMIT 100"></textarea>
+            </div>
+
+            <!-- Bottom: Results Area -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <div class="px-4 py-2 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
+                    <span id="result-status" class="text-xs font-medium text-gray-500">Ready</span>
+                    <div id="result-actions" class="hidden flex space-x-3 items-center">
+                        <button onclick="toggleTableDefinition()" id="toggle-definition-btn" class="hidden text-xs text-blue-600 hover:text-blue-800 flex items-center">
+                            <i data-lucide="layout" class="w-3 h-3 mr-1"></i> Hide Definition
+                        </button>
+                        <button onclick="exportToCSV()" class="text-xs text-gray-600 hover:text-blue-600 flex items-center">
+                            <i data-lucide="download" class="w-3 h-3 mr-1"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="query-result-container" class="flex-1 flex flex-col overflow-hidden bg-white">
+                    <!-- Table Definition Section (Initially Hidden) -->
+                    <div id="table-definition-container" class="hidden border-b border-gray-200 bg-gray-50 max-h-48 overflow-y-auto">
+                        <div class="px-4 py-2 flex justify-between items-center sticky top-0 bg-gray-50 border-b border-gray-100">
+                            <h4 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Table Definition: <span id="definition-table-name" class="text-blue-600"></span></h4>
+                        </div>
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-1 text-left text-[10px] font-bold text-gray-500 uppercase">Column</th>
+                                    <th class="px-4 py-1 text-left text-[10px] font-bold text-gray-500 uppercase">Type</th>
+                                    <th class="px-4 py-1 text-left text-[10px] font-bold text-gray-500 uppercase">Nullable</th>
+                                    <th class="px-4 py-1 text-left text-[10px] font-bold text-gray-500 uppercase">Default</th>
+                                    <th class="px-4 py-1 text-center text-[10px] font-bold text-gray-500 uppercase">PK</th>
+                                </tr>
+                            </thead>
+                            <tbody id="definition-table-body" class="divide-y divide-gray-100 bg-white">
+                                <!-- Schema will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="empty-results" class="flex-1 flex flex-col items-center justify-center text-gray-400 p-8">
+                        <i data-lucide="database" class="w-12 h-12 mb-4 opacity-20"></i>
+                        <p>Run a query or select a table to see results</p>
+                    </div>
+                    
+                    <div id="error-results" class="hidden p-4">
+                        <div class="bg-red-50 border-l-4 border-red-500 p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i data-lucide="alert-circle" class="h-5 w-5 text-red-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-red-700 font-bold">Query Error</p>
+                                    <p id="error-message" class="text-sm text-red-600 mt-1 font-mono break-all"></p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex justify-end">
-                        <a th:href="@{/admin/database/table/{name}(name=${table.name})}" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
-                            View Config & Data &rarr;
-                        </a>
+
+                    <div id="success-results" class="hidden p-4">
+                        <div class="bg-green-50 border-l-4 border-green-500 p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i data-lucide="check-circle" class="h-5 w-5 text-green-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p id="success-message" class="text-sm text-green-700"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="data-results" class="hidden flex-1 overflow-auto">
+                        <table class="min-w-full divide-y divide-gray-200 border-collapse">
+                            <thead id="table-head" class="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                                <!-- Headers -->
+                            </thead>
+                            <tbody id="table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Rows -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div th:if="${selectedTable}" class="mt-8 space-y-6">
-        <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="font-semibold text-gray-700" th:text="'Table Configuration: ' + ${selectedTable}">Table Configuration</h3>
-                <a href="/admin/database" class="text-gray-500 hover:text-gray-700 text-sm">Close</a>
-            </div>
-            <div class="p-0 overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Column Name</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max Length</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nullable</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Default</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PK</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr th:each="colCfg : ${tableConfig}">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" th:text="${colCfg.COLUMN_NAME}">Column</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${colCfg.TYPE_NAME}">Type</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${colCfg.CHARACTER_MAXIMUM_LENGTH}">Length</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${colCfg.IS_NULLABLE}">Yes</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${colCfg.COLUMN_DEFAULT}">Default</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <span th:if="${#lists.contains(primaryKeys, colCfg.COLUMN_NAME)}" class="text-yellow-600">🔑</span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
 
-        <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="font-semibold text-gray-700" th:text="'Table Data: ' + ${selectedTable}">Table Data</h3>
-            </div>
-            <div class="p-0 overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th th:each="col : ${columns}" scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" th:text="${col}">
-                                Column
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr th:each="row : ${rows}">
-                            <td th:each="cell : ${row}" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${cell}">
-                                Value
-                            </td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(rows)}">
-                            <td th:attr="colspan=${#lists.size(columns)}" class="px-6 py-4 text-center text-sm text-gray-500">
-                                No data available in this table.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+    <!-- Table Info Modal -->
+    <div id="table-info-modal" class="fixed inset-0 z-[60] hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeTableInfo()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h3 class="text-lg leading-6 font-bold text-gray-900 flex items-center" id="modal-table-name">
+                            <i data-lucide="table" class="w-5 h-5 mr-2 text-blue-600"></i>
+                            Table Info
+                        </h3>
+                        <button onclick="closeTableInfo()" class="text-gray-400 hover:text-gray-500">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Structure</h4>
+                        <div class="overflow-x-auto border rounded">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Column</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nullable</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Default</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-center">PK</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modal-schema-body" class="divide-y divide-gray-200">
+                                    <!-- Schema -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="closeTableInfo()" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Close
+                    </button>
+                    <button type="button" id="modal-query-btn" class="mt-3 w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Query Table
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        // Global State
+        let currentTables = [];
+        let lastResult = null;
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Database Admin Page Initialized');
+            loadTables();
+            
+            // Handle Ctrl+Enter to run query
+            const editor = document.getElementById('sql-editor');
+            if (editor) {
+                editor.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                        runQuery();
+                    }
+                });
+            }
+        });
+
+        async function loadTables() {
+            try {
+                const response = await fetch('/api/admin/database/tables');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                currentTables = await response.json();
+                console.log('Tables loaded:', currentTables);
+                renderTablesList();
+            } catch (error) {
+                console.error('Error loading tables:', error);
+                const list = document.getElementById('tables-list');
+                if (list) {
+                    list.innerHTML = `<div class="p-4 text-center text-red-500 italic text-sm">Error loading tables: ${error.message}</div>`;
+                }
+            }
+        }
+
+        function renderTablesList() {
+            const list = document.getElementById('tables-list');
+            if (!list) return;
+
+            if (currentTables.length === 0) {
+                list.innerHTML = '<div class="p-4 text-center text-gray-400 italic text-sm">No tables found</div>';
+                return;
+            }
+
+            list.innerHTML = currentTables.map(table => `
+                <div class="table-list-item border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer group p-3" onclick="selectTable('${table.name}')">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center">
+                            <i data-lucide="table" class="w-4 h-4 mr-2 text-gray-400 group-hover:text-blue-500"></i>
+                            <span class="text-sm font-medium text-gray-700 group-hover:text-blue-700">${table.name}</span>
+                        </div>
+                        <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">${table.rowCount}</span>
+                    </div>
+                    <div class="mt-1 flex justify-between items-center">
+                         <span class="text-[10px] text-gray-400 truncate max-w-[150px]">${table.columns.join(', ')}</span>
+                         <div class="table-actions flex space-x-1">
+                             <button onclick="event.stopPropagation(); showTableInfo('${table.name}')" class="p-1 text-gray-400 hover:text-blue-600" title="Table Info">
+                                 <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                             </button>
+                         </div>
+                    </div>
+                </div>
+            `).join('');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function selectTable(tableName) {
+            const editor = document.getElementById('sql-editor');
+            if (!editor) return;
+            editor.value = `SELECT * FROM "${tableName}" LIMIT 100`;
+            
+            // Show table definition when selecting a table
+            loadTableDefinition(tableName);
+            
+            runQuery();
+        }
+
+        async function loadTableDefinition(tableName) {
+            const container = document.getElementById('table-definition-container');
+            const toggleBtn = document.getElementById('toggle-definition-btn');
+            const body = document.getElementById('definition-table-body');
+            const nameSpan = document.getElementById('definition-table-name');
+            
+            if (!container || !body || !nameSpan) return;
+            
+            try {
+                const response = await fetch(`/api/admin/database/table/${tableName}`);
+                const data = await response.json();
+                
+                nameSpan.textContent = data.name;
+                body.innerHTML = data.schema.map(col => `
+                    <tr class="hover:bg-blue-50/30">
+                        <td class="px-4 py-1.5 text-xs font-medium text-gray-900">${col.COLUMN_NAME}</td>
+                        <td class="px-4 py-1.5 text-xs text-gray-500 font-mono">${col.TYPE_NAME}${col.CHARACTER_MAXIMUM_LENGTH ? '('+col.CHARACTER_MAXIMUM_LENGTH+')' : ''}</td>
+                        <td class="px-4 py-1.5 text-xs text-gray-500">${col.IS_NULLABLE}</td>
+                        <td class="px-4 py-1.5 text-xs text-gray-500 font-mono text-[10px]">${col.COLUMN_DEFAULT || ''}</td>
+                        <td class="px-4 py-1.5 text-xs text-center">
+                            ${data.primaryKeys.includes(col.COLUMN_NAME) ? '<span class="text-yellow-500" title="Primary Key">🔑</span>' : ''}
+                        </td>
+                    </tr>
+                `).join('');
+                
+                container.classList.remove('hidden');
+                if (toggleBtn) {
+                    toggleBtn.classList.remove('hidden');
+                    toggleBtn.innerHTML = '<i data-lucide="layout" class="w-3 h-3 mr-1"></i> Hide Definition';
+                }
+                if (window.lucide) lucide.createIcons();
+            } catch (error) {
+                console.error('Error loading table definition:', error);
+                container.classList.add('hidden');
+            }
+        }
+
+        function toggleTableDefinition() {
+            const container = document.getElementById('table-definition-container');
+            const toggleBtn = document.getElementById('toggle-definition-btn');
+            if (!container || !toggleBtn) return;
+            
+            const isHidden = container.classList.contains('hidden');
+            if (isHidden) {
+                container.classList.remove('hidden');
+                toggleBtn.innerHTML = '<i data-lucide="layout" class="w-3 h-3 mr-1"></i> Hide Definition';
+            } else {
+                container.classList.add('hidden');
+                toggleBtn.innerHTML = '<i data-lucide="layout" class="w-3 h-3 mr-1"></i> Show Definition';
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function clearEditor() {
+            const editor = document.getElementById('sql-editor');
+            if (editor) editor.value = '';
+        }
+
+        async function runQuery() {
+            const editor = document.getElementById('sql-editor');
+            if (!editor) return;
+            const sql = editor.value.trim();
+            if (!sql) return;
+
+            // Hide definition if it's not a SELECT * FROM [table] query
+            // This is a simple heuristic to keep the UI clean
+            const trimmedSql = sql.toUpperCase();
+            if (!trimmedSql.startsWith("SELECT * FROM") && !trimmedSql.includes("LIMIT")) {
+                // Keep it if it's the exact table we just loaded, but for general queries hide it
+            }
+
+            showLoading(true);
+            hideAllResults();
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                if (csrfHeader && csrfToken) {
+                    headers[csrfHeader] = csrfToken;
+                }
+
+                const response = await fetch('/api/admin/database/query', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ sql })
+                });
+
+                const result = await response.json();
+                lastResult = result;
+                displayResult(result);
+            } catch (error) {
+                console.error('Error running query:', error);
+                displayError("Failed to connect to server");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayResult(result) {
+            const status = document.getElementById('result-status');
+            const actions = document.getElementById('result-actions');
+            
+            if (result.error) {
+                displayError(result.error);
+                if (status) status.textContent = 'Error';
+                if (actions) actions.classList.add('hidden');
+                return;
+            }
+
+            if (result.isSelect) {
+                if (result.rows && result.rows.length > 0) {
+                    displayData(result.columns, result.rows);
+                    if (status) status.textContent = `${result.rows.length} rows returned`;
+                    if (actions) actions.classList.remove('hidden');
+                } else {
+                    displaySuccess(result.message || "Query executed successfully (0 rows)");
+                    if (status) status.textContent = '0 rows returned';
+                    if (actions) actions.classList.add('hidden');
+                }
+            } else {
+                displaySuccess(result.message);
+                if (status) status.textContent = `Success: ${result.affectedRows} rows affected`;
+                if (actions) actions.classList.add('hidden');
+                // Refresh tables list if it was a DDL or something that might change counts
+                loadTables();
+            }
+        }
+
+        function displayData(columns, rows) {
+            const container = document.getElementById('data-results');
+            if (!container) return;
+            container.classList.remove('hidden');
+            const head = document.getElementById('table-head');
+            const body = document.getElementById('table-body');
+
+            head.innerHTML = `<tr>${columns.map(col => `
+                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200 bg-gray-50">${col}</th>
+            `).join('')}</tr>`;
+
+            body.innerHTML = rows.map(row => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    ${row.map(cell => `<td class="px-4 py-2 text-sm text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden max-w-xs truncate" title="${cell}">${cell === null ? '<span class="text-gray-300 italic">null</span>' : cell}</td>`).join('')}
+                </tr>
+            `).join('');
+        }
+
+        function displayError(msg) {
+            const container = document.getElementById('error-results');
+            if (container) {
+                container.classList.remove('hidden');
+                const msgEl = document.getElementById('error-message');
+                if (msgEl) msgEl.textContent = msg;
+            }
+        }
+
+        function displaySuccess(msg) {
+            const container = document.getElementById('success-results');
+            if (container) {
+                container.classList.remove('hidden');
+                const msgEl = document.getElementById('success-message');
+                if (msgEl) msgEl.textContent = msg;
+            }
+        }
+
+        function hideAllResults() {
+            const ids = ['empty-results', 'error-results', 'success-results', 'data-results'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+        }
+
+        function showLoading(show) {
+            const overlay = document.getElementById('loading-overlay');
+            if (!overlay) return;
+            if (show) overlay.classList.add('active');
+            else overlay.classList.remove('active');
+        }
+
+        async function showTableInfo(tableName) {
+            showLoading(true);
+            try {
+                const response = await fetch(`/api/admin/database/table/${tableName}`);
+                const data = await response.json();
+                
+                const titleEl = document.getElementById('modal-table-name');
+                if (titleEl) titleEl.innerHTML = `<i data-lucide="table" class="w-5 h-5 mr-2 text-blue-600"></i> Table: ${data.name}`;
+                
+                const schemaBody = document.getElementById('modal-schema-body');
+                if (schemaBody) {
+                    schemaBody.innerHTML = data.schema.map(col => `
+                        <tr>
+                            <td class="px-4 py-2 text-sm font-medium text-gray-900">${col.COLUMN_NAME}</td>
+                            <td class="px-4 py-2 text-sm text-gray-500 font-mono text-xs">${col.TYPE_NAME}${col.CHARACTER_MAXIMUM_LENGTH ? '('+col.CHARACTER_MAXIMUM_LENGTH+')' : ''}</td>
+                            <td class="px-4 py-2 text-sm text-gray-500">${col.IS_NULLABLE}</td>
+                            <td class="px-4 py-2 text-sm text-gray-500 font-mono text-xs">${col.COLUMN_DEFAULT || ''}</td>
+                            <td class="px-4 py-2 text-sm text-center">
+                                ${data.primaryKeys.includes(col.COLUMN_NAME) ? '<span class="text-yellow-500" title="Primary Key">🔑</span>' : ''}
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                const queryBtn = document.getElementById('modal-query-btn');
+                if (queryBtn) {
+                    queryBtn.onclick = () => {
+                        selectTable(tableName);
+                        closeTableInfo();
+                    };
+                }
+
+                const modal = document.getElementById('table-info-modal');
+                if (modal) modal.classList.remove('hidden');
+                if (window.lucide) lucide.createIcons();
+            } catch (error) {
+                console.error('Error loading table info:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function closeTableInfo() {
+            const modal = document.getElementById('table-info-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function exportToCSV() {
+            if (!lastResult || !lastResult.rows) return;
+            
+            const headers = lastResult.columns.join(',');
+            const rows = lastResult.rows.map(row => 
+                row.map(cell => {
+                    if (cell === null) return '';
+                    let val = String(cell).replace(/"/g, '""');
+                    return val.includes(',') || val.includes('"') || val.includes('\n') ? `"${val}"` : val;
+                }).join(',')
+            );
+            
+            const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows.join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `query_results_${new Date().getTime()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</th:block>
 </body>
 </html>

@@ -45,13 +45,14 @@ public class ReportService {
         Template template = mustacheCompiler.compile(templateContent);
 
         Map<String, Object> context = new HashMap<>();
-        context.put("title", postmortem.getTitle());
-        context.put("description", postmortem.getDescription());
+        context.put("title", postmortem.getTitle() != null ? postmortem.getTitle() : "N/A");
+        context.put("description", postmortem.getDescription() != null ? postmortem.getDescription() : "N/A");
         context.put("incidentRef", postmortem.getIncidentRef() != null ? postmortem.getIncidentRef() : "N/A");
         context.put("incidentSource", postmortem.getIncidentSource() != null ? postmortem.getIncidentSource() : "N/A");
         context.put("storyStore", postmortem.getStoryStore() != null ? postmortem.getStoryStore() : "N/A");
         context.put("department", postmortem.getDepartment() != null ? postmortem.getDepartment() : "N/A");
         context.put("failedApplication", postmortem.getFailedApplication() != null ? postmortem.getFailedApplication() : "N/A");
+        context.put("type", postmortem.getType() != null ? postmortem.getType() : "N/A");
         context.put("startDate", postmortem.getStartDate() != null ? postmortem.getStartDate().format(DATE_FORMATTER) : "N/A");
         context.put("incidentDate", postmortem.getIncidentDate() != null ? postmortem.getIncidentDate().format(DATE_FORMATTER) : "N/A");
         context.put("postMortemMeetingDate", postmortem.getPostMortemMeetingDate() != null ? postmortem.getPostMortemMeetingDate().format(DATE_FORMATTER) : "N/A");

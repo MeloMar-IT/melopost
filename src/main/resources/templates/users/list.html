@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>User Management</title>
+</head>
+<body>
+    <div layout:fragment="header-title">User Management</div>
+
+    <div layout:fragment="content">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Application Users</h1>
+            <a href="/users/new" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+                Add User
+            </a>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-gray-100">
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">User</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Email</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Roles</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Depts</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr th:each="u : ${users}" class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold mr-3" th:text="${#strings.substring(u.username,0,1).toUpperCase()}">U</div>
+                                    <div>
+                                        <div class="text-sm font-bold text-gray-900" th:text="${u.username}">username</div>
+                                        <div class="text-xs text-gray-400" th:text="${u.firstName + ' ' + u.lastName}">First Last</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500" th:text="${u.email}">email@example.com</td>
+                            <td class="px-6 py-4">
+                                <div class="flex flex-wrap gap-1">
+                                    <span th:each="role : ${u.roles}" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800" th:text="${role}">ROLE</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex flex-wrap gap-1">
+                                    <span th:each="dept : ${u.allowedDepartments}" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700" th:text="${dept}">DEPT</span>
+                                    <span th:if="${u.allowedDepartments.empty}" class="text-xs text-gray-400">All (Admin only) or None</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span th:if="${u.active}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Active
+                                </span>
+                                <span th:unless="${u.active}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    Inactive
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right space-x-3">
+                                <a th:href="@{/users/edit/{id}(id=${u.id})}" class="text-sm font-medium text-blue-600 hover:text-blue-800">Edit</a>
+                                <a th:href="@{/users/delete/{id}(id=${u.id})}" class="text-sm font-medium text-red-600 hover:text-red-800" onclick="return confirm('Are you sure?')">Delete</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Empty State -->
+            <div th:if="${users.empty}" class="py-12 text-center bg-white">
+                <i data-lucide="users" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+                <h3 class="text-gray-500 font-medium">No Users Found</h3>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

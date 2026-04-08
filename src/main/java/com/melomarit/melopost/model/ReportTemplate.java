@@ -15,7 +15,7 @@ public class ReportTemplate {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "is_default", nullable = false, columnDefinition = "boolean default false")
+    @Column(name = "is_default", nullable = false)
     private boolean isDefault;
 
     public Long getId() { return id; }

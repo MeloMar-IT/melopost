@@ -51,9 +51,19 @@ public class TestDataInitializer {
             UserRepository userRepository,
             ReportTemplateRepository reportTemplateRepository,
             ResourceLoader resourceLoader,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         return args -> {
             log.info("[TEST_DATA] Removing existing test data...");
+            
+            // Clean up old 'DEFAULT_TEMPLATE' column if it exists in 'REPORT_TEMPLATE' table
+            try {
+                log.info("[TEST_DATA] Checking for legacy column 'DEFAULT_TEMPLATE' in 'REPORT_TEMPLATE'...");
+                jdbcTemplate.execute("ALTER TABLE REPORT_TEMPLATE DROP COLUMN IF EXISTS DEFAULT_TEMPLATE");
+            } catch (Exception e) {
+                log.warn("[TEST_DATA] Could not drop 'DEFAULT_TEMPLATE' column (might not exist): {}", e.getMessage());
+            }
+
             postmortemRepository.deleteAll();
             dataSourceRepository.deleteAll();
 

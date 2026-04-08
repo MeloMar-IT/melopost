@@ -30,7 +30,8 @@ public class TestDataInitializer {
     private final String[] teamNames = {"DevOps", "Frontend", "Backend", "Security", "SRE", "Infrastructure"};
     private final String[] statuses = {"PENDING", "COMPLETED", "IN_PROGRESS"};
     private final String[] priorities = {"LOW", "MEDIUM", "HIGH", "CRITICAL"};
-    private final String[] departments = {"IT", "Operations", "QA", "Development", "Security"};
+    private final String[] departments = {"IT", "Operations", "QA", "Development", "Security", "Finance", "HR", "Sales"};
+    private final String[] failedApplications = {"Payment Gateway", "User Authentication", "Order Processing", "Inventory Management", "Email Service", "Database Cluster", "Load Balancer", "Mobile API"};
     private final String[] tags = {"performance", "database", "ui", "api", "security", "infra", "process", "human-error"};
     private final String[] questionTexts = {
         "What was the first sign of trouble?",
@@ -52,18 +53,43 @@ public class TestDataInitializer {
             ResourceLoader resourceLoader,
             PasswordEncoder passwordEncoder) {
         return args -> {
-            log.info("[TEST_DATA] Checking for existing data...");
-            
+            log.info("[TEST_DATA] Removing existing test data...");
+            postmortemRepository.deleteAll();
+            dataSourceRepository.deleteAll();
+
             // Initialize User
-            if (userRepository.count() == 0) {
-                User admin = new User();
-                admin.setUsername("admin");
-                admin.setPassword(passwordEncoder.encode("admin"));
-                admin.setEmail("admin@example.com");
-                admin.setRoles(Set.of("ADMIN", "USER"));
-                admin.setActive(true);
-                userRepository.save(admin);
-                log.info("[TEST_DATA] Initialized default admin user.");
+            if (userRepository.count() <= 1) { // If only admin or no users exist
+                if (userRepository.findByUsername("admin").isEmpty()) {
+                    User admin = new User();
+                    admin.setUsername("admin");
+                    admin.setPassword(passwordEncoder.encode("admin"));
+                    admin.setEmail("admin@example.com");
+                    admin.setRoles(Set.of("ADMIN", "USER"));
+                    admin.setActive(true);
+                    userRepository.save(admin);
+                    log.info("[TEST_DATA] Initialized default admin user.");
+                }
+
+                if (userRepository.findByUsername("user1").isEmpty()) {
+                    User user1 = new User();
+                    user1.setUsername("user1");
+                    user1.setPassword(passwordEncoder.encode("user1"));
+                    user1.setEmail("user1@example.com");
+                    user1.setRoles(Set.of("USER"));
+                    user1.setActive(true);
+                    userRepository.save(user1);
+                }
+
+                if (userRepository.findByUsername("user2").isEmpty()) {
+                    User user2 = new User();
+                    user2.setUsername("user2");
+                    user2.setPassword(passwordEncoder.encode("user2"));
+                    user2.setEmail("user2@example.com");
+                    user2.setRoles(Set.of("USER"));
+                    user2.setActive(true);
+                    userRepository.save(user2);
+                }
+                log.info("[TEST_DATA] Initialized test users (user1, user2).");
             }
 
             // Initialize Default Report Template
@@ -91,11 +117,6 @@ public class TestDataInitializer {
                 } catch (Exception e) {
                     log.error("[TEST_DATA] Error initializing report templates: {}", e.getMessage());
                 }
-            }
-
-            if (postmortemRepository.count() > 0) {
-                log.info("[TEST_DATA] Database already contains postmortems. Skipping initialization.");
-                return;
             }
 
             log.info("[TEST_DATA] Initializing test data...");
@@ -133,7 +154,7 @@ public class TestDataInitializer {
         pm.setIncidentSource(template.getType());
         pm.setStoryApplication(template.getType()); // Using the same platform for stories as incident source
         pm.setDepartment(departments[random.nextInt(departments.length)]);
-        pm.setFailedApplication("Application " + (char)('A' + random.nextInt(26)));
+        pm.setFailedApplication(failedApplications[random.nextInt(failedApplications.length)]);
 
         // Add 1-3 random tags
         int pmTagCount = 1 + random.nextInt(3);

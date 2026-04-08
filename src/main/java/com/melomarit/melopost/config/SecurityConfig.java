@@ -24,17 +24,18 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/error", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                .requestMatchers("/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
                 .defaultAuthenticationEntryPointFor(
                     (request, response, authException) -> response.sendError(401, "Unauthorized"),
                     new AntPathRequestMatcher("/api/**")
                 )
             )
-            .httpBasic(Customizer.withDefaults())
             .formLogin(form -> form
                 .loginPage("/login")
                 .defaultSuccessUrl("/", true)

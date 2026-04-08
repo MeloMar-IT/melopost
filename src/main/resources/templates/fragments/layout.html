@@ -43,15 +43,19 @@
                 <i data-lucide="file-code" class="w-5 h-5"></i>
                 <span>Report Templates</span>
             </a>
+            <a th:if="${#authorization.expression('hasRole(''ADMIN'')')}" href="/users" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                <span>User Management</span>
+            </a>
         </nav>
         <div class="p-4 border-t border-slate-800">
             <div class="flex items-center space-x-3 px-3 py-2">
                 <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center overflow-hidden">
-                    <img src="https://ui-avatars.com/api/?name=Admin&background=random" alt="User">
+                    <img th:src="${'https://ui-avatars.com/api/?name=' + #authentication.name + '&background=random'}" alt="User">
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium truncate">Admin User</p>
-                    <p class="text-xs text-slate-400 truncate">melopost@example.com</p>
+                    <p class="text-sm font-medium truncate" th:text="${#authentication.name}">User</p>
+                    <p class="text-xs text-slate-400 truncate" th:text="${#authentication.principal.username}">user@example.com</p>
                 </div>
             </div>
         </div>

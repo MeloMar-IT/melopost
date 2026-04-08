@@ -47,6 +47,12 @@
                 <i data-lucide="users" class="w-5 h-5"></i>
                 <span>User Management</span>
             </a>
+            <form th:action="@{/logout}" method="post" class="mt-4 pt-4 border-t border-slate-800">
+                <button type="submit" class="w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-red-900/40 text-slate-300 hover:text-red-400 transition-colors">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                    <span>Sign Out</span>
+                </button>
+            </form>
         </nav>
         <div class="p-4 border-t border-slate-800">
             <div class="flex items-center space-x-3 px-3 py-2">
@@ -86,8 +92,9 @@
                     <i data-lucide="settings" class="w-5 h-5"></i>
                 </button>
                 <form th:action="@{/logout}" method="post" class="inline">
-                    <button type="submit" class="text-gray-500 hover:text-red-600 transition-colors flex items-center" title="Sign Out">
+                    <button type="submit" class="text-gray-500 hover:text-red-600 transition-colors flex items-center space-x-2" title="Sign Out">
                         <i data-lucide="log-out" class="w-5 h-5"></i>
+                        <span class="text-sm font-medium hidden sm:inline">Sign Out</span>
                     </button>
                 </form>
             </div>

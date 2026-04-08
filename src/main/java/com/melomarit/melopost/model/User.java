@@ -29,6 +29,11 @@ public class User {
     @Column(name = "role")
     private Set<String> roles = new HashSet<>();
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_allowed_departments", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "department")
+    private Set<String> allowedDepartments = new HashSet<>();
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getUsername() { return username; }
@@ -45,4 +50,6 @@ public class User {
     public void setActive(Boolean active) { this.active = active; }
     public Set<String> getRoles() { return roles; }
     public void setRoles(Set<String> roles) { this.roles = roles; }
+    public Set<String> getAllowedDepartments() { return allowedDepartments; }
+    public void setAllowedDepartments(Set<String> allowedDepartments) { this.allowedDepartments = allowedDepartments; }
 }

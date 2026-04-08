@@ -161,4 +161,28 @@ public class PostmortemViewController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @PostMapping("/{id}/documents/upload")
+    public String uploadDocument(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
+        Postmortem pm = service.findById(id);
+        documentService.uploadDocument(pm, file);
+        service.save(pm);
+        return "redirect:/postmortems/details/" + id;
+    }
+
+    @GetMapping("/{id}/documents/{docId}/download")
+    public ResponseEntity<byte[]> downloadDocument(@PathVariable Long id, @PathVariable Long docId) {
+        return documentService.findById(docId)
+                .map(doc -> ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getFileName() + "\"")
+                        .contentType(MediaType.parseMediaType(doc.getContentType()))
+                        .body(doc.getData()))
+                .orElse(ResponseEntity.status(404).body(null));
+    }
+
+    @PostMapping("/{id}/documents/{docId}/delete")
+    public String deleteDocument(@PathVariable Long id, @PathVariable Long docId) {
+        documentService.deleteById(docId);
+        return "redirect:/postmortems/details/" + id;
+    }
 }

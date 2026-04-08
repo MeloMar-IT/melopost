@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+transformers
+torch
+sentencepiece>=0.2.1
+protobuf
+pydantic
+requests

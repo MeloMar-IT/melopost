@@ -30,6 +30,10 @@ public class Postmortem {
     private String failedApplication;
     private String type;
     
+    @Lob
+    @Column(length = 1000000, columnDefinition = "LONGTEXT")
+    private String note;
+    
     public static final List<String> POSTMORTEM_TYPES = List.of(
             "Local postmortem", "Major Postmortem", "Orchestrated P1"
     );
@@ -120,6 +124,9 @@ public class Postmortem {
 
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+
+    public String getNote() { return note; }
+    public void setNote(String note) { this.note = note; }
 
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }

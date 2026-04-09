@@ -49,4 +49,34 @@ public class PostmortemViewControllerTest {
                 .andExpect(view().name("postmortems/details"))
                 .andExpect(model().attributeExists("postmortem"));
     }
+
+    @Test
+    @WithMockUser
+    public void testShowNote() throws Exception {
+        Postmortem pm = new Postmortem();
+        pm.setId(1L);
+        pm.setTitle("Test Postmortem");
+        
+        when(postmortemService.findById(anyLong())).thenReturn(pm);
+
+        mockMvc.perform(get("/postmortems/1/note"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("postmortems/note"))
+                .andExpect(model().attributeExists("postmortem"));
+    }
+
+    @Test
+    @WithMockUser
+    public void testSaveNote() throws Exception {
+        Postmortem pm = new Postmortem();
+        pm.setId(1L);
+        
+        when(postmortemService.findById(anyLong())).thenReturn(pm);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/1/note")
+                .param("note", "New note content")
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/postmortems/details/1"));
+    }
 }

@@ -126,6 +126,13 @@
                                placeholder="e.g. database, performance, outage (comma separated)">
                     </div>
 
+                    <div class="space-y-2">
+                        <label for="note" class="block text-sm font-semibold text-gray-700">Analysis Notes</label>
+                        <textarea id="note" th:field="*{note}" rows="10"
+                                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                                  placeholder="Detailed analysis notes, thoughts, and conclusions..."></textarea>
+                    </div>
+
                     <!-- Document Upload in Form -->
                     <div class="space-y-4 pt-4 border-t border-gray-100">
                         <label class="block text-sm font-semibold text-gray-700">Attach Documents</label>

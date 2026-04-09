@@ -194,4 +194,18 @@ public class PostmortemViewController {
         documentService.deleteById(docId);
         return "redirect:/postmortems/details/" + id;
     }
+
+    @GetMapping("/{id}/note")
+    public String showNote(@PathVariable Long id, Model model) {
+        model.addAttribute("postmortem", service.findById(id));
+        return "postmortems/note";
+    }
+
+    @PostMapping("/{id}/note")
+    public String saveNote(@PathVariable Long id, @RequestParam String note) {
+        Postmortem pm = service.findById(id);
+        pm.setNote(note);
+        service.save(pm);
+        return "redirect:/postmortems/details/" + id;
+    }
 }

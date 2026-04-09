@@ -62,6 +62,10 @@
                 </div>
             </div>
             <div class="flex space-x-3">
+                <a th:href="@{/postmortems/{id}/note(id=${postmortem.id})}" class="inline-flex items-center px-4 py-2 bg-amber-500 text-sm font-medium rounded-lg text-white hover:bg-amber-600 shadow-sm transition-colors">
+                    <i data-lucide="sticky-note" class="w-4 h-4 mr-2"></i>
+                    Note
+                </a>
                 <a th:href="@{/postmortems/{id}/report(id=${postmortem.id})}" class="inline-flex items-center px-4 py-2 bg-red-600 text-sm font-medium rounded-lg text-white hover:bg-red-700 shadow-sm transition-colors">
                     <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
                     Download PDF
@@ -103,6 +107,17 @@
                     <p class="text-gray-600 leading-relaxed" th:text="${postmortem.description}">
                         Description of the incident and its impact.
                     </p>
+                </section>
+
+                <!-- Analysis Notes -->
+                <section th:if="${postmortem.note != null && !postmortem.note.isEmpty()}" class="bg-amber-50 rounded-xl shadow-sm border border-amber-100 p-6">
+                    <h3 class="text-lg font-bold text-amber-900 mb-4 flex items-center">
+                        <i data-lucide="sticky-note" class="w-5 h-5 mr-2 text-amber-500"></i>
+                        Analysis Notes
+                    </h3>
+                    <div class="text-gray-700 leading-relaxed whitespace-pre-wrap" th:text="${postmortem.note}">
+                        Detailed analysis notes...
+                    </div>
                 </section>
 
                 <!-- Timeline -->

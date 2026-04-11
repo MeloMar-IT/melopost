@@ -9,49 +9,56 @@
     <div layout:fragment="header-title">Data Sources</div>
 
     <div layout:fragment="content">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">External Integrations</h1>
-            <a href="/datasources/new" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
-                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-3xl font-bold text-gray-700 tracking-tight">External Integrations</h1>
+            <a href="/datasources/new" class="nm-button px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold flex items-center hover:nm-convex transition-all">
+                <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
                 Add Data Source
             </a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div th:each="ds : ${datasources}" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                <div class="p-6 flex-1">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100">
-                            <i data-lucide="database" th:if="${ds.type == 'ServiceNow' or ds.type == 'DB'}" class="w-5 h-5 text-slate-400"></i>
-                            <i data-lucide="share-2" th:if="${ds.type == 'Jira' or ds.type == 'API'}" class="w-5 h-5 text-slate-400"></i>
-                            <i data-lucide="cloud" th:if="${ds.type == 'Azure DevOps' or ds.type == 'WEBHOOK'}" class="w-5 h-5 text-slate-400"></i>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div th:each="ds : ${datasources}" class="nm-card flex flex-col overflow-hidden transition-transform hover:scale-[1.02] duration-300">
+                <div class="p-8 flex-1">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="w-12 h-12 nm-inset flex items-center justify-center rounded-xl text-blue-600">
+                            <i data-lucide="database" th:if="${ds.type == 'ServiceNow' or ds.type == 'DB'}" class="w-6 h-6"></i>
+                            <i data-lucide="share-2" th:if="${ds.type == 'Jira' or ds.type == 'API'}" class="w-6 h-6"></i>
+                            <i data-lucide="cloud" th:if="${ds.type == 'Azure DevOps' or ds.type == 'WEBHOOK'}" class="w-6 h-6"></i>
                         </div>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" th:text="${ds.type}">
+                        <span class="nm-inset px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-blue-700" th:text="${ds.type}">
                             TYPE
                         </span>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-1" th:text="${ds.name}">Source Name</h3>
-                    <p class="text-sm text-gray-500 truncate mb-4" th:text="${ds.url}">https://api.example.com</p>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2" th:text="${ds.name}">Source Name</h3>
+                    <p class="text-sm text-gray-500 truncate mb-6 italic" th:text="${ds.url}">https://api.example.com</p>
                     
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between text-xs text-gray-400">
-                            <span>Operation</span>
-                            <span class="text-gray-600 font-medium" th:text="${ds.operation}">Operation</span>
+                    <div class="nm-inset p-4 rounded-xl space-y-3">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-400 font-medium">Operation Mode</span>
+                            <span class="text-blue-600 font-bold" th:text="${ds.operation}">Operation</span>
                         </div>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-3 border-t border-gray-100">
-                    <a th:href="@{/datasources/edit/{id}(id=${ds.id})}" class="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">Edit</a>
-                    <a th:href="@{/datasources/delete/{id}(id=${ds.id})}" class="text-sm font-medium text-red-600 hover:text-red-800 transition-colors" onclick="return confirm('Are you sure?')">Delete</a>
+                <div class="px-8 py-5 flex justify-end space-x-4 bg-gray-900/5 border-t border-white/20">
+                    <a th:href="@{/datasources/edit/{id}(id=${ds.id})}" class="nm-button px-4 py-1.5 text-sm font-bold text-gray-600 hover:text-blue-600">Edit</a>
+                    <a th:href="@{/datasources/delete/{id}(id=${ds.id})}" class="nm-button px-4 py-1.5 text-sm font-bold text-red-500 hover:text-red-700" onclick="return confirm('Are you sure?')">Delete</a>
                 </div>
             </div>
 
             <!-- Empty State -->
-            <div th:if="${datasources.empty}" class="col-span-full py-12 text-center bg-white rounded-xl border-2 border-dashed border-gray-200">
-                <i data-lucide="database-zap" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
-                <h3 class="text-gray-500 font-medium">No Data Sources Configured</h3>
-                <p class="text-sm text-gray-400 mt-1">Connect your Jira, Azure DevOps, or other tools to import incidents.</p>
-                <a href="/datasources/new" class="mt-4 inline-flex text-blue-600 hover:underline text-sm font-medium">Add your first data source</a>
+            <div th:if="${datasources.empty}" class="col-span-full py-20 text-center nm-card border-2 border-dashed border-gray-300/50">
+                <div class="w-20 h-20 nm-inset mx-auto mb-6 flex items-center justify-center rounded-full text-gray-400">
+                    <i data-lucide="database-zap" class="w-10 h-10"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-700">No Data Sources Configured</h3>
+                <p class="text-gray-500 mt-2 max-w-sm mx-auto">Connect your Jira, Azure DevOps, or other tools to import incidents and automate postmortems.</p>
+                <div class="mt-8">
+                    <a href="/datasources/new" class="nm-button px-8 py-3 bg-blue-600 text-white font-bold inline-flex items-center hover:nm-convex">
+                        <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
+                        Add your first data source
+                    </a>
+                </div>
             </div>
         </div>
     </div>

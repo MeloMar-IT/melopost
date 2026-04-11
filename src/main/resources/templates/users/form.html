@@ -7,88 +7,108 @@
 </head>
 <body>
     <div layout:fragment="header-title">
-        <div class="flex items-center space-x-2 text-sm text-gray-500 mb-1">
-            <a href="/users" class="hover:text-blue-600">Users</a>
-            <i data-lucide="chevron-right" class="w-3 h-3"></i>
-            <span th:text="${user.id == null ? 'New' : 'Edit'}">Action</span>
+        <div class="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">
+            <a href="/users" class="hover:text-blue-600 transition-colors">Users</a>
+            <i data-lucide="chevron-right" class="w-3 h-3 text-gray-300"></i>
+            <span th:text="${user.id == null ? 'New Profile' : 'Edit Profile'}" class="text-blue-600">Action</span>
         </div>
-        <div th:text="${user.id == null ? 'Create User' : 'Edit User'}">Form</div>
+        <h1 class="text-2xl font-bold text-gray-700" th:text="${user.id == null ? 'Create User' : 'Update User Account'}">Form</h1>
     </div>
 
     <div layout:fragment="content">
-        <div class="max-w-3xl mx-auto">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <form th:action="@{/users/save}" th:object="${user}" method="post" class="p-8 space-y-6">
+        <div class="max-w-4xl mx-auto">
+            <div class="nm-card overflow-hidden">
+                <form th:action="@{/users/save}" th:object="${user}" method="post" class="p-10 space-y-8">
                     <input type="hidden" th:field="*{id}">
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <label for="username" class="block text-sm font-semibold text-gray-700">Username</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-3">
+                            <label for="username" class="block text-sm font-bold text-gray-500 uppercase tracking-wider ml-1">Username</label>
                             <input type="text" id="username" th:field="*{username}" required
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                                   class="w-full nm-input px-5 py-3 text-gray-700 font-medium"
                                    placeholder="jdoe">
                         </div>
-                        <div class="space-y-2">
-                            <label for="email" class="block text-sm font-semibold text-gray-700">Email Address</label>
+                        <div class="space-y-3">
+                            <label for="email" class="block text-sm font-bold text-gray-500 uppercase tracking-wider ml-1">Email Address</label>
                             <input type="email" id="email" th:field="*{email}"
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-                                   placeholder="jane.doe@example.com">
+                                   class="w-full nm-input px-5 py-3 text-gray-700 font-medium"
+                                   placeholder="jane.doe@company.com">
                         </div>
                     </div>
 
-                    <div class="space-y-2">
-                        <label for="password" class="block text-sm font-semibold text-gray-700">Password</label>
-                        <input type="password" id="password" name="password" 
-                               th:required="${user.id == null}"
-                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-                               placeholder="Leave empty to keep current password" th:placeholder="${user.id == null ? 'Password' : 'Leave empty to keep current password'}">
+                    <div class="space-y-3">
+                        <label for="password" class="block text-sm font-bold text-gray-500 uppercase tracking-wider ml-1">Security Credentials</label>
+                        <div class="relative">
+                            <input type="password" id="password" name="password" 
+                                   th:required="${user.id == null}"
+                                   class="w-full nm-input px-5 py-3 text-gray-700 font-medium"
+                                   placeholder="Leave empty to keep current password" th:placeholder="${user.id == null ? 'Set secure password' : 'Enter new password to reset, or leave blank'}">
+                            <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                                <i data-lucide="lock" class="w-4 h-4 text-gray-400"></i>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <label for="firstName" class="block text-sm font-semibold text-gray-700">First Name</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-3">
+                            <label for="firstName" class="block text-sm font-bold text-gray-500 uppercase tracking-wider ml-1">First Name</label>
                             <input type="text" id="firstName" th:field="*{firstName}"
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none">
+                                   class="w-full nm-input px-5 py-3 text-gray-700 font-medium"
+                                   placeholder="Jane">
                         </div>
-                        <div class="space-y-2">
-                            <label for="lastName" class="block text-sm font-semibold text-gray-700">Last Name</label>
+                        <div class="space-y-3">
+                            <label for="lastName" class="block text-sm font-bold text-gray-500 uppercase tracking-wider ml-1">Last Name</label>
                             <input type="text" id="lastName" th:field="*{lastName}"
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none">
+                                   class="w-full nm-input px-5 py-3 text-gray-700 font-medium"
+                                   placeholder="Doe">
                         </div>
                     </div>
 
-                    <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700">Roles</label>
-                        <div class="flex items-center space-x-6">
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" th:field="*{roles}" value="ADMIN" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-700">ADMIN</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" th:field="*{roles}" value="USER" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-700">USER</span>
-                            </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-3">
+                            <label class="block text-sm font-bold text-gray-500 uppercase tracking-wider ml-1">System Roles</label>
+                            <div class="flex items-center space-x-8 mt-2 p-1">
+                                <label class="inline-flex items-center cursor-pointer group">
+                                    <input type="checkbox" th:field="*{roles}" value="ADMIN" class="sr-only peer">
+                                    <div class="w-5 h-5 nm-inset rounded border border-transparent peer-checked:border-blue-500 peer-checked:bg-blue-600 flex items-center justify-center transition-all">
+                                        <i data-lucide="check" class="w-3 h-3 text-white opacity-0 peer-checked:opacity-100"></i>
+                                    </div>
+                                    <span class="ml-3 text-sm font-bold text-gray-600 uppercase tracking-widest group-hover:text-blue-600 transition-colors">Administrator</span>
+                                </label>
+                                <label class="inline-flex items-center cursor-pointer group">
+                                    <input type="checkbox" th:field="*{roles}" value="USER" class="sr-only peer">
+                                    <div class="w-5 h-5 nm-inset rounded border border-transparent peer-checked:border-blue-500 peer-checked:bg-blue-600 flex items-center justify-center transition-all">
+                                        <i data-lucide="check" class="w-3 h-3 text-white opacity-0 peer-checked:opacity-100"></i>
+                                    </div>
+                                    <span class="ml-3 text-sm font-bold text-gray-600 uppercase tracking-widest group-hover:text-blue-600 transition-colors">Standard User</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <label class="block text-sm font-bold text-gray-500 uppercase tracking-wider ml-1">Account Status</label>
+                            <div class="mt-2">
+                                <label class="relative inline-flex items-center cursor-pointer group">
+                                    <input type="checkbox" id="active" th:field="*{active}" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500 nm-inset"></div>
+                                    <span class="ml-3 text-sm font-bold text-gray-600 uppercase tracking-widest group-hover:text-green-600 transition-colors">Active Account</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="space-y-2">
-                        <label for="allowedDepartments" class="block text-sm font-semibold text-gray-700">Allowed Departments (comma-separated)</label>
+                    <div class="space-y-3">
+                        <label for="allowedDepartments" class="block text-sm font-bold text-gray-500 uppercase tracking-wider ml-1">Department Access (Restrictive)</label>
                         <input type="text" id="allowedDepartments" name="allowedDepartments" th:value="${#strings.listJoin(user.allowedDepartments, ', ')}"
-                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-                               placeholder="IT, HR, Finance">
-                        <p class="text-xs text-gray-500 mt-1">Leave empty to allow no specific departments (Admins always see everything).</p>
+                               class="w-full nm-input px-5 py-3 text-gray-700 font-medium"
+                               placeholder="IT, DevOps, Security">
+                        <p class="text-xs text-gray-400 italic px-2">Comma-separated list. Leave empty for full visibility (admins) or no specific access.</p>
                     </div>
 
-                    <div class="flex items-center">
-                        <input type="checkbox" id="active" th:field="*{active}" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <label for="active" class="ml-2 block text-sm font-semibold text-gray-700">Account Active</label>
-                    </div>
-
-                    <div class="pt-4 flex items-center justify-end space-x-4">
-                        <a href="/users" class="text-sm font-medium text-gray-500 hover:text-gray-700">Cancel</a>
-                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm transition-colors">
-                            <i data-lucide="save" class="w-4 h-4 mr-2"></i>
-                            Save User
+                    <div class="pt-6 flex items-center justify-end space-x-6">
+                        <a href="/users" class="nm-button px-6 py-3 text-sm font-bold text-gray-500 hover:text-gray-700">Cancel</a>
+                        <button type="submit" class="nm-button px-10 py-3 bg-blue-600 text-white font-bold hover:nm-convex transition-all flex items-center">
+                            <i data-lucide="save" class="w-5 h-5 mr-3"></i>
+                            Save User Profile
                         </button>
                     </div>
                 </form>

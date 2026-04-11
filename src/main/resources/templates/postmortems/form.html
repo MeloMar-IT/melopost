@@ -21,66 +21,66 @@
                 <input type="hidden" th:field="*{id}"/>
                 
                 <!-- Basic Info -->
-                <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 space-y-6">
-                    <h3 class="text-lg font-bold text-gray-900 border-b border-gray-100 pb-4">General Information</h3>
+                <section class="nm-card p-8 space-y-6">
+                    <h3 class="text-lg font-bold text-gray-700 border-b border-gray-200/50 pb-4">General Information</h3>
                     
                     <div class="space-y-2">
-                        <label for="title" class="block text-sm font-semibold text-gray-700">Incident Title</label>
+                        <label for="title" class="block text-sm font-semibold text-gray-600 ml-2">Incident Title</label>
                         <input type="text" id="title" th:field="*{title}" required
-                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                               class="w-full nm-input px-4 py-3 text-gray-700"
                                placeholder="e.g. Database connection pool exhaustion">
                     </div>
 
                     <div class="space-y-2">
-                        <label for="description" class="block text-sm font-semibold text-gray-700">Description</label>
+                        <label for="description" class="block text-sm font-semibold text-gray-600 ml-2">Description</label>
                         <textarea id="description" th:field="*{description}" rows="3"
-                                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                                  class="w-full nm-input px-4 py-3 text-gray-700"
                                   placeholder="Summary of what happened and the impact..."></textarea>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="space-y-2">
-                            <label for="startDate" class="block text-sm font-semibold text-gray-700">Start Date</label>
+                            <label for="startDate" class="block text-sm font-semibold text-gray-600 ml-2">Start Date</label>
                             <input type="datetime-local" id="startDate" th:field="*{startDate}"
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none">
+                                   class="w-full nm-input px-4 py-3 text-gray-700">
                         </div>
                         <div class="space-y-2">
-                            <label for="incidentDate" class="block text-sm font-semibold text-gray-700">Incident Date</label>
+                            <label for="incidentDate" class="block text-sm font-semibold text-gray-600 ml-2">Incident Date</label>
                             <input type="datetime-local" id="incidentDate" th:field="*{incidentDate}" required
                                    oninput="updateDueDate()"
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none">
+                                   class="w-full nm-input px-4 py-3 text-gray-700">
                         </div>
                         <div class="space-y-2">
-                            <label for="postMortemMeetingDate" class="block text-sm font-semibold text-gray-700">Post Mortem Meeting Date</label>
+                            <label for="postMortemMeetingDate" class="block text-sm font-semibold text-gray-600 ml-2">Post Mortem Meeting Date</label>
                             <input type="datetime-local" id="postMortemMeetingDate" th:field="*{postMortemMeetingDate}"
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none">
+                                   class="w-full nm-input px-4 py-3 text-gray-700">
                         </div>
                         <div class="space-y-2">
-                            <label for="dueDate" class="block text-sm font-semibold text-gray-700">Due Date (3 weeks after incident)</label>
+                            <label for="dueDate" class="block text-sm font-semibold text-gray-600 ml-2">Due Date</label>
                             <input type="datetime-local" id="dueDate" th:field="*{dueDate}" readonly
-                                   class="w-full border border-gray-100 bg-gray-50 rounded-lg px-4 py-2 text-gray-500 outline-none cursor-not-allowed">
+                                   class="w-full nm-inset bg-gray-200/50 rounded-xl px-4 py-3 text-gray-500 cursor-not-allowed">
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div class="space-y-2">
-                            <label for="incidentRef" class="block text-sm font-semibold text-gray-700">Incident Ref</label>
+                            <label for="incidentRef" class="block text-sm font-semibold text-gray-600 ml-2">Incident Ref</label>
                             <input type="text" id="incidentRef" th:field="*{incidentRef}"
-                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                                   class="w-full nm-input px-4 py-3 text-gray-700"
                                    placeholder="INC-123">
                         </div>
                         <div class="space-y-2">
-                            <label for="incidentSource" class="block text-sm font-semibold text-gray-700">Source</label>
+                            <label for="incidentSource" class="block text-sm font-semibold text-gray-600 ml-2">Source</label>
                             <select id="incidentSource" th:field="*{incidentSource}"
-                                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-white">
+                                    class="w-full nm-input px-4 py-3 text-gray-700 appearance-none">
                                 <option value="">-- Select Source --</option>
                                 <option th:each="ds : ${readDataSources}" th:value="${ds.name}" th:text="${ds.name}">Source Name</option>
                             </select>
                         </div>
                         <div class="space-y-2">
-                            <label for="storyStore" class="block text-sm font-semibold text-gray-700">Story Store</label>
+                            <label for="storyStore" class="block text-sm font-semibold text-gray-600 ml-2">Story Store</label>
                             <select id="storyStore" th:field="*{storyStore}"
-                                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-white">
+                                    class="w-full nm-input px-4 py-3 text-gray-700 appearance-none">
                                 <option value="">-- Select Story Store --</option>
                                 <option th:each="ds : ${writeDataSources}" th:value="${ds.name}" th:text="${ds.name}">Source Name</option>
                             </select>
@@ -300,9 +300,9 @@
                 </div>
 
                 <!-- Form Actions -->
-                <div class="flex items-center justify-end space-x-4 pb-12">
-                    <a href="/postmortems" class="text-sm font-medium text-gray-500 hover:text-gray-700">Discard Changes</a>
-                    <button type="submit" class="inline-flex items-center px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-lg transition-all transform hover:scale-[1.02]">
+                <div class="flex items-center justify-end space-x-6 pb-12">
+                    <a href="/postmortems" class="text-sm font-semibold text-gray-500 hover:text-gray-700">Discard Changes</a>
+                    <button type="submit" class="nm-button px-10 py-3 bg-blue-600 text-white font-bold hover:nm-concave transition-all flex items-center">
                         <i data-lucide="save" class="w-5 h-5 mr-2"></i>
                         Save Postmortem
                     </button>

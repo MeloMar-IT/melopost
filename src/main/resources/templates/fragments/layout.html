@@ -14,61 +14,152 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .sidebar-active { background-color: rgba(255, 255, 255, 0.1); border-left: 4px solid #fff; }
+        :root {
+            --nm-bg: #e0e5ec;
+            --nm-shadow-dark: #a3b1c6;
+            --nm-shadow-light: #ffffff;
+            --nm-accent: #4a90e2;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--nm-bg);
+        }
+
+        /* Neumorphic Shadow Helpers */
+        .nm-flat {
+            background: var(--nm-bg);
+            box-shadow: 6px 6px 12px var(--nm-shadow-dark), 
+                        -6px -6px 12px var(--nm-shadow-light);
+        }
+
+        .nm-inset {
+            background: var(--nm-bg);
+            box-shadow: inset 6px 6px 12px var(--nm-shadow-dark), 
+                        inset -6px -6px 12px var(--nm-shadow-light);
+        }
+
+        .nm-convex {
+            background: linear-gradient(145deg, #f0f5ff, #cacfd4);
+            box-shadow: 6px 6px 12px var(--nm-shadow-dark), 
+                        -6px -6px 12px var(--nm-shadow-light);
+        }
+
+        .nm-concave {
+            background: linear-gradient(145deg, #cacfd4, #f0f5ff);
+            box-shadow: 6px 6px 12px var(--nm-shadow-dark), 
+                        -6px -6px 12px var(--nm-shadow-light);
+        }
+
+        /* Elements */
+        .nm-button {
+            border-radius: 12px;
+            background: var(--nm-bg);
+            box-shadow: 6px 6px 12px var(--nm-shadow-dark), 
+                        -6px -6px 12px var(--nm-shadow-light);
+            transition: all 0.2s ease;
+            border: none;
+            outline: none;
+        }
+
+        .nm-button:active {
+            box-shadow: inset 4px 4px 8px var(--nm-shadow-dark), 
+                        inset -4px -4px 8px var(--nm-shadow-light);
+            transform: scale(0.98);
+        }
+
+        .nm-card {
+            border-radius: 20px;
+            background: var(--nm-bg);
+            box-shadow: 9px 9px 16px var(--nm-shadow-dark), 
+                        -9px -9px 16px var(--nm-shadow-light);
+        }
+
+        .nm-input {
+            border-radius: 12px;
+            background: var(--nm-bg);
+            box-shadow: inset 6px 6px 12px var(--nm-shadow-dark), 
+                        inset -6px -6px 12px var(--nm-shadow-light);
+            border: none;
+            outline: none;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .nm-input:focus {
+            box-shadow: inset 2px 2px 5px var(--nm-shadow-dark), 
+                        inset -2px -2px 5px var(--nm-shadow-light);
+        }
+
+        .nm-icon-raised {
+            background: var(--nm-bg);
+            box-shadow: 4px 4px 8px var(--nm-shadow-dark), 
+                        -4px -4px 8px var(--nm-shadow-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-active { 
+            box-shadow: inset 4px 4px 8px var(--nm-shadow-dark), 
+                        inset -4px -4px 8px var(--nm-shadow-light);
+            background-color: rgba(0,0,0,0.05);
+            color: var(--nm-accent);
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 flex h-screen overflow-hidden">
+<body class="text-gray-900 flex h-screen overflow-hidden">
     <!-- Sidebar -->
-    <aside class="w-64 bg-slate-900 text-white flex-shrink-0 hidden md:flex flex-col">
+    <aside class="w-64 flex-shrink-0 hidden md:flex flex-col nm-inset">
         <div class="p-6">
             <div class="flex items-center space-x-2">
-                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <div class="w-10 h-10 nm-icon-raised bg-blue-600 border-none text-white">
                     <i data-lucide="shield-check" class="w-5 h-5"></i>
                 </div>
-                <span class="text-xl font-bold tracking-tight">MeloPost</span>
+                <span class="text-xl font-bold tracking-tight text-gray-700">MeloPost</span>
             </div>
         </div>
-        <nav class="flex-1 px-4 space-y-1 mt-4">
-            <a href="/" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+        <nav class="flex-1 px-4 space-y-3 mt-4">
+            <a href="/" class="flex items-center space-x-3 px-3 py-2 nm-button hover:nm-convex transition-all text-gray-600 hover:text-blue-600">
                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-                <span>Dashboard</span>
+                <span class="font-medium">Dashboard</span>
             </a>
-            <a href="/postmortems" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+            <a href="/postmortems" class="flex items-center space-x-3 px-3 py-2 nm-button hover:nm-convex transition-all text-gray-600 hover:text-blue-600">
                 <i data-lucide="file-text" class="w-5 h-5"></i>
-                <span>Postmortems</span>
+                <span class="font-medium">Postmortems</span>
             </a>
-            <a href="/datasources" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+            <a href="/datasources" class="flex items-center space-x-3 px-3 py-2 nm-button hover:nm-convex transition-all text-gray-600 hover:text-blue-600">
                 <i data-lucide="database" class="w-5 h-5"></i>
-                <span>Data Sources</span>
+                <span class="font-medium">Data Sources</span>
             </a>
-            <a href="/templates" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+            <a href="/templates" class="flex items-center space-x-3 px-3 py-2 nm-button hover:nm-convex transition-all text-gray-600 hover:text-blue-600">
                 <i data-lucide="file-code" class="w-5 h-5"></i>
-                <span>Report Templates</span>
+                <span class="font-medium">Report Templates</span>
             </a>
-            <a th:if="${#authorization.expression('hasRole(''ADMIN'')')}" href="/users" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+            <a th:if="${#authorization.expression('hasRole(''ADMIN'')')}" href="/users" class="flex items-center space-x-3 px-3 py-2 nm-button hover:nm-convex transition-all text-gray-600 hover:text-blue-600">
                 <i data-lucide="users" class="w-5 h-5"></i>
-                <span>User Management</span>
+                <span class="font-medium">User Management</span>
             </a>
-            <a th:if="${#authorization.expression('hasRole(''ADMIN'')')}" href="/admin/database" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+            <a th:if="${#authorization.expression('hasRole(''ADMIN'')')}" href="/admin/database" class="flex items-center space-x-3 px-3 py-2 nm-button hover:nm-convex transition-all text-gray-600 hover:text-blue-600">
                 <i data-lucide="server" class="w-5 h-5"></i>
-                <span>Database Admin</span>
+                <span class="font-medium">Database Admin</span>
             </a>
-            <form th:action="@{/logout}" method="post" class="mt-4 pt-4 border-t border-slate-800">
-                <button type="submit" class="w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-red-900/40 text-slate-300 hover:text-red-400 transition-colors">
+            <form th:action="@{/logout}" method="post" class="mt-4 pt-4 border-t border-gray-300">
+                <button type="submit" class="w-full flex items-center space-x-3 px-3 py-2 rounded-lg nm-button text-red-600 hover:nm-concave transition-all">
                     <i data-lucide="log-out" class="w-5 h-5"></i>
-                    <span>Sign Out</span>
+                    <span class="font-medium">Sign Out</span>
                 </button>
             </form>
         </nav>
-        <div class="p-4 border-t border-slate-800">
+        <div class="p-4 border-t border-gray-300">
             <div class="flex items-center space-x-3 px-3 py-2">
-                <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center overflow-hidden">
+                <div class="w-10 h-10 nm-icon-raised bg-gray-200 rounded-full overflow-hidden">
                     <img th:src="${'https://ui-avatars.com/api/?name=' + #authentication.name + '&background=random'}" alt="User">
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium truncate" th:text="${#authentication.name}">User</p>
-                    <p class="text-xs text-slate-400 truncate" th:text="${#authentication.principal.username}">user@example.com</p>
+                    <p class="text-sm font-semibold truncate text-gray-700" th:text="${#authentication.name}">User</p>
+                    <p class="text-xs text-gray-500 truncate" th:text="${#authentication.principal.username}">user@example.com</p>
                 </div>
             </div>
         </div>
@@ -77,31 +168,31 @@
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
         <!-- Header -->
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
+        <header class="h-20 bg-[var(--nm-bg)] flex items-center justify-between px-8">
             <div class="flex items-center flex-1">
-                <button class="md:hidden mr-4">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
+                <button class="md:hidden mr-4 nm-button p-2">
+                    <i data-lucide="menu" class="w-6 h-6 text-gray-600"></i>
                 </button>
                 <div class="hidden md:flex items-center flex-1 max-w-md ml-4">
-                    <form action="/postmortems" method="get" class="w-full flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
-                        <i data-lucide="search" class="w-4 h-4 text-gray-400 mr-2"></i>
-                        <input type="text" name="keyword" th:value="${keyword}" placeholder="Search postmortems, holes or stories..." 
+                    <form action="/postmortems" method="get" class="w-full flex items-center nm-input px-3 py-1.5 transition-all">
+                        <i data-lucide="search" class="w-4 h-4 text-gray-500 mr-2"></i>
+                        <input type="text" name="keyword" th:value="${keyword}" placeholder="Search..." 
                                class="bg-transparent border-none outline-none text-sm w-full text-gray-700">
                     </form>
                 </div>
-                <h2 class="text-lg font-semibold text-gray-800 ml-8" layout:fragment="header-title">Page Title</h2>
+                <h2 class="text-lg font-semibold text-gray-700 ml-8" layout:fragment="header-title">Page Title</h2>
             </div>
-            <div class="flex items-center space-x-4">
-                <button class="text-gray-500 hover:text-gray-700">
+            <div class="flex items-center space-x-6">
+                <button class="nm-button p-2 text-gray-600">
                     <i data-lucide="bell" class="w-5 h-5"></i>
                 </button>
-                <button class="text-gray-500 hover:text-gray-700">
+                <button class="nm-button p-2 text-gray-600">
                     <i data-lucide="settings" class="w-5 h-5"></i>
                 </button>
                 <form th:action="@{/logout}" method="post" class="inline">
-                    <button type="submit" class="text-gray-500 hover:text-red-600 transition-colors flex items-center space-x-2" title="Sign Out">
+                    <button type="submit" class="nm-button px-4 py-2 text-red-600 font-medium flex items-center space-x-2" title="Sign Out">
                         <i data-lucide="log-out" class="w-5 h-5"></i>
-                        <span class="text-sm font-medium hidden sm:inline">Sign Out</span>
+                        <span class="text-sm hidden sm:inline">Sign Out</span>
                     </button>
                 </form>
             </div>

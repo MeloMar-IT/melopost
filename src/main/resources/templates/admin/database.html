@@ -27,25 +27,25 @@
 <body>
 <div layout:fragment="header-title">Database Administration</div>
 
-<div layout:fragment="content" class="h-full flex flex-col p-0 overflow-hidden">
-    <div class="flex h-full overflow-hidden">
+<div layout:fragment="content" class="h-full flex flex-col p-4 overflow-hidden">
+    <div class="flex h-full overflow-hidden space-x-6">
         <!-- Left Sidebar: Tables -->
-        <div class="w-72 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
-            <div class="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+        <div class="w-72 flex flex-col flex-shrink-0 nm-card overflow-hidden">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/50">
                 <h3 class="font-bold text-gray-700 uppercase text-xs tracking-wider">Tables</h3>
-                <button onclick="loadTables()" class="text-gray-400 hover:text-blue-600 transition-colors" title="Refresh Tables">
+                <button onclick="loadTables()" class="nm-button p-1.5 text-gray-400 hover:text-blue-600 transition-colors" title="Refresh Tables">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                 </button>
             </div>
-            <div class="flex-1 overflow-y-auto" id="tables-list">
+            <div class="flex-1 overflow-y-auto p-2" id="tables-list">
                 <!-- Tables will be loaded here -->
                 <div class="p-4 text-center text-gray-400 italic text-sm">Loading tables...</div>
             </div>
         </div>
 
         <!-- Main Area -->
-        <div class="flex-1 flex flex-col bg-gray-50 overflow-hidden relative">
-            <div id="loading-overlay" class="loading-overlay absolute inset-0 z-50 items-center justify-center">
+        <div class="flex-1 flex flex-col overflow-hidden relative space-y-6">
+            <div id="loading-overlay" class="loading-overlay absolute inset-0 z-50 items-center justify-center rounded-2xl">
                 <div class="flex flex-col items-center">
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                     <span class="mt-2 text-sm text-gray-600 font-medium">Executing...</span>
@@ -53,64 +53,66 @@
             </div>
 
             <!-- Top: SQL Editor -->
-            <div class="p-4 bg-white border-b border-gray-200">
-                <div class="flex justify-between items-center mb-2">
-                    <label class="text-sm font-semibold text-gray-600">SQL Query</label>
-                    <div class="flex space-x-2">
-                        <button onclick="clearEditor()" class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1">Clear</button>
-                        <button onclick="runQuery()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded shadow-sm transition-all flex items-center">
-                            <i data-lucide="play" class="w-4 h-4 mr-1"></i> Run
+            <div class="p-6 nm-card">
+                <div class="flex justify-between items-center mb-4">
+                    <label class="text-sm font-bold text-gray-600 uppercase tracking-wide">SQL Query</label>
+                    <div class="flex space-x-3">
+                        <button onclick="clearEditor()" class="nm-button px-4 py-1.5 text-xs text-gray-500 hover:text-gray-700">Clear</button>
+                        <button onclick="runQuery()" class="nm-button bg-blue-600 text-white text-sm font-bold py-1.5 px-6 hover:nm-concave transition-all flex items-center">
+                            <i data-lucide="play" class="w-4 h-4 mr-2"></i> Run
                         </button>
                     </div>
                 </div>
-                <textarea id="sql-editor" rows="6" 
-                          class="sql-editor w-full px-3 py-2 text-sm text-gray-800 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" 
+                <textarea id="sql-editor" rows="5" 
+                          class="sql-editor w-full nm-input text-sm text-gray-800 focus:ring-2 focus:ring-blue-400 outline-none" 
                           placeholder="SELECT * FROM USERS LIMIT 100"></textarea>
             </div>
 
             <!-- Bottom: Results Area -->
-            <div class="flex-1 flex flex-col overflow-hidden">
-                <div class="px-4 py-2 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
-                    <span id="result-status" class="text-xs font-medium text-gray-500">Ready</span>
-                    <div id="result-actions" class="hidden flex space-x-3 items-center">
-                        <button onclick="toggleTableDefinition()" id="toggle-definition-btn" class="hidden text-xs text-blue-600 hover:text-blue-800 flex items-center">
-                            <i data-lucide="layout" class="w-3 h-3 mr-1"></i> Hide Definition
+            <div class="flex-1 flex flex-col overflow-hidden nm-card">
+                <div class="px-6 py-3 bg-gray-50/50 border-b border-gray-200 flex justify-between items-center">
+                    <span id="result-status" class="text-xs font-bold text-gray-500 uppercase tracking-wider">Ready</span>
+                    <div id="result-actions" class="hidden flex space-x-4 items-center">
+                        <button onclick="toggleTableDefinition()" id="toggle-definition-btn" class="hidden text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center">
+                            <i data-lucide="layout" class="w-3.5 h-3.5 mr-1"></i> Hide Definition
                         </button>
-                        <button onclick="exportToCSV()" class="text-xs text-gray-600 hover:text-blue-600 flex items-center">
-                            <i data-lucide="download" class="w-3 h-3 mr-1"></i> Export CSV
+                        <button onclick="exportToCSV()" class="nm-button px-3 py-1 text-xs text-gray-600 hover:text-blue-600 flex items-center">
+                            <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> Export CSV
                         </button>
                     </div>
                 </div>
                 
-                <div id="query-result-container" class="flex-1 flex flex-col overflow-hidden bg-white">
+                <div id="query-result-container" class="flex-1 flex flex-col overflow-hidden">
                     <!-- Table Definition Section (Initially Hidden) -->
-                    <div id="table-definition-container" class="hidden border-b border-gray-200 bg-gray-50 max-h-48 overflow-y-auto">
-                        <div class="px-4 py-2 flex justify-between items-center sticky top-0 bg-gray-50 border-b border-gray-100">
+                    <div id="table-definition-container" class="hidden border-b border-gray-200 bg-gray-50/30 max-h-48 overflow-y-auto">
+                        <div class="px-6 py-2 flex justify-between items-center sticky top-0 bg-gray-50 border-b border-gray-200">
                             <h4 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Table Definition: <span id="definition-table-name" class="text-blue-600"></span></h4>
                         </div>
                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-100 sticky top-0">
+                            <thead class="bg-gray-100/50 sticky top-0">
                                 <tr>
-                                    <th class="px-4 py-1 text-left text-[10px] font-bold text-gray-500 uppercase">Column</th>
-                                    <th class="px-4 py-1 text-left text-[10px] font-bold text-gray-500 uppercase">Type</th>
-                                    <th class="px-4 py-1 text-left text-[10px] font-bold text-gray-500 uppercase">Nullable</th>
-                                    <th class="px-4 py-1 text-left text-[10px] font-bold text-gray-500 uppercase">Default</th>
-                                    <th class="px-4 py-1 text-center text-[10px] font-bold text-gray-500 uppercase">PK</th>
+                                    <th class="px-6 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Column</th>
+                                    <th class="px-6 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Nullable</th>
+                                    <th class="px-6 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Default</th>
+                                    <th class="px-6 py-2 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">PK</th>
                                 </tr>
                             </thead>
-                            <tbody id="definition-table-body" class="divide-y divide-gray-100 bg-white">
+                            <tbody id="definition-table-body" class="divide-y divide-gray-100">
                                 <!-- Schema will be loaded here -->
                             </tbody>
                         </table>
                     </div>
 
                     <div id="empty-results" class="flex-1 flex flex-col items-center justify-center text-gray-400 p-8">
-                        <i data-lucide="database" class="w-12 h-12 mb-4 opacity-20"></i>
-                        <p>Run a query or select a table to see results</p>
+                        <div class="nm-icon-raised w-16 h-16 mb-4 text-gray-300">
+                            <i data-lucide="database" class="w-8 h-8"></i>
+                        </div>
+                        <p class="font-medium">Run a query or select a table to see results</p>
                     </div>
                     
-                    <div id="error-results" class="hidden p-4">
-                        <div class="bg-red-50 border-l-4 border-red-500 p-4">
+                    <div id="error-results" class="hidden p-6">
+                        <div class="nm-card bg-red-50/50 border-l-4 border-red-500 p-4">
                             <div class="flex">
                                 <div class="flex-shrink-0">
                                     <i data-lucide="alert-circle" class="h-5 w-5 text-red-400"></i>
@@ -123,14 +125,14 @@
                         </div>
                     </div>
 
-                    <div id="success-results" class="hidden p-4">
-                        <div class="bg-green-50 border-l-4 border-green-500 p-4">
+                    <div id="success-results" class="hidden p-6">
+                        <div class="nm-card bg-green-50/50 border-l-4 border-green-500 p-4">
                             <div class="flex">
                                 <div class="flex-shrink-0">
                                     <i data-lucide="check-circle" class="h-5 w-5 text-green-400"></i>
                                 </div>
                                 <div class="ml-3">
-                                    <p id="success-message" class="text-sm text-green-700"></p>
+                                    <p id="success-message" class="text-sm text-green-700 font-medium"></p>
                                 </div>
                             </div>
                         </div>
@@ -138,10 +140,10 @@
 
                     <div id="data-results" class="hidden flex-1 overflow-auto">
                         <table class="min-w-full divide-y divide-gray-200 border-collapse">
-                            <thead id="table-head" class="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                            <thead id="table-head" class="bg-gray-50 sticky top-0 z-10">
                                 <!-- Headers -->
                             </thead>
-                            <tbody id="table-body" class="bg-white divide-y divide-gray-200">
+                            <tbody id="table-body" class="divide-y divide-gray-200">
                                 <!-- Rows -->
                             </tbody>
                         </table>
@@ -156,44 +158,44 @@
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeTableInfo()"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <h3 class="text-lg leading-6 font-bold text-gray-900 flex items-center" id="modal-table-name">
-                            <i data-lucide="table" class="w-5 h-5 mr-2 text-blue-600"></i>
+            <div class="inline-block align-bottom nm-card text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="px-8 pt-6 pb-6">
+                    <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center" id="modal-table-name">
+                            <i data-lucide="table" class="w-6 h-6 mr-3 text-blue-600"></i>
                             Table Info
                         </h3>
-                        <button onclick="closeTableInfo()" class="text-gray-400 hover:text-gray-500">
+                        <button onclick="closeTableInfo()" class="nm-button p-1.5 text-gray-400 hover:text-gray-600 transition-all">
                             <i data-lucide="x" class="w-6 h-6"></i>
                         </button>
                     </div>
                     
                     <div class="mb-6">
-                        <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Structure</h4>
-                        <div class="overflow-x-auto border rounded">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
+                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Structure</h4>
+                        <div class="overflow-x-auto nm-inset rounded-xl p-1">
+                            <table class="min-w-full divide-y divide-gray-200 bg-transparent">
+                                <thead>
                                     <tr>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Column</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nullable</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Default</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-center">PK</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Column</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Nullable</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Default</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider text-center">PK</th>
                                     </tr>
                                 </thead>
-                                <tbody id="modal-schema-body" class="divide-y divide-gray-200">
+                                <tbody id="modal-schema-body" class="divide-y divide-gray-200/50">
                                     <!-- Schema -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="button" onclick="closeTableInfo()" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Close
-                    </button>
-                    <button type="button" id="modal-query-btn" class="mt-3 w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                <div class="bg-gray-50/50 px-8 py-4 sm:flex sm:flex-row-reverse space-x-reverse sm:space-x-4">
+                    <button type="button" id="modal-query-btn" class="nm-button bg-blue-600 text-white font-bold px-6 py-2 text-sm hover:nm-concave transition-all">
                         Query Table
+                    </button>
+                    <button type="button" onclick="closeTableInfo()" class="nm-button bg-white text-gray-700 font-bold px-6 py-2 text-sm hover:nm-convex transition-all">
+                        Close
                     </button>
                 </div>
             </div>
@@ -252,18 +254,18 @@
             }
 
             list.innerHTML = currentTables.map(table => `
-                <div class="table-list-item border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer group p-3" onclick="selectTable('${table.name}')">
+                <div class="table-list-item nm-card mb-2 hover:nm-convex transition-all cursor-pointer group p-3" onclick="selectTable('${table.name}')">
                     <div class="flex justify-between items-start">
                         <div class="flex items-center">
                             <i data-lucide="table" class="w-4 h-4 mr-2 text-gray-400 group-hover:text-blue-500"></i>
-                            <span class="text-sm font-medium text-gray-700 group-hover:text-blue-700">${table.name}</span>
+                            <span class="text-sm font-bold text-gray-700 group-hover:text-blue-700">${table.name}</span>
                         </div>
-                        <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">${table.rowCount}</span>
+                        <span class="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full font-bold">${table.rowCount}</span>
                     </div>
                     <div class="mt-1 flex justify-between items-center">
-                         <span class="text-[10px] text-gray-400 truncate max-w-[150px]">${table.columns.join(', ')}</span>
+                         <span class="text-[10px] text-gray-400 truncate max-w-[150px] font-medium">${table.columns.join(', ')}</span>
                          <div class="table-actions flex space-x-1">
-                             <button onclick="event.stopPropagation(); showTableInfo('${table.name}')" class="p-1 text-gray-400 hover:text-blue-600" title="Table Info">
+                             <button onclick="event.stopPropagation(); showTableInfo('${table.name}')" class="nm-button p-1 text-gray-400 hover:text-blue-600" title="Table Info">
                                  <i data-lucide="info" class="w-3.5 h-3.5"></i>
                              </button>
                          </div>
@@ -298,16 +300,16 @@
                 
                 nameSpan.textContent = data.name;
                 body.innerHTML = data.schema.map(col => `
-                    <tr class="hover:bg-blue-50/30">
-                        <td class="px-4 py-1.5 text-xs font-medium text-gray-900">${col.COLUMN_NAME}</td>
-                        <td class="px-4 py-1.5 text-xs text-gray-500 font-mono">${col.TYPE_NAME}${col.CHARACTER_MAXIMUM_LENGTH ? '('+col.CHARACTER_MAXIMUM_LENGTH+')' : ''}</td>
-                        <td class="px-4 py-1.5 text-xs text-gray-500">${col.IS_NULLABLE}</td>
-                        <td class="px-4 py-1.5 text-xs text-gray-500 font-mono text-[10px]">${col.COLUMN_DEFAULT || ''}</td>
-                        <td class="px-4 py-1.5 text-xs text-center">
-                            ${data.primaryKeys.includes(col.COLUMN_NAME) ? '<span class="text-yellow-500" title="Primary Key">🔑</span>' : ''}
-                        </td>
-                    </tr>
-                `).join('');
+                <tr class="hover:bg-blue-50/30 transition-colors">
+                    <td class="px-6 py-2 text-xs font-bold text-gray-800">${col.COLUMN_NAME}</td>
+                    <td class="px-6 py-2 text-xs text-gray-500 font-mono">${col.TYPE_NAME}${col.CHARACTER_MAXIMUM_LENGTH ? '('+col.CHARACTER_MAXIMUM_LENGTH+')' : ''}</td>
+                    <td class="px-6 py-2 text-xs text-gray-500 font-medium">${col.IS_NULLABLE}</td>
+                    <td class="px-6 py-2 text-xs text-gray-500 font-mono text-[10px]">${col.COLUMN_DEFAULT || ''}</td>
+                    <td class="px-6 py-2 text-xs text-center">
+                        ${data.primaryKeys.includes(col.COLUMN_NAME) ? '<span class="text-yellow-500 filter drop-shadow-sm" title="Primary Key">🔑</span>' : ''}
+                    </td>
+                </tr>
+            `).join('');
                 
                 container.classList.remove('hidden');
                 if (toggleBtn) {
@@ -421,12 +423,12 @@
             const body = document.getElementById('table-body');
 
             head.innerHTML = `<tr>${columns.map(col => `
-                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200 bg-gray-50">${col}</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200 bg-gray-50/80">${col}</th>
             `).join('')}</tr>`;
 
             body.innerHTML = rows.map(row => `
-                <tr class="hover:bg-gray-50 transition-colors">
-                    ${row.map(cell => `<td class="px-4 py-2 text-sm text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden max-w-xs truncate" title="${cell}">${cell === null ? '<span class="text-gray-300 italic">null</span>' : cell}</td>`).join('')}
+                <tr class="hover:bg-gray-50/50 transition-colors">
+                    ${row.map(cell => `<td class="px-6 py-3 text-sm text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden max-w-xs truncate" title="${cell}">${cell === null ? '<span class="text-gray-300 italic">null</span>' : cell}</td>`).join('')}
                 </tr>
             `).join('');
         }
@@ -476,13 +478,13 @@
                 const schemaBody = document.getElementById('modal-schema-body');
                 if (schemaBody) {
                     schemaBody.innerHTML = data.schema.map(col => `
-                        <tr>
-                            <td class="px-4 py-2 text-sm font-medium text-gray-900">${col.COLUMN_NAME}</td>
-                            <td class="px-4 py-2 text-sm text-gray-500 font-mono text-xs">${col.TYPE_NAME}${col.CHARACTER_MAXIMUM_LENGTH ? '('+col.CHARACTER_MAXIMUM_LENGTH+')' : ''}</td>
-                            <td class="px-4 py-2 text-sm text-gray-500">${col.IS_NULLABLE}</td>
-                            <td class="px-4 py-2 text-sm text-gray-500 font-mono text-xs">${col.COLUMN_DEFAULT || ''}</td>
-                            <td class="px-4 py-2 text-sm text-center">
-                                ${data.primaryKeys.includes(col.COLUMN_NAME) ? '<span class="text-yellow-500" title="Primary Key">🔑</span>' : ''}
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+                            <td class="px-6 py-3 text-sm font-bold text-gray-800">${col.COLUMN_NAME}</td>
+                            <td class="px-6 py-3 text-sm text-gray-500 font-mono text-xs">${col.TYPE_NAME}${col.CHARACTER_MAXIMUM_LENGTH ? '('+col.CHARACTER_MAXIMUM_LENGTH+')' : ''}</td>
+                            <td class="px-6 py-3 text-sm text-gray-500 font-medium">${col.IS_NULLABLE}</td>
+                            <td class="px-6 py-3 text-sm text-gray-500 font-mono text-xs">${col.COLUMN_DEFAULT || ''}</td>
+                            <td class="px-6 py-3 text-sm text-center">
+                                ${data.primaryKeys.includes(col.COLUMN_NAME) ? '<span class="text-yellow-500 filter drop-shadow-sm" title="Primary Key">🔑</span>' : ''}
                             </td>
                         </tr>
                     `).join('');

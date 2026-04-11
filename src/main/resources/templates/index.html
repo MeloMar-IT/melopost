@@ -10,63 +10,63 @@
 
     <div layout:fragment="content">
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
-                    <i data-lucide="file-text" class="w-6 h-6"></i>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div class="nm-card p-6 flex items-center space-x-6">
+                <div class="w-14 h-14 nm-icon-raised text-blue-600">
+                    <i data-lucide="file-text" class="w-7 h-7"></i>
                 </div>
                 <div>
                     <p class="text-sm font-medium text-gray-500">Postmortems</p>
-                    <p class="text-2xl font-bold text-gray-900" th:text="${postmortemCount}">12</p>
+                    <p class="text-3xl font-bold text-gray-800" th:text="${postmortemCount}">12</p>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center">
-                    <i data-lucide="alert-circle" class="w-6 h-6"></i>
+            <div class="nm-card p-6 flex items-center space-x-6">
+                <div class="w-14 h-14 nm-icon-raised text-amber-600">
+                    <i data-lucide="alert-circle" class="w-7 h-7"></i>
                 </div>
                 <div>
                     <p class="text-sm font-medium text-gray-500">Active Incidents</p>
-                    <p class="text-2xl font-bold text-gray-900">3</p>
+                    <p class="text-3xl font-bold text-gray-800">3</p>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-                <div class="w-12 h-12 bg-green-50 text-green-600 rounded-lg flex items-center justify-center">
-                    <i data-lucide="check-circle" class="w-6 h-6"></i>
+            <div class="nm-card p-6 flex items-center space-x-6">
+                <div class="w-14 h-14 nm-icon-raised text-green-600">
+                    <i data-lucide="check-circle" class="w-7 h-7"></i>
                 </div>
                 <div>
                     <p class="text-sm font-medium text-gray-500">Remedies Completed</p>
-                    <p class="text-2xl font-bold text-gray-900">85%</p>
+                    <p class="text-3xl font-bold text-gray-800">85%</p>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <!-- Recent Activity -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="p-6 border-b border-gray-100 flex justify-between items-center">
-                    <h3 class="font-bold text-gray-800">Recent Postmortems</h3>
-                    <a href="/postmortems" class="text-sm text-blue-600 hover:underline">View all</a>
+            <div class="nm-card overflow-hidden">
+                <div class="p-6 border-b border-gray-200/50 flex justify-between items-center">
+                    <h3 class="font-bold text-gray-700">Recent Postmortems</h3>
+                    <a href="/postmortems" class="text-sm text-blue-600 font-semibold hover:underline">View all</a>
                 </div>
-                <div class="p-0">
-                    <ul class="divide-y divide-gray-100">
-                        <li th:each="pm : ${recentPostmortems}" class="p-0 hover:bg-gray-50 transition-colors">
-                            <a th:href="@{/postmortems/details/{id}(id=${pm.id})}" class="block p-6">
+                <div class="p-2">
+                    <ul class="space-y-2">
+                        <li th:each="pm : ${recentPostmortems}" class="transition-all rounded-xl hover:nm-inset">
+                            <a th:href="@{/postmortems/details/{id}(id=${pm.id})}" class="block p-4">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-4">
-                                        <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                        <div class="w-3 h-3 rounded-full bg-blue-500 nm-flat"></div>
                                         <div>
-                                            <p class="font-semibold text-gray-900" th:text="${pm.title}">Database connection pool exhaustion</p>
+                                            <p class="font-semibold text-gray-800" th:text="${pm.title}">Database connection pool exhaustion</p>
                                             <p class="text-xs text-gray-500">
                                                 <span th:text="${#temporals.format(pm.incidentDate, 'yyyy-MM-dd HH:mm')}">2 days ago</span>
-                                                • <span th:text="${pm.incidentRef}">Inc-421</span>
+                                                • <span th:text="${pm.incidentRef}" class="font-mono">Inc-421</span>
                                             </p>
                                         </div>
                                     </div>
-                                    <i data-lucide="chevron-right" class="w-5 h-5 text-gray-300"></i>
+                                    <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
                                 </div>
                             </a>
                         </li>
-                        <li th:if="${#lists.isEmpty(recentPostmortems)}" class="p-6 text-center text-gray-500">
+                        <li th:if="${#lists.isEmpty(recentPostmortems)}" class="p-8 text-center text-gray-500">
                             No recent postmortems found.
                         </li>
                     </ul>
@@ -74,16 +74,16 @@
             </div>
 
             <!-- Quick Actions -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 class="font-bold text-gray-800 mb-6">Quick Actions</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <a href="/postmortems/new" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group">
-                        <i data-lucide="plus-circle" class="w-8 h-8 text-gray-400 group-hover:text-blue-500 mb-2"></i>
-                        <span class="text-sm font-medium text-gray-600 group-hover:text-blue-700">New Postmortem</span>
+            <div class="nm-card p-8">
+                <h3 class="font-bold text-gray-700 mb-8">Quick Actions</h3>
+                <div class="grid grid-cols-2 gap-6">
+                    <a href="/postmortems/new" class="nm-button flex flex-col items-center justify-center p-6 hover:nm-concave transition-all group">
+                        <i data-lucide="plus-circle" class="w-10 h-10 text-gray-500 group-hover:text-blue-500 mb-3"></i>
+                        <span class="text-sm font-semibold text-gray-600 group-hover:text-blue-700">New Postmortem</span>
                     </a>
-                    <a href="/datasources" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group">
-                        <i data-lucide="database" class="w-8 h-8 text-gray-400 group-hover:text-blue-500 mb-2"></i>
-                        <span class="text-sm font-medium text-gray-600 group-hover:text-blue-700">Manage Sources</span>
+                    <a href="/datasources" class="nm-button flex flex-col items-center justify-center p-6 hover:nm-concave transition-all group">
+                        <i data-lucide="database" class="w-10 h-10 text-gray-500 group-hover:text-blue-500 mb-3"></i>
+                        <span class="text-sm font-semibold text-gray-600 group-hover:text-blue-700">Manage Sources</span>
                     </a>
                 </div>
             </div>

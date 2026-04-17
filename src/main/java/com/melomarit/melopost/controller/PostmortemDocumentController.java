@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/postmortem-documents")
@@ -30,19 +31,19 @@ public class PostmortemDocumentController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PostmortemDocument> getById(@PathVariable Long id) {
+    public ResponseEntity<PostmortemDocument> getById(@PathVariable UUID id) {
         return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/postmortem/{id}")
-    public List<PostmortemDocument> getByPostmortem(@PathVariable Long id) {
-        return service.findByPostmortemId(id);
+    public List<PostmortemDocument> getByPostmortem(@PathVariable UUID id) {
+        return service.findByPostmortemUuid(id);
     }
 
     @GetMapping("/{id}/download")
-    public ResponseEntity<byte[]> download(@PathVariable Long id) {
+    public ResponseEntity<byte[]> download(@PathVariable UUID id) {
         return service.findById(id)
                 .map(doc -> ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getFileName() + "\"")
@@ -52,7 +53,7 @@ public class PostmortemDocumentController {
     }
 
     @PostMapping("/upload/{postmortemId}")
-    public ResponseEntity<PostmortemDocument> upload(@PathVariable Long postmortemId, @RequestParam("file") MultipartFile file) throws IOException {
+    public ResponseEntity<PostmortemDocument> upload(@PathVariable UUID postmortemId, @RequestParam("file") MultipartFile file) throws IOException {
         Postmortem pm = postmortemService.findById(postmortemId);
         service.uploadDocument(pm, file);
         postmortemService.save(pm);
@@ -66,7 +67,7 @@ public class PostmortemDocumentController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();
     }

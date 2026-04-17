@@ -1,41 +1,48 @@
 package com.melomarit.melopost.model;
 
-import jakarta.persistence.*;
+import org.springframework.data.cassandra.core.mapping.PrimaryKey;
+import org.springframework.data.cassandra.core.mapping.Table;
+import org.springframework.data.cassandra.core.mapping.Column;
+import org.springframework.data.cassandra.core.mapping.Indexed;
 import lombok.Data;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.UUID;
 
 @Data
-@Entity
-@Table(name = "users")
+@Table("users")
 public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @PrimaryKey
+    @Column("uuid")
+    private UUID uuid = UUID.randomUUID();
 
-    @Column(unique = true, nullable = false)
+    @Indexed
+    @Column("username")
     private String username;
 
-    @Column(nullable = false)
+    @Column("password")
     private String password;
 
+    @Column("email")
     private String email;
+
+    @Column("first_name")
     private String firstName;
+
+    @Column("last_name")
     private String lastName;
+
+    @Column("active")
     private Boolean active = true;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "role")
+    @Column("roles")
     private Set<String> roles = new HashSet<>();
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_allowed_departments", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "department")
+    @Column("allowed_departments")
     private Set<String> allowedDepartments = new HashSet<>();
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public UUID getUuid() { return uuid; }
+    public void setUuid(UUID uuid) { this.uuid = uuid; }
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
     public String getPassword() { return password; }

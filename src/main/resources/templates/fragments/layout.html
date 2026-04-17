@@ -9,10 +9,24 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link th:href="@{/css/tailwind.min.css}" rel="stylesheet">
     <!-- Google Font: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Markdown-it for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
+    <script>
+        // Configure markdown-it globally
+        const md = window.markdownit({
+            html: true,
+            linkify: true,
+            typographer: true,
+            breaks: true
+        });
+    </script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .sidebar-active { background-color: rgba(255, 255, 255, 0.1); border-left: 4px solid #fff; }
@@ -38,6 +52,18 @@
                 <i data-lucide="file-text" class="w-5 h-5"></i>
                 <span>Postmortems</span>
             </a>
+            <a href="/postmortems/holes" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+                <i data-lucide="circle-dot" class="w-5 h-5"></i>
+                <span>Holes Overview</span>
+            </a>
+            <a href="/postmortems/stories" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+                <i data-lucide="check-square" class="w-5 h-5"></i>
+                <span>Stories Overview</span>
+            </a>
+            <a href="/incident-notes" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+                <i data-lucide="sticky-note" class="w-5 h-5"></i>
+                <span>Incident Notes</span>
+            </a>
             <a href="/datasources" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
                 <i data-lucide="database" class="w-5 h-5"></i>
                 <span>Data Sources</span>
@@ -54,7 +80,11 @@
                 <i data-lucide="server" class="w-5 h-5"></i>
                 <span>Database Admin</span>
             </a>
-            <form th:action="@{/logout}" method="post" class="mt-4 pt-4 border-t border-slate-800">
+            <a href="/help" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+                <i data-lucide="help-circle" class="w-5 h-5"></i>
+                <span>Help</span>
+            </a>
+            <form th:if="${#authentication != null and #authentication.name != 'anonymousUser'}" th:action="@{/logout}" method="post" class="mt-4 pt-4 border-t border-slate-800">
                 <button type="submit" class="w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-red-900/40 text-slate-300 hover:text-red-400 transition-colors">
                     <i data-lucide="log-out" class="w-5 h-5"></i>
                     <span>Sign Out</span>
@@ -64,11 +94,11 @@
         <div class="p-4 border-t border-slate-800">
             <div class="flex items-center space-x-3 px-3 py-2">
                 <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center overflow-hidden">
-                    <img th:src="${'https://ui-avatars.com/api/?name=' + #authentication.name + '&background=random'}" alt="User">
+                    <img th:src="${#authentication != null and #authentication.name != 'anonymousUser' ? 'https://ui-avatars.com/api/?name=' + #authentication.name + '&background=random' : 'https://ui-avatars.com/api/?name=User&background=random'}" alt="User">
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium truncate" th:text="${#authentication.name}">User</p>
-                    <p class="text-xs text-slate-400 truncate" th:text="${#authentication.principal.username}">user@example.com</p>
+                    <p class="text-sm font-medium truncate" th:text="${#authentication != null and #authentication.name != 'anonymousUser' ? #authentication.name : 'User'}">User</p>
+                    <p class="text-xs text-slate-400 truncate" th:text="${#authentication != null and #authentication.name != 'anonymousUser' and #authentication.principal instanceof T(org.springframework.security.core.userdetails.UserDetails) ? #authentication.principal.username : 'user@example.com'}">user@example.com</p>
                 </div>
             </div>
         </div>

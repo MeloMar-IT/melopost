@@ -33,9 +33,14 @@
         <div class="w-72 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
             <div class="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                 <h3 class="font-bold text-gray-700 uppercase text-xs tracking-wider">Tables</h3>
-                <button onclick="loadTables()" class="text-gray-400 hover:text-blue-600 transition-colors" title="Refresh Tables">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                </button>
+                <div class="flex space-x-2">
+                    <button onclick="loadTables(true)" class="text-gray-400 hover:text-green-600 transition-colors" title="Refresh with Counts">
+                        <i data-lucide="hash" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="loadTables(false)" class="text-gray-400 hover:text-blue-600 transition-colors" title="Refresh Tables">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    </button>
+                </div>
             </div>
             <div class="flex-1 overflow-y-auto" id="tables-list">
                 <!-- Tables will be loaded here -->
@@ -203,6 +208,7 @@
 
 <th:block layout:fragment="script">
     <script th:inline="javascript">
+    /*<![CDATA[*/
         // Global State
         let currentTables = [];
         let lastResult = null;
@@ -211,7 +217,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             console.log('Database Admin Page Initialized');
-            loadTables();
+            loadTables(true);
             
             // Handle Ctrl+Enter to run query
             const editor = document.getElementById('sql-editor');
@@ -224,9 +230,9 @@
             }
         });
 
-        async function loadTables() {
+        async function loadTables(includeCounts = false) {
             try {
-                const response = await fetch('/api/admin/database/tables');
+                const response = await fetch(`/api/admin/database/tables?includeCounts=${includeCounts}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -252,13 +258,16 @@
             }
 
             list.innerHTML = currentTables.map(table => `
-                <div class="table-list-item border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer group p-3" onclick="selectTable('${table.name}')">
+                <div class="table-list-item border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer group p-3" onclick="selectTable('${table.name}', '${table.type}')">
                     <div class="flex justify-between items-start">
                         <div class="flex items-center">
-                            <i data-lucide="table" class="w-4 h-4 mr-2 text-gray-400 group-hover:text-blue-500"></i>
-                            <span class="text-sm font-medium text-gray-700 group-hover:text-blue-700">${table.name}</span>
+                            <i data-lucide="${table.type === 'TYPE' ? 'box' : 'table'}" class="w-4 h-4 mr-2 ${table.type === 'TYPE' ? 'text-purple-400 group-hover:text-purple-500' : 'text-gray-400 group-hover:text-blue-500'}"></i>
+                            <span class="text-sm font-medium text-gray-700 ${table.type === 'TYPE' ? 'group-hover:text-purple-700' : 'group-hover:text-blue-700'}">${table.name}</span>
                         </div>
-                        <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">${table.rowCount}</span>
+                        <div class="flex flex-col items-end">
+                            <span class="text-[8px] font-bold uppercase ${table.type === 'TYPE' ? 'text-purple-500' : 'text-blue-500'}">${table.type}</span>
+                            <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded mt-0.5">${table.rowCount !== null ? table.rowCount : '?'}</span>
+                        </div>
                     </div>
                     <div class="mt-1 flex justify-between items-center">
                          <span class="text-[10px] text-gray-400 truncate max-w-[150px]">${table.columns.join(', ')}</span>
@@ -273,22 +282,34 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        function selectTable(tableName) {
+        function selectTable(tableName, type) {
             const editor = document.getElementById('sql-editor');
             if (!editor) return;
+
+            if (type === 'TYPE') {
+                // For UDTs, we'll set a placeholder and loadTableDefinition will fill the actual query if it has one
+                editor.value = `-- User Defined Type: ${tableName}\n-- Loading data...`;
+                loadTableDefinition(tableName, true);
+                hideAllResults();
+                const status = document.getElementById('result-status');
+                if (status) status.textContent = 'User Defined Type Selected';
+                return;
+            }
+
             editor.value = `SELECT * FROM "${tableName}" LIMIT 100`;
             
             // Show table definition when selecting a table
-            loadTableDefinition(tableName);
+            loadTableDefinition(tableName, false);
             
             runQuery();
         }
 
-        async function loadTableDefinition(tableName) {
+        async function loadTableDefinition(tableName, isType = false) {
             const container = document.getElementById('table-definition-container');
             const toggleBtn = document.getElementById('toggle-definition-btn');
             const body = document.getElementById('definition-table-body');
             const nameSpan = document.getElementById('definition-table-name');
+            const editor = document.getElementById('sql-editor');
             
             if (!container || !body || !nameSpan) return;
             
@@ -300,11 +321,11 @@
                 body.innerHTML = data.schema.map(col => `
                     <tr class="hover:bg-blue-50/30">
                         <td class="px-4 py-1.5 text-xs font-medium text-gray-900">${col.COLUMN_NAME}</td>
-                        <td class="px-4 py-1.5 text-xs text-gray-500 font-mono">${col.TYPE_NAME}${col.CHARACTER_MAXIMUM_LENGTH ? '('+col.CHARACTER_MAXIMUM_LENGTH+')' : ''}</td>
-                        <td class="px-4 py-1.5 text-xs text-gray-500">${col.IS_NULLABLE}</td>
+                        <td class="px-4 py-1.5 text-xs text-gray-500 font-mono">${col.DATA_TYPE || col.TYPE_NAME}</td>
+                        <td class="px-4 py-1.5 text-xs text-gray-500">${col.IS_NULLABLE || '-'}</td>
                         <td class="px-4 py-1.5 text-xs text-gray-500 font-mono text-[10px]">${col.COLUMN_DEFAULT || ''}</td>
                         <td class="px-4 py-1.5 text-xs text-center">
-                            ${data.primaryKeys.includes(col.COLUMN_NAME) ? '<span class="text-yellow-500" title="Primary Key">🔑</span>' : ''}
+                            ${(data.primaryKeys || []).includes(col.COLUMN_NAME) ? '<span class="text-yellow-500" title="Primary Key">🔑</span>' : ''}
                         </td>
                     </tr>
                 `).join('');
@@ -314,6 +335,19 @@
                     toggleBtn.classList.remove('hidden');
                     toggleBtn.innerHTML = '<i data-lucide="layout" class="w-3 h-3 mr-1"></i> Hide Definition';
                 }
+                
+                // If it's a type and we have data (like cheese_layer), show it
+                if (isType && data.data) {
+                    if (data.data.sql && editor) {
+                        editor.value = `-- Query used to fetch UDT data:\n${data.data.sql}`;
+                    }
+                    if (data.data.rows && data.data.rows.length > 0) {
+                        displayResult(data.data);
+                    } else if (data.data.message) {
+                        displayResult(data.data);
+                    }
+                }
+
                 if (window.lucide) lucide.createIcons();
             } catch (error) {
                 console.error('Error loading table definition:', error);
@@ -409,7 +443,7 @@
                 if (status) status.textContent = `Success: ${result.affectedRows} rows affected`;
                 if (actions) actions.classList.add('hidden');
                 // Refresh tables list if it was a DDL or something that might change counts
-                loadTables();
+                loadTables(false);
             }
         }
 
@@ -478,11 +512,11 @@
                     schemaBody.innerHTML = data.schema.map(col => `
                         <tr>
                             <td class="px-4 py-2 text-sm font-medium text-gray-900">${col.COLUMN_NAME}</td>
-                            <td class="px-4 py-2 text-sm text-gray-500 font-mono text-xs">${col.TYPE_NAME}${col.CHARACTER_MAXIMUM_LENGTH ? '('+col.CHARACTER_MAXIMUM_LENGTH+')' : ''}</td>
-                            <td class="px-4 py-2 text-sm text-gray-500">${col.IS_NULLABLE}</td>
+                            <td class="px-4 py-2 text-sm text-gray-500 font-mono text-xs">${col.DATA_TYPE || col.TYPE_NAME}</td>
+                            <td class="px-4 py-2 text-sm text-gray-500">${col.IS_NULLABLE || '-'}</td>
                             <td class="px-4 py-2 text-sm text-gray-500 font-mono text-xs">${col.COLUMN_DEFAULT || ''}</td>
                             <td class="px-4 py-2 text-sm text-center">
-                                ${data.primaryKeys.includes(col.COLUMN_NAME) ? '<span class="text-yellow-500" title="Primary Key">🔑</span>' : ''}
+                                ${(data.primaryKeys || []).includes(col.COLUMN_NAME) ? '<span class="text-yellow-500" title="Primary Key">🔑</span>' : ''}
                             </td>
                         </tr>
                     `).join('');
@@ -490,10 +524,15 @@
 
                 const queryBtn = document.getElementById('modal-query-btn');
                 if (queryBtn) {
-                    queryBtn.onclick = () => {
-                        selectTable(tableName);
-                        closeTableInfo();
-                    };
+                    if (data.type === 'TYPE') {
+                        queryBtn.classList.add('hidden');
+                    } else {
+                        queryBtn.classList.remove('hidden');
+                        queryBtn.onclick = () => {
+                            selectTable(tableName, data.type);
+                            closeTableInfo();
+                        };
+                    }
                 }
 
                 const modal = document.getElementById('table-info-modal');
@@ -532,6 +571,7 @@
             link.click();
             document.body.removeChild(link);
         }
+    /*]]>*/
     </script>
 </th:block>
 </body>

@@ -32,19 +32,19 @@
                             <span class="font-semibold text-gray-900" th:text="${template.name}">Template Name</span>
                         </td>
                         <td class="px-6 py-4">
-                            <span th:if="${template.default}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span th:if="${template.isDefault}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 Default
                             </span>
-                            <span th:if="${!template.default}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            <span th:if="${!template.isDefault}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                 Optional
                             </span>
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex justify-end space-x-2">
-                                <a th:href="@{/templates/edit/{id}(id=${template.id})}" class="p-2 text-gray-400 hover:text-green-600 rounded-lg hover:bg-green-50 transition-colors" title="Edit">
+                                <a th:href="@{/templates/edit/{id}(id=${template.uuid})}" class="p-2 text-gray-400 hover:text-green-600 rounded-lg hover:bg-green-50 transition-colors" title="Edit">
                                     <i data-lucide="edit" class="w-5 h-5"></i>
                                 </a>
-                                <a th:href="@{/templates/delete/{id}(id=${template.id})}" class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors" title="Delete" onclick="return confirm('Are you sure you want to delete this template?')">
+                                <a th:href="@{/templates/delete/{id}(id=${template.uuid})}" class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors" title="Delete" onclick="return confirm('Are you sure you want to delete this template?')">
                                     <i data-lucide="trash-2" class="w-5 h-5"></i>
                                 </a>
                             </div>

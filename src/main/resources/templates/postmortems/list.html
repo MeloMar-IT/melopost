@@ -11,10 +11,117 @@
     <div layout:fragment="content">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-gray-800">All Postmortems</h1>
-            <a href="/postmortems/new" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
-                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-                Create New
-            </a>
+            <div class="flex items-center space-x-3">
+                <form id="importForm" class="hidden">
+                    <input type="file" id="importFile" name="file" accept=".docx,.doc,.pdf" onchange="uploadFile()">
+                </form>
+                <button onclick="document.getElementById('importFile').click()" class="inline-flex items-center px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg transition-colors shadow-sm">
+                    <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                    Import Document
+                </button>
+                <a href="/postmortems/new" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                    <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                    Create New
+                </a>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            function uploadFile() {
+                const fileInput = document.getElementById('importFile');
+                if (!fileInput.files.length) return;
+
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                // Show loading state if needed
+                const btn = document.querySelector('button[onclick*="importFile"]');
+                const originalContent = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 animate-spin"></i> Importing...';
+                lucide.createIcons();
+
+                fetch('/api/postmortems/import', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Import failed');
+                    return response.json();
+                })
+                .then(data => {
+                    // Success! Redirect to details
+                    window.location.href = '/postmortems/details/' + data.uuid;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to import document. Please ensure it follows the correct format.');
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                    lucide.createIcons();
+                });
+            }
+        </script>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 p-4">
+            <form th:action="@{/postmortems}" method="get" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Keyword</label>
+                    <input type="text" name="keyword" th:value="${keyword}" placeholder="Title, Desc, etc..." 
+                           class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Type</label>
+                    <select name="type" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">All Types</option>
+                        <option th:each="t : ${postmortemTypes}" th:value="${t}" th:text="${t}" th:selected="${t == type}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Status</label>
+                    <select name="status" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">All Statuses</option>
+                        <option th:each="s : ${postmortemStates}" th:value="${s}" th:text="${s}" th:selected="${s == status}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Incident Date</label>
+                    <div class="flex space-x-1">
+                        <select name="incidentDateOp" class="bg-gray-50 border border-gray-200 rounded-lg px-2 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="on" th:selected="${incidentDateOp == 'on'}">On</option>
+                            <option value="before" th:selected="${incidentDateOp == 'before'}">Before</option>
+                            <option value="after" th:selected="${incidentDateOp == 'after'}">After</option>
+                        </select>
+                        <input type="date" name="incidentDate" th:value="${incidentDate}"
+                               class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Due Date</label>
+                    <div class="flex space-x-1">
+                        <select name="dueDateOp" class="bg-gray-50 border border-gray-200 rounded-lg px-2 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="on" th:selected="${dueDateOp == 'on'}">On</option>
+                            <option value="before" th:selected="${dueDateOp == 'before'}">Before</option>
+                            <option value="after" th:selected="${dueDateOp == 'after'}">After</option>
+                        </select>
+                        <input type="date" name="dueDate" th:value="${dueDate}"
+                               class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+                <div class="flex items-end space-x-2">
+                    <div class="flex-1">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Incident REF</label>
+                        <input type="text" name="incidentRef" th:value="${incidentRef}" placeholder="INC-..." 
+                               class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <button type="submit" class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                        <i data-lucide="filter" class="w-5 h-5"></i>
+                    </button>
+                    <a th:href="@{/postmortems}" class="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors shadow-sm" title="Clear Filters">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            </form>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -23,6 +130,7 @@
                     <tr class="bg-gray-50 border-b border-gray-100">
                         <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Title</th>
                         <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Incident Date</th>
                         <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Due Date</th>
                         <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Incident Ref</th>
@@ -31,10 +139,12 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    <tr th:each="pm : ${postmortems}" class="hover:bg-gray-50 transition-colors">
+                    <tr th:each="item : ${searchResults != null ? searchResults : postmortems}" 
+                        th:with="pm=${searchResults != null ? item.postmortem : item}"
+                        class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4">
                             <div class="flex flex-col">
-                                <a th:href="@{/postmortems/details/{id}(id=${pm.id})}" class="font-semibold text-gray-900 hover:text-blue-600 transition-colors" th:text="${pm.title}">Title</a>
+                                <a th:href="@{/postmortems/details/{id}(id=${pm.uuid})}" class="font-semibold text-gray-900 hover:text-blue-600 transition-colors" th:text="${pm.title}">Title</a>
                                 <div class="flex flex-wrap gap-1 mt-1">
                                     <span class="text-[10px] text-gray-500 mr-2 uppercase tracking-wide font-bold" th:text="${pm.failedApplication ?: 'N/A'}">Application</span>
                                     <span class="text-[10px] text-gray-400 mr-2 uppercase tracking-wide font-bold" th:text="${pm.department ?: 'N/A'}">Department</span>
@@ -42,13 +152,26 @@
                                         Tag
                                     </span>
                                 </div>
+                                <div th:if="${searchResults != null}" class="mt-2 flex flex-wrap gap-1">
+                                    <span th:each="hint : ${item.matchHints}" class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
+                                        <i data-lucide="search" class="w-2.5 h-2.5 mr-1"></i>
+                                        <span th:text="${hint}">Found in Title</span>
+                                    </span>
+                                </div>
                             </div>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600" th:text="${pm.type ?: 'N/A'}">Type</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                  th:classappend="${pm.status == 'Published' ? 'bg-green-100 text-green-800' : 
+                                                 (pm.status == 'Actioned' ? 'bg-blue-100 text-blue-800' : 
+                                                 (pm.status == 'In Analysis' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'))}"
+                                  th:text="${pm.status ?: 'Triggered'}">Status</span>
+                        </td>
                         <td class="px-6 py-4 text-sm text-gray-600" th:text="${pm.incidentDate != null ? #temporals.format(pm.incidentDate, 'MMM dd, yyyy') : 'N/A'}">Date</td>
                         <td class="px-6 py-4">
                             <span class="text-sm font-medium" 
-                                  th:classappend="${pm.dueDate != null && pm.dueDate.isBefore(#temporals.createNow()) ? 'text-red-600' : 'text-gray-600'}"
+                                  th:classappend="${pm.dueDate != null and pm.dueDate.isBefore(#temporals.createNow()) ? 'text-red-600' : 'text-gray-600'}"
                                   th:text="${pm.dueDate != null ? #temporals.format(pm.dueDate, 'MMM dd, yyyy') : 'N/A'}">Due Date</span>
                         </td>
                         <td class="px-6 py-4">
@@ -70,16 +193,19 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex justify-end space-x-2">
-                                <a th:href="@{/postmortems/details/{id}(id=${pm.id})}" class="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="View">
+                                <a th:href="@{/postmortems/details/{id}(id=${pm.uuid})}" class="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="View">
                                     <i data-lucide="eye" class="w-5 h-5"></i>
                                 </a>
-                                <a th:href="@{/postmortems/edit/{id}(id=${pm.id})}" class="p-2 text-gray-400 hover:text-green-600 rounded-lg hover:bg-green-50 transition-colors" title="Edit">
+                                <a th:if="${pm.status != 'Published'}" th:href="@{/postmortems/edit/{id}(id=${pm.uuid})}" class="p-2 text-gray-400 hover:text-green-600 rounded-lg hover:bg-green-50 transition-colors" title="Edit">
                                     <i data-lucide="edit" class="w-5 h-5"></i>
                                 </a>
+                                <span th:if="${pm.status == 'Published'}" class="p-2 text-gray-300 cursor-not-allowed" title="Locked">
+                                    <i data-lucide="lock" class="w-5 h-5"></i>
+                                </span>
                             </div>
                         </td>
                     </tr>
-                    <tr th:if="${postmortems.empty}">
+                    <tr th:if="${(searchResults == null or searchResults.empty) and (postmortems == null or postmortems.empty)}">
                         <td colspan="4" class="px-6 py-12 text-center">
                             <div class="flex flex-col items-center">
                                 <i data-lucide="inbox" class="w-12 h-12 text-gray-300 mb-4"></i>

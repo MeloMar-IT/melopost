@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/datasources")
@@ -20,7 +21,7 @@ public class DataSourceController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DataSource> getById(@PathVariable Long id) {
+    public ResponseEntity<DataSource> getById(@PathVariable UUID id) {
         return dataSourceService.getDataSourceById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -32,7 +33,7 @@ public class DataSourceController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DataSource> update(@PathVariable Long id, @RequestBody DataSource dataSource) {
+    public ResponseEntity<DataSource> update(@PathVariable UUID id, @RequestBody DataSource dataSource) {
         return dataSourceService.getDataSourceById(id)
                 .map(existing -> {
                     if (dataSource.getName() != null) existing.setName(dataSource.getName());
@@ -48,7 +49,7 @@ public class DataSourceController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         if (dataSourceService.getDataSourceById(id).isPresent()) {
             dataSourceService.deleteDataSource(id);
             return ResponseEntity.ok().build();

@@ -1,24 +1,26 @@
 package com.melomarit.melopost.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.util.List;
-import java.util.Map;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class DatabaseTableDTO {
     private String name;
+    private String type; // "TABLE" or "TYPE"
     private Integer rowCount;
     private List<String> columns;
 
+    public DatabaseTableDTO() {}
+
+    public DatabaseTableDTO(String name, String type, Integer rowCount, List<String> columns) {
+        this.name = name;
+        this.type = type;
+        this.rowCount = rowCount;
+        this.columns = columns;
+    }
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
     public Integer getRowCount() { return rowCount; }
     public void setRowCount(Integer rowCount) { this.rowCount = rowCount; }
     public List<String> getColumns() { return columns; }

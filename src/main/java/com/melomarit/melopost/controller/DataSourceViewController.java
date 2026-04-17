@@ -7,6 +7,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @Controller
 @RequestMapping("/datasources")
 public class DataSourceViewController {
@@ -34,14 +36,14 @@ public class DataSourceViewController {
     }
 
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model) {
+    public String showEditForm(@PathVariable UUID id, Model model) {
         dataSourceService.getDataSourceById(id).ifPresent(ds -> model.addAttribute("datasource", ds));
         model.addAttribute("templates", dataSourceService.getTemplates());
         return "datasources/form";
     }
 
     @GetMapping("/delete/{id}")
-    public String deleteDataSource(@PathVariable Long id) {
+    public String deleteDataSource(@PathVariable UUID id) {
         dataSourceService.deleteDataSource(id);
         return "redirect:/datasources";
     }

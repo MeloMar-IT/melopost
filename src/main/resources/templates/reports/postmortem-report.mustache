@@ -7,7 +7,8 @@
         body { font-family: 'Helvetica', 'Arial', sans-serif; line-height: 1.6; color: #333; margin: 40px; }
         h1 { color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; }
         h2 { color: #2980b9; margin-top: 30px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .section { margin-bottom: 20px; }
+        .section { margin-bottom: 20px; page-break-before: always; }
+        .section:first-of-type, .no-break { page-break-before: auto; }
         .label { font-weight: bold; color: #7f8c8d; width: 150px; display: inline-block; }
         .value { display: inline-block; }
         .tag { background: #ecf0f1; border-radius: 3px; padding: 2px 8px; margin-right: 5px; font-size: 0.9em; }
@@ -15,12 +16,73 @@
         .hole { margin-left: 20px; margin-top: 10px; border-left: 3px solid #e74c3c; padding-left: 10px; }
         .timeline-event { margin-bottom: 10px; }
         .event-time { font-weight: bold; color: #16a085; width: 120px; display: inline-block; }
+
+        /* Improved Graphical Timeline Styles */
+        .graphical-timeline {
+            margin: 20px 0;
+            padding: 20px 0;
+            position: relative;
+        }
+        .timeline-container {
+            position: relative;
+            padding-left: 100px;
+            border-left: 2px solid #3498db;
+            margin-left: 150px; /* Increased margin for time-box */
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            min-height: 40px; /* Ensure space for box */
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -108px;
+            top: 5px;
+            width: 14px;
+            height: 14px;
+            background-color: #3498db;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            z-index: 1;
+        }
+        .timeline-time-box {
+            position: absolute;
+            left: -200px;
+            width: 80px;
+            text-align: right;
+            top: 2px;
+        }
+        .timeline-date {
+            font-size: 0.75em;
+            color: #7f8c8d;
+            display: block;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .timeline-time {
+            font-size: 1em;
+            color: #2c3e50;
+            font-weight: bold;
+            display: block;
+        }
+        .timeline-content {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            position: relative;
+        }
+        .timeline-description {
+            margin: 0;
+            font-size: 0.95em;
+            color: #34495e;
+        }
     </style>
 </head>
 <body>
     <h1>Postmortem: {{title}}</h1>
 
-    <div class="section">
+    <div>
         <div><span class="label">Postmortem Type:</span> <span class="value">{{type}}</span></div>
         <div><span class="label">Incident Ref:</span> <span class="value">{{incidentRef}} ({{incidentSource}})</span></div>
         <div><span class="label">Incident Date:</span> <span class="value">{{incidentDate}}</span></div>
@@ -32,12 +94,12 @@
         <div><span class="label">Failed App:</span> <span class="value">{{failedApplication}}</span></div>
     </div>
 
-    <div class="section">
+    <div>
         <h2>Description</h2>
         <p>{{description}}</p>
     </div>
 
-    <div class="section">
+    <div>
         <h2>Tags</h2>
         {{#tags}}
             <span class="tag">{{.}}</span>
@@ -49,6 +111,34 @@
 
     <div class="section">
         <h2>Timeline</h2>
+        {{#mermaidSource}}
+        <div style="margin: 20px 0; padding: 15px; background-color: #fcfcfc; border: 1px solid #eee; border-radius: 8px; text-align: center;">
+            <img src="https://kroki.io/mermaid/png/{{mermaidSource}}" alt="Incident Timeline" style="max-width: 100%; height: auto;" />
+        </div>
+        {{/mermaidSource}}
+
+        {{^mermaidSource}}
+        {{#hasGraphicalTimeline}}
+        <div class="graphical-timeline">
+            <div class="timeline-container">
+                {{#graphicalTimeline}}
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-time-box">
+                        <span class="timeline-date">{{date}}</span>
+                        <span class="timeline-time">{{time}}</span>
+                    </div>
+                    <div class="timeline-content">
+                        <p class="timeline-description">{{description}}</p>
+                    </div>
+                </div>
+                {{/graphicalTimeline}}
+            </div>
+        </div>
+        {{/hasGraphicalTimeline}}
+        {{/mermaidSource}}
+
+        <h3>Event Details</h3>
         {{#timelineEvents}}
             <div class="timeline-event">
                 <span class="event-time">{{eventTime}}</span>
@@ -69,7 +159,8 @@
                 
                 {{#holes}}
                     <div class="hole">
-                        <strong>Hole:</strong> {{description}}<br/>
+                        <strong>Hole:</strong> {{description}} 
+                        {{#sourcePostmortem}}<span style="color: #7f8c8d; font-size: 0.9em;">(Source: {{sourcePostmortem}})</span>{{/sourcePostmortem}}<br/>
                         <strong>Team:</strong> {{teamName}}<br/>
                         <strong>Remedial Action:</strong> {{remedialAction}} ({{actionStatus}})
                         {{#tags}}
@@ -77,6 +168,9 @@
                         {{/tags}}
                         {{#story}}
                             <br/><strong>Story:</strong> {{storyNumber}} - {{status}}
+                            {{#priority}}<br/><strong>Priority:</strong> {{priority}}{{/priority}}
+                            {{#whatToFix}}<br/><strong>What to fix:</strong> {{whatToFix}}{{/whatToFix}}
+                            {{#storyLink}}<br/><strong>Link:</strong> {{storyLink}}{{/storyLink}}
                         {{/story}}
                     </div>
                 {{/holes}}
@@ -102,13 +196,31 @@
 
     {{#localPostmortems.0}}
     <div class="section">
-        <h2>Included Local Postmortems</h2>
+        <h2>Linked Local Postmortems (Overview)</h2>
         <ul>
         {{#localPostmortems}}
-            <li><strong>{{title}}</strong> ({{incidentRef}}) - {{incidentDate}}</li>
+            <li><strong>{{title}}</strong> (#{{id}}, {{incidentRef}}) - {{incidentDate}}</li>
         {{/localPostmortems}}
         </ul>
     </div>
     {{/localPostmortems.0}}
+
+    {{#majorPostmortems.0}}
+    <div class="section">
+        <h2>Linked Major Postmortems</h2>
+        <ul>
+        {{#majorPostmortems}}
+            <li><strong>{{title}}</strong> (#{{id}}, {{incidentRef}}) - {{incidentDate}}</li>
+        {{/majorPostmortems}}
+        </ul>
+    </div>
+    {{/majorPostmortems.0}}
+
+    {{#note}}
+    <div class="section">
+        <h2>Postmortem Notes</h2>
+        <div style="white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; background-color: #f4f4f4; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">{{note}}</div>
+    </div>
+    {{/note}}
 </body>
 </html>

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class DataSourceService {
@@ -18,7 +19,7 @@ public class DataSourceService {
         return dataSourceRepository.findAll();
     }
 
-    public Optional<DataSource> getDataSourceById(Long id) {
+    public Optional<DataSource> getDataSourceById(UUID id) {
         return dataSourceRepository.findById(id);
     }
 
@@ -26,7 +27,7 @@ public class DataSourceService {
         return dataSourceRepository.save(dataSource);
     }
 
-    public void deleteDataSource(Long id) {
+    public void deleteDataSource(UUID id) {
         dataSourceRepository.deleteById(id);
     }
 

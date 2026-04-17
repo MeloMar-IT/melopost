@@ -1,33 +1,42 @@
 package com.melomarit.melopost.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
+import org.springframework.data.cassandra.core.mapping.PrimaryKey;
+import org.springframework.data.cassandra.core.mapping.Table;
+import org.springframework.data.cassandra.core.mapping.Column;
+import org.springframework.data.cassandra.core.mapping.CassandraType;
+import org.springframework.data.cassandra.core.mapping.CassandraType.Name;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
-@Entity
+@Table("postmortem_document")
 public class PostmortemDocument {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @PrimaryKey
+    @Column("uuid")
+    private UUID uuid = UUID.randomUUID();
 
+    @Column("file_name")
     private String fileName;
+
+    @Column("content_type")
     private String contentType;
+
+    @Column("size")
     private long size;
+
+    @Column("upload_date")
     private LocalDateTime uploadDate;
 
-    @Lob
-    @Column(columnDefinition = "BLOB")
+    @Column("data")
+    @CassandraType(type = Name.BLOB)
     private byte[] data;
 
-    @ManyToOne
-    @JoinColumn(name = "postmortem_id")
-    @JsonIgnore
-    private Postmortem postmortem;
+    @Column("postmortem_uuid")
+    private UUID postmortemUuid;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public UUID getUuid() { return uuid; }
+    public void setUuid(UUID uuid) { this.uuid = uuid; }
     public String getFileName() { return fileName; }
     public void setFileName(String fileName) { this.fileName = fileName; }
     public String getContentType() { return contentType; }
@@ -38,11 +47,10 @@ public class PostmortemDocument {
     public void setUploadDate(LocalDateTime uploadDate) { this.uploadDate = uploadDate; }
     public byte[] getData() { return data; }
     public void setData(byte[] data) { this.data = data; }
-    public Postmortem getPostmortem() { return postmortem; }
-    public void setPostmortem(Postmortem postmortem) { this.postmortem = postmortem; }
+    public UUID getPostmortemUuid() { return postmortemUuid; }
+    public void setPostmortemUuid(UUID postmortemUuid) { this.postmortemUuid = postmortemUuid; }
 
-    @PrePersist
-    protected void onCreate() {
+    public void onCreate() {
         uploadDate = LocalDateTime.now();
     }
 }

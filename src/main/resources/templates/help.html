@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{fragments/layout}">
+<head>
+    <title>Help & Documentation</title>
+</head>
+<body>
+<div layout:fragment="header-title">
+    Help & Documentation
+</div>
+
+<div layout:fragment="content">
+    <div class="flex flex-col lg:flex-row gap-6">
+        <!-- Sidebar Navigation -->
+        <div class="w-full lg:w-64 flex-shrink-0">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-6">
+                <div class="p-4 border-b border-gray-100 bg-gray-50">
+                    <h3 class="font-semibold text-gray-700 flex items-center">
+                        <i data-lucide="book-open" class="w-4 h-4 mr-2"></i>
+                        Navigation
+                    </h3>
+                </div>
+                <nav class="p-2">
+                    <ul class="space-y-1">
+                        <li>
+                            <a th:href="@{/help(section='userguide')}"
+                               class="block px-4 py-2 rounded-lg text-sm transition-colors"
+                               th:classappend="${currentSection == 'userguide'} ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'">
+                                <div class="flex items-center">
+                                    <i data-lucide="user" class="w-4 h-4 mr-2"></i>
+                                    User Guide
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a th:href="@{/help(section='api')}"
+                               class="block px-4 py-2 rounded-lg text-sm transition-colors"
+                               th:classappend="${currentSection == 'api'} ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'">
+                                <div class="flex items-center">
+                                    <i data-lucide="code" class="w-4 h-4 mr-2"></i>
+                                    API Guide
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a th:href="@{/help(section='database')}"
+                               class="block px-4 py-2 rounded-lg text-sm transition-colors"
+                               th:classappend="${currentSection == 'database'} ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'">
+                                <div class="flex items-center">
+                                    <i data-lucide="database" class="w-4 h-4 mr-2"></i>
+                                    Database Guide
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-grow min-w-0">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="p-8 max-w-none">
+                    
+                    <!-- USER GUIDE SECTION -->
+                    <div th:if="${currentSection == 'userguide'}" class="space-y-12">
+                        <header class="border-b border-gray-100 pb-6">
+                            <h1 class="text-3xl font-bold text-gray-900">MeloPost User Guide</h1>
+                            <p class="mt-2 text-gray-600 text-lg">Comprehensive manual for incident postmortems and systematic root cause analysis.</p>
+                        </header>
+
+                        <!-- Introduction -->
+                        <section id="introduction">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">1</span>
+                                Introduction
+                            </h2>
+                            <p class="text-gray-600 leading-relaxed mb-6">
+                                MeloPost is a specialized application designed to help organizations move beyond simple "blame games" and into structured, systematic root cause analysis. By using the <strong>Swiss Cheese Model</strong>, MeloPost helps teams identify not just <em>who</em> made a mistake, but <em>what</em> layers of defense failed and <em>how</em> to prevent similar issues in the future.
+                            </p>
+                            <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
+                                <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.50.28.png" alt="MeloPost Dashboard" class="w-full">
+                                <p class="p-3 text-sm text-gray-500 italic text-center bg-white border-t border-gray-100">Figure 1: The MeloPost Dashboard provides a central hub for incident management.</p>
+                            </div>
+                        </section>
+
+                        <!-- Key Concepts -->
+                        <section id="concepts">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">2</span>
+                                Key Concepts
+                            </h2>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                                    <h3 class="font-bold text-gray-800 mb-2 flex items-center">
+                                        <i data-lucide="layers" class="w-5 h-5 mr-2 text-blue-500"></i>
+                                        The Swiss Cheese Model
+                                    </h3>
+                                    <p class="text-sm text-gray-600 leading-relaxed">
+                                        Defenses are likened to slices of Swiss cheese. Slices (Layers) represent defenses. Holes represent weaknesses. Incidents occur when holes in every slice align.
+                                    </p>
+                                </div>
+                                <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                                    <h3 class="font-bold text-gray-800 mb-2 flex items-center">
+                                        <i data-lucide="info" class="w-5 h-5 mr-2 text-blue-500"></i>
+                                        Layers, Holes & Stories
+                                    </h3>
+                                    <ul class="text-sm text-gray-600 space-y-2">
+                                        <li><strong>Layer:</strong> Category of defense (e.g., Run, Test).</li>
+                                        <li><strong>Hole:</strong> A specific weakness found in a layer.</li>
+                                        <li><strong>Story:</strong> A remedial task created to plug a hole.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Dashboard & Search -->
+                        <section id="dashboard">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">3</span>
+                                Getting Started
+                            </h2>
+                            <p class="text-gray-600 mb-6">
+                                Upon logging in, you are greeted with the Dashboard. Here you can see key metrics and recent postmortems. Use the search bar to find specific incidents using keywords or tags.
+                            </p>
+                            <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50 mb-6">
+                                <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.50.41.png" alt="Dashboard Overview" class="w-full">
+                                <p class="p-3 text-sm text-gray-500 italic text-center bg-white border-t border-gray-100">Figure 2: Dashboard Overview and Search.</p>
+                            </div>
+                        </section>
+
+                        <!-- Creating Postmortem -->
+                        <section id="creating">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">4</span>
+                                Managing Postmortems
+                            </h2>
+                            <p class="text-gray-600 mb-6">
+                                Click <strong>"Create New Postmortem"</strong> to begin. You'll need to provide basic incident data, including title, date, type (Local, Major, Orchestrated P1), and references to external systems.
+                            </p>
+                            <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50 mb-6">
+                                <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.50.50.png" alt="Create Postmortem" class="w-full">
+                                <p class="p-3 text-sm text-gray-500 italic text-center bg-white border-t border-gray-100">Figure 3: Incident creation form.</p>
+                            </div>
+                        </section>
+
+                        <!-- Analysis -->
+                        <section id="analysis">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">5</span>
+                                In-Depth Incident Analysis
+                            </h2>
+                            <div class="space-y-8">
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Timeline & Details</h3>
+                                    <p class="text-gray-600 mb-4">The details view is where you manage the timeline, analyze layers, and document holes. Every postmortem starts with a set of 10 standard defense layers.</p>
+                                    <div class="grid md:grid-cols-2 gap-4">
+                                        <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                            <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.50.59.png" alt="Postmortem Details" class="w-full">
+                                        </div>
+                                        <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                            <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.06.png" alt="Timeline Management" class="w-full">
+                                        </div>
+                                    </div>
+                                    <p class="mt-2 text-sm text-gray-500 italic">Figure 4 & 5: Postmortem details view and Timeline management.</p>
+                                </div>
+
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Cheese Layers & Holes</h3>
+                                    <p class="text-gray-600 mb-4">Analyze each layer to identify where the defense failed. Add "Holes" to document these specific failures and assign remedial actions.</p>
+                                    <div class="grid md:grid-cols-2 gap-4">
+                                        <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                            <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.19.png" alt="Cheese Layers Analysis" class="w-full">
+                                        </div>
+                                        <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                            <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.26.png" alt="Hole Identification" class="w-full">
+                                        </div>
+                                    </div>
+                                    <p class="mt-2 text-sm text-gray-500 italic">Figure 6 & 7: Analyzing layers and identifying holes.</p>
+                                </div>
+
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Guiding Questions</h3>
+                                    <p class="text-gray-600 mb-4">Use the Questions tab to help stimulate deeper analysis and document your thought process.</p>
+                                    <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50 max-w-2xl mx-auto">
+                                        <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.32.png" alt="Guiding Questions" class="w-full">
+                                        <p class="p-3 text-sm text-gray-500 italic text-center bg-white border-t border-gray-100">Figure 8: Structured analysis through guiding questions.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Stories -->
+                        <section id="stories">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">6</span>
+                                Remedial Actions (Stories)
+                            </h2>
+                            <p class="text-gray-600 mb-6">
+                                A postmortem is only successful if it leads to improvement. "Stories" are the mechanism for this. Link holes to specific tasks in platforms like Jira, ServiceNow, or Azure DevOps.
+                            </p>
+                            <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50 mb-6">
+                                <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.37.png" alt="Remedial Stories" class="w-full">
+                                <p class="p-3 text-sm text-gray-500 italic text-center bg-white border-t border-gray-100">Figure 9: Remedial stories management.</p>
+                            </div>
+                        </section>
+
+                        <!-- Administration -->
+                        <section id="admin">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">7</span>
+                                Administration
+                            </h2>
+                            <p class="text-gray-600 mb-6">Admin users can manage system-wide settings, including users, data sources, and report templates.</p>
+                            <div class="grid md:grid-cols-3 gap-4">
+                                <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                    <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.50.png" alt="User Management" class="h-40 w-full object-cover">
+                                    <p class="p-2 text-xs text-center bg-white">Users</p>
+                                </div>
+                                <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                    <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.55.png" alt="Data Sources" class="h-40 w-full object-cover">
+                                    <p class="p-2 text-xs text-center bg-white">Data Sources</p>
+                                </div>
+                                <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                    <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.52.04.png" alt="Report Templates" class="h-40 w-full object-cover">
+                                    <p class="p-2 text-xs text-center bg-white">Templates</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- API GUIDE SECTION -->
+                    <div th:if="${currentSection == 'api'}" class="space-y-12">
+                        <header class="border-b border-gray-100 pb-6">
+                            <h1 class="text-3xl font-bold text-gray-900">MeloPost API Documentation</h1>
+                            <p class="mt-2 text-gray-600 text-lg">Programmatic access to postmortems and administrative tasks.</p>
+                        </header>
+
+                        <section>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Base URL</h2>
+                            <code class="bg-gray-100 px-4 py-2 rounded text-blue-700 font-mono block">http://localhost:8080</code>
+                        </section>
+
+                        <!-- Full API Reference -->
+                        <section>
+                            <h3 class="text-xl font-bold text-gray-800 mb-4 border-l-4 border-blue-500 pl-3">Full API Reference</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endpoint</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <th:block th:each="api : ${apiEndpoints}">
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <span th:if="${api.method == 'GET'}" class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">GET</span>
+                                                    <span th:if="${api.method == 'POST'}" class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">POST</span>
+                                                    <span th:if="${api.method == 'PUT'}" class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">PUT</span>
+                                                    <span th:if="${api.method == 'DELETE'}" class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">DELETE</span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-700" th:text="${api.url}">/api/xxx</td>
+                                                <td class="px-6 py-4 text-sm text-gray-600" th:text="${api.description}">Description</td>
+                                            </tr>
+                                            <tr th:if="${api.exampleJson != null and api.exampleJson != ''}">
+                                                <td colspan="3" class="px-6 py-4 bg-gray-50">
+                                                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Example JSON Response / Request</div>
+                                                    <pre class="p-4 bg-gray-900 text-gray-100 rounded text-xs overflow-x-auto whitespace-pre-wrap font-mono shadow-inner border border-gray-700" th:text="${api.exampleJson}">{}</pre>
+                                                </td>
+                                            </tr>
+                                        </th:block>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- DATABASE GUIDE SECTION -->
+                    <div th:if="${currentSection == 'database'}" class="space-y-12">
+                        <header class="border-b border-gray-100 pb-6">
+                            <h1 class="text-3xl font-bold text-gray-900">Database Schema Guide</h1>
+                            <p class="mt-2 text-gray-600 text-lg">Comprehensive overview of the MeloPost data model.</p>
+                        </header>
+
+                        <div class="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                            <h2 class="text-xl font-bold text-blue-800 mb-2">Overview</h2>
+                            <p class="text-blue-700 leading-relaxed">
+                                MeloPost uses an H2 file-based database with Hibernate/JPA. The schema is optimized for tracking incident histories and the Swiss Cheese Model of analysis.
+                            </p>
+                        </div>
+
+                        <!-- Full Database Reference -->
+                        <section class="space-y-8">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-l-4 border-blue-500 pl-3">Full Database Reference</h2>
+                            
+                            <div th:each="table : ${databaseTables}" class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                                    <h3 class="text-lg font-bold text-gray-800">
+                                        Table: <code class="text-blue-600 bg-blue-100 px-2 py-1 rounded" th:text="${table.name}">table_name</code>
+                                    </h3>
+                                    <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium" th:text="${table.rowCount + ' rows'}">0 rows</span>
+                                </div>
+                                <div class="p-6">
+                                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Columns</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        <span th:each="col : ${table.columns}" 
+                                              class="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm font-mono border border-gray-200"
+                                              th:text="${col}">column_name</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

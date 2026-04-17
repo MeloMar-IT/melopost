@@ -1,6 +1,8 @@
 package com.melomarit.melopost.controller;
 
+import com.melomarit.melopost.dto.PostmortemSearchResultDTO;
 import com.melomarit.melopost.model.Postmortem;
+import com.melomarit.melopost.service.DocumentImportService;
 import com.melomarit.melopost.service.PostmortemService;
 import com.melomarit.melopost.service.ReportService;
 import lombok.RequiredArgsConstructor;
@@ -8,17 +10,32 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/postmortems")
 public class PostmortemController {
     private final PostmortemService service;
     private final ReportService reportService;
+    private final DocumentImportService importService;
 
-    public PostmortemController(PostmortemService service, ReportService reportService) {
+    public PostmortemController(PostmortemService service, ReportService reportService, DocumentImportService importService) {
         this.service = service;
         this.reportService = reportService;
+        this.importService = importService;
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<Postmortem> importFromDocument(@RequestParam("file") MultipartFile file) {
+        try {
+            Postmortem pm = importService.importFromDocument(file);
+            return ResponseEntity.ok(pm);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @GetMapping
@@ -32,8 +49,12 @@ public class PostmortemController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Postmortem> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(service.findById(id));
+    public ResponseEntity<Postmortem> getById(@PathVariable UUID id) {
+        try {
+            return ResponseEntity.ok(service.findById(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping
@@ -42,7 +63,7 @@ public class PostmortemController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Postmortem> update(@PathVariable Long id, @RequestBody Postmortem postmortem) {
+    public ResponseEntity<Postmortem> update(@PathVariable UUID id, @RequestBody Postmortem postmortem) {
         try {
             Postmortem existing = service.findById(id);
             if (postmortem.getTitle() != null) existing.setTitle(postmortem.getTitle());
@@ -60,25 +81,34 @@ public class PostmortemController {
             if (postmortem.getNote() != null) existing.setNote(postmortem.getNote());
             
             if (postmortem.getTags() != null) {
+                if (existing.getTags() == null) {
+                    existing.setTags(new java.util.ArrayList<>());
+                }
                 existing.getTags().clear();
                 existing.getTags().addAll(postmortem.getTags());
             }
 
             if (postmortem.getLayers() != null) {
+                if (existing.getLayers() == null) {
+                    existing.setLayers(new java.util.ArrayList<>());
+                }
                 existing.getLayers().clear();
                 existing.getLayers().addAll(postmortem.getLayers());
             }
             if (postmortem.getTimelineEvents() != null) {
+                if (existing.getTimelineEvents() == null) {
+                    existing.setTimelineEvents(new java.util.ArrayList<>());
+                }
                 existing.getTimelineEvents().clear();
                 existing.getTimelineEvents().addAll(postmortem.getTimelineEvents());
             }
 
             if (postmortem.getQuestions() != null) {
+                if (existing.getQuestions() == null) {
+                    existing.setQuestions(new java.util.ArrayList<>());
+                }
                 existing.getQuestions().clear();
                 existing.getQuestions().addAll(postmortem.getQuestions());
-                for (var q : existing.getQuestions()) {
-                    q.setPostmortem(existing);
-                }
             }
             
             return ResponseEntity.ok(service.save(existing));
@@ -88,18 +118,18 @@ public class PostmortemController {
     }
 
     @GetMapping("/search")
-    public List<Postmortem> search(@RequestParam String keyword) {
+    public List<PostmortemSearchResultDTO> search(@RequestParam String keyword) {
         return service.search(keyword);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/report")
-    public ResponseEntity<byte[]> downloadReport(@PathVariable Long id) {
+    public ResponseEntity<byte[]> downloadReport(@PathVariable UUID id) {
         try {
             Postmortem postmortem = service.findById(id);
             byte[] pdfBytes = reportService.generatePostmortemPdf(postmortem);

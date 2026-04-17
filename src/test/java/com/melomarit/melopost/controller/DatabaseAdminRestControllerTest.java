@@ -1,19 +1,29 @@
 package com.melomarit.melopost.controller;
 
+import com.datastax.oss.driver.api.core.CqlIdentifier;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.ColumnDefinition;
+import com.datastax.oss.driver.api.core.cql.ColumnDefinitions;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
+import com.datastax.oss.driver.api.core.type.UserDefinedType;
+import com.datastax.oss.driver.api.core.cql.ExecutionInfo;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
@@ -29,51 +39,99 @@ public class DatabaseAdminRestControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private JdbcTemplate jdbcTemplate;
+    @MockitoBean
+    private CqlSession session;
 
     @Test
     @WithMockUser(roles = "ADMIN")
     public void testGetTables() throws Exception {
-        when(jdbcTemplate.queryForList(anyString(), eq(String.class)))
-                .thenReturn(Collections.singletonList("USERS"));
-        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class)))
-                .thenReturn(10);
-        when(jdbcTemplate.queryForList(anyString(), eq(String.class), anyString()))
-                .thenReturn(Collections.singletonList("ID"));
+        CqlIdentifier keyspace = CqlIdentifier.fromInternal("melopost");
+        when(session.getKeyspace()).thenReturn(Optional.of(keyspace));
+        
+        Metadata metadata = mock(Metadata.class);
+        when(session.getMetadata()).thenReturn(metadata);
+        
+        KeyspaceMetadata keyspaceMetadata = mock(KeyspaceMetadata.class);
+        when(metadata.getKeyspace(keyspace)).thenReturn(Optional.of(keyspaceMetadata));
+        
+        TableMetadata tableMetadata = mock(TableMetadata.class);
+        CqlIdentifier tableName = CqlIdentifier.fromInternal("USERS");
+        when(tableMetadata.getName()).thenReturn(tableName);
+        when(keyspaceMetadata.getTables()).thenReturn(Collections.singletonMap(tableName, tableMetadata));
+        
+        // Mock UDTs
+        UserDefinedType udt = mock(UserDefinedType.class);
+        CqlIdentifier udtName = CqlIdentifier.fromInternal("cheese_layer");
+        when(udt.getName()).thenReturn(udtName);
+        when(udt.getFieldNames()).thenReturn(Collections.emptyList());
+        when(keyspaceMetadata.getUserDefinedTypes()).thenReturn(Collections.singletonMap(udtName, udt));
+        when(keyspaceMetadata.getUserDefinedType(anyString())).thenReturn(Optional.of(udt));
+        when(keyspaceMetadata.getUserDefinedType(any(CqlIdentifier.class))).thenReturn(Optional.of(udt));
 
+        when(keyspaceMetadata.getTable(anyString())).thenReturn(Optional.of(tableMetadata));
+        when(keyspaceMetadata.getTable(any(CqlIdentifier.class))).thenReturn(Optional.of(tableMetadata));
+        when(metadata.getKeyspace(any(CqlIdentifier.class))).thenReturn(Optional.of(keyspaceMetadata));
+        when(metadata.getKeyspace(anyString())).thenReturn(Optional.of(keyspaceMetadata));
+        
+        ResultSet rs = mock(ResultSet.class);
+        when(session.execute(anyString())).thenReturn(rs);
+        Row row = mock(Row.class);
+        when(rs.one()).thenReturn(row);
+        when(row.getLong(0)).thenReturn(10L);
+
+        // Test without counts (explicitly false)
+        mockMvc.perform(get("/api/admin/database/tables?includeCounts=false"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("USERS"))
+                .andExpect(jsonPath("$[0].rowCount").value(org.hamcrest.Matchers.nullValue()));
+
+        // Test with counts (default is now true)
         mockMvc.perform(get("/api/admin/database/tables"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("USERS"))
-                .andExpect(jsonPath("$[0].rowCount").value(10))
-                .andExpect(jsonPath("$[0].columns[0]").value("ID"));
+                .andExpect(jsonPath("$[0].rowCount").value(10));
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    public void testExecuteQuery() throws Exception {
-        // Mock a SELECT result
-        when(jdbcTemplate.query(anyString(), any(ResultSetExtractor.class))).thenAnswer(invocation -> {
-            ResultSetExtractor<Object> extractor = invocation.getArgument(1);
-            ResultSet rs = mock(ResultSet.class);
-            ResultSetMetaData metaData = mock(ResultSetMetaData.class);
-            when(rs.getMetaData()).thenReturn(metaData);
-            when(metaData.getColumnCount()).thenReturn(1);
-            when(metaData.getColumnName(1)).thenReturn("ID");
-            
-            // Simulating one row
-            when(rs.next()).thenReturn(true).thenReturn(false);
-            when(rs.getObject(1)).thenReturn(1L);
-            
-            return extractor.extractData(rs);
-        });
+    public void testGetTableInfoForCheeseLayer() throws Exception {
+        CqlIdentifier keyspace = CqlIdentifier.fromInternal("melopost");
+        when(session.getKeyspace()).thenReturn(Optional.of(keyspace));
+        
+        Metadata metadata = mock(Metadata.class);
+        when(session.getMetadata()).thenReturn(metadata);
+        
+        KeyspaceMetadata keyspaceMetadata = mock(KeyspaceMetadata.class);
+        when(metadata.getKeyspace(keyspace)).thenReturn(Optional.of(keyspaceMetadata));
+        when(metadata.getKeyspace(anyString())).thenReturn(Optional.of(keyspaceMetadata));
+        when(metadata.getKeyspace(any(CqlIdentifier.class))).thenReturn(Optional.of(keyspaceMetadata));
+        when(keyspaceMetadata.getTable(anyString())).thenReturn(Optional.empty());
+        when(keyspaceMetadata.getTable(any(CqlIdentifier.class))).thenReturn(Optional.empty());
+        
+        UserDefinedType udt = mock(UserDefinedType.class);
+        CqlIdentifier udtName = CqlIdentifier.fromInternal("cheese_layer");
+        when(udt.getFieldNames()).thenReturn(Collections.singletonList(CqlIdentifier.fromInternal("name")));
+        when(udt.getFieldTypes()).thenReturn(Collections.singletonList(com.datastax.oss.driver.api.core.type.DataTypes.TEXT));
+        when(keyspaceMetadata.getUserDefinedType("cheese_layer")).thenReturn(Optional.of(udt));
+        when(keyspaceMetadata.getUserDefinedType(CqlIdentifier.fromInternal("cheese_layer"))).thenReturn(Optional.of(udt));
 
-        mockMvc.perform(post("/api/admin/database/query")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"sql\": \"SELECT * FROM USERS\"}")
-                        .with(csrf()))
+        ResultSet rs = mock(ResultSet.class);
+        when(session.execute(anyString())).thenReturn(rs);
+        
+        Row row = mock(Row.class);
+        com.datastax.oss.driver.api.core.data.UdtValue udtValue = mock(com.datastax.oss.driver.api.core.data.UdtValue.class);
+        when(udtValue.getType()).thenReturn(udt);
+        when(udtValue.getString("name")).thenReturn("Test Layer");
+        when(udtValue.getObject(any(CqlIdentifier.class))).thenReturn("Test Layer");
+        
+        when(row.getList("layers", com.datastax.oss.driver.api.core.data.UdtValue.class)).thenReturn(Collections.singletonList(udtValue));
+        when(rs.iterator()).thenReturn(Collections.singletonList(row).iterator());
+
+        mockMvc.perform(get("/api/admin/database/table/cheese_layer"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.columns[0]").value("ID"))
-                .andExpect(jsonPath("$.rows[0][0]").value(1));
+                .andExpect(jsonPath("$.name").value("cheese_layer"))
+                .andExpect(jsonPath("$.type").value("TYPE"))
+                .andExpect(jsonPath("$.data.rows[0][0]").value("Test Layer"))
+                .andExpect(jsonPath("$.data.message").value(org.hamcrest.Matchers.containsString("Found 1 unique instances")));
     }
 }

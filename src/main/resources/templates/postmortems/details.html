@@ -4,6 +4,29 @@
       layout:decorate="~{fragments/layout}">
 <head>
     <title th:text="${postmortem.title}"></title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ 
+            startOnLoad: false, 
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#e0f2fe',
+                primaryTextColor: '#0369a1',
+                primaryBorderColor: '#bae6fd',
+                lineColor: '#3b82f6',
+                secondaryColor: '#f0fdf4',
+                tertiaryColor: '#fafafa',
+                // Timeline specific colors
+                sectionBkgColor: '#E0F2FE',
+                sectionBkgColor2: '#F0FDF4',
+                sectionBkgColor3: '#FEF9C3',
+                sectionBkgColor4: '#FFEDD5',
+                sectionBkgColor5: '#F3E8FF'
+            },
+            securityLevel: 'loose'
+        });
+        window.mermaid = mermaid;
+    </script>
 </head>
 <body>
     <div layout:fragment="header-title">
@@ -16,6 +39,12 @@
     </div>
 
     <div layout:fragment="content">
+        <!-- Error alert -->
+        <div th:if="${param.error != null and param.error[0] == 'locked'}" class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center shadow-sm">
+            <i data-lucide="alert-circle" class="w-5 h-5 mr-3"></i>
+            <p class="text-sm font-medium">This postmortem is published and locked. Only administrators can make changes.</p>
+        </div>
+
         <!-- Toast Notification -->
         <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 z-[100]">
             <div class="bg-gray-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center space-x-3">
@@ -29,6 +58,13 @@
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 mb-2" th:text="${postmortem.title}">Incident Title</h1>
                 <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                          th:classappend="${postmortem.status == 'Published' ? 'bg-green-100 text-green-800' : 
+                                         (postmortem.status == 'Actioned' ? 'bg-blue-100 text-blue-800' : 
+                                         (postmortem.status == 'In Analysis' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'))}">
+                        <i data-lucide="info" class="w-4 h-4 mr-1"></i>
+                        <span th:text="${postmortem.status ?: 'Triggered'}">Status</span>
+                    </span>
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                         <i data-lucide="tag" class="w-4 h-4 mr-1"></i>
                         <span th:text="${postmortem.incidentSource}">Source</span>
@@ -44,7 +80,7 @@
                     <span th:each="tag : ${postmortem.tags}" th:if="${!#strings.isEmpty(tag)}" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                         <i data-lucide="tag" class="w-4 h-4 mr-1"></i>
                         <span th:text="${tag}">Tag</span>
-                        <form th:action="@{/postmortems/{id}/tags/remove(id=${postmortem.id})}" method="post" class="inline-flex ml-1">
+                        <form th:action="@{/postmortems/{id}/tags/remove(id=${postmortem.uuid})}" method="post" class="inline-flex ml-1">
                             <input type="hidden" name="tag" th:value="${tag}">
                             <button type="submit" class="hover:text-red-600 transition-colors focus:outline-none">
                                 <i data-lucide="x" class="w-3 h-3"></i>
@@ -52,7 +88,7 @@
                         </form>
                     </span>
 
-                    <form th:action="@{/postmortems/{id}/tags/add(id=${postmortem.id})}" method="post" class="inline-flex items-center ml-2 bg-white rounded-full border border-gray-200 px-2 py-0.5 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all shadow-sm">
+                    <form th:action="@{/postmortems/{id}/tags/add(id=${postmortem.uuid})}" method="post" class="inline-flex items-center ml-2 bg-white rounded-full border border-gray-200 px-2 py-0.5 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all shadow-sm">
                         <input type="text" name="tag" placeholder="Add tag" 
                                class="bg-transparent border-none outline-none text-xs text-gray-600 w-16 focus:w-24 transition-all" required>
                         <button type="submit" class="text-blue-600 hover:text-blue-800 p-0.5">
@@ -62,18 +98,23 @@
                 </div>
             </div>
             <div class="flex space-x-3">
-                <a th:href="@{/postmortems/{id}/note(id=${postmortem.id})}" class="inline-flex items-center px-4 py-2 bg-amber-500 text-sm font-medium rounded-lg text-white hover:bg-amber-600 shadow-sm transition-colors">
+                <a th:href="@{/postmortems/{id}/note(id=${postmortem.uuid})}" class="inline-flex items-center px-4 py-2 bg-amber-500 text-sm font-medium rounded-lg text-white hover:bg-amber-600 shadow-sm transition-colors">
                     <i data-lucide="sticky-note" class="w-4 h-4 mr-2"></i>
-                    Note
+                    Postmortem Note
                 </a>
-                <a th:href="@{/postmortems/{id}/report(id=${postmortem.id})}" class="inline-flex items-center px-4 py-2 bg-red-600 text-sm font-medium rounded-lg text-white hover:bg-red-700 shadow-sm transition-colors">
+                
+                <a th:href="@{/postmortems/{id}/report(id=${postmortem.uuid})}" class="inline-flex items-center px-4 py-2 bg-red-600 text-sm font-medium rounded-lg text-white hover:bg-red-700 shadow-sm transition-colors">
                     <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
                     Download PDF
                 </a>
-                <a th:href="@{/postmortems/edit/{id}(id=${postmortem.id})}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-50 shadow-sm transition-colors">
+                <a th:if="${postmortem.status != 'Published'}" th:href="@{/postmortems/edit/{id}(id=${postmortem.uuid})}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-50 shadow-sm transition-colors">
                     <i data-lucide="edit-3" class="w-4 h-4 mr-2"></i>
                     Edit
                 </a>
+                <span th:if="${postmortem.status == 'Published'}" class="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-200 text-sm font-medium rounded-lg text-gray-400 cursor-not-allowed shadow-sm" title="Postmortem is published and locked">
+                    <i data-lucide="lock" class="w-4 h-4 mr-2"></i>
+                    Locked
+                </span>
                 <div class="relative inline-block text-left" id="shareDropdown">
                     <button type="button" onclick="toggleShareDropdown()" class="inline-flex items-center px-4 py-2 bg-blue-600 text-sm font-medium rounded-lg text-white hover:bg-blue-700 shadow-sm transition-colors">
                         <i data-lucide="share-2" class="w-4 h-4 mr-2"></i>
@@ -109,24 +150,24 @@
                     </p>
                 </section>
 
-                <!-- Analysis Notes -->
-                <section th:if="${postmortem.note != null && !postmortem.note.isEmpty()}" class="bg-amber-50 rounded-xl shadow-sm border border-amber-100 p-6">
-                    <h3 class="text-lg font-bold text-amber-900 mb-4 flex items-center">
-                        <i data-lucide="sticky-note" class="w-5 h-5 mr-2 text-amber-500"></i>
-                        Analysis Notes
-                    </h3>
-                    <div class="text-gray-700 leading-relaxed whitespace-pre-wrap" th:text="${postmortem.note}">
-                        Detailed analysis notes...
-                    </div>
-                </section>
-
                 <!-- Timeline -->
                 <section th:if="${!postmortem.timelineEvents.isEmpty()}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                        <i data-lucide="clock" class="w-5 h-5 mr-2 text-amber-500"></i>
-                        Incident Timeline
-                    </h3>
-                    <div class="relative pl-8 space-y-8 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                            <i data-lucide="clock" class="w-5 h-5 mr-2 text-amber-500"></i>
+                            Incident Timeline
+                        </h3>
+                        <div class="flex space-x-2">
+                            <button onclick="toggleTimelineView('list')" id="btnTimelineList" class="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" title="List View">
+                                <i data-lucide="list" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="toggleTimelineView('graph')" id="btnTimelineGraph" class="p-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors" title="Graphical View">
+                                <i data-lucide="line-chart" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="timelineListView" class="hidden relative pl-8 space-y-8 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
                         <div th:each="event : ${postmortem.timelineEvents}" class="relative">
                             <div class="absolute -left-[27px] top-1.5 w-4 h-4 rounded-full bg-white border-4 border-blue-500"></div>
                             <div class="flex flex-col md:flex-row md:items-baseline md:space-x-4">
@@ -134,6 +175,10 @@
                                 <p class="text-gray-600" th:text="${event.description}">Event description</p>
                             </div>
                         </div>
+                    </div>
+
+                    <div id="timelineGraphView" class="w-full overflow-x-auto">
+                        <pre class="mermaid bg-white p-4 flex justify-center" id="mermaidContainer"></pre>
                     </div>
                 </section>
 
@@ -144,7 +189,110 @@
                         Analysis: Swiss Cheese Model
                     </h3>
                     
-                    <div th:each="layer : ${postmortem.layers}" th:if="${!layer.holes.isEmpty()}" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <th:block th:each="layerName : ${T(com.melomarit.melopost.model.Postmortem).STANDARD_LAYERS}">
+                    <div th:with="currentLayer=${postmortem.layers?.?[name == '__${layerName}__']}"
+                         class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                        <div class="bg-gray-50 px-6 py-3 border-b border-gray-100">
+                            <h4 class="font-bold text-gray-700 uppercase tracking-wider text-xs" th:text="${layerName}">Layer Name</h4>
+                        </div>
+                        <div class="p-6 space-y-6">
+                            <!-- Current Postmortem Holes -->
+                            <div th:each="layer : ${currentLayer}">
+                                <div th:each="hole : ${layer.holes}" class="space-y-4 mb-6 last:mb-0">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center space-x-2 mb-1">
+                                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                                <h5 class="font-bold text-gray-900">Root Cause / Hole</h5>
+                                            </div>
+                                            <p class="text-gray-600 ml-4" th:text="${hole.description}">Hole description</p>
+                                            <div class="flex flex-wrap gap-1 mt-2 ml-4">
+                                                <span th:each="tag : ${hole.tags}" th:if="${!#strings.isEmpty(tag)}" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
+                                                    <i data-lucide="tag" class="w-3 h-3 mr-1"></i>
+                                                    <span th:text="${tag}">Tag</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <span class="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded" th:text="${hole.teamName}">Team</span>
+                                    </div>
+                                    
+                                    <div class="ml-4 p-4 bg-green-50 rounded-lg border border-green-100">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <i data-lucide="shield-check" class="w-4 h-4 text-green-600"></i>
+                                            <h5 class="text-sm font-bold text-green-900">Remedial Action</h5>
+                                        </div>
+                                        <p class="text-sm text-green-800 mb-2" th:text="${hole.remedialAction}">Action</p>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-200 text-green-900" th:text="${hole.actionStatus}">Status</span>
+                                    </div>
+
+                                    <div th:if="${hole.story != null}" class="ml-4 p-4 bg-blue-50 rounded-lg border border-blue-100 flex items-center justify-between">
+                                        <div>
+                                            <div class="flex items-center space-x-2 mb-1">
+                                                <i data-lucide="external-link" class="w-4 h-4 text-blue-600"></i>
+                                                <span class="text-xs font-bold text-blue-900 uppercase tracking-wide">Linked Story</span>
+                                            </div>
+                                            <div class="flex flex-wrap gap-1 mb-2" th:if="${hole.story.tags != null and !hole.story.tags.empty}">
+                                                <span th:each="tag : ${hole.story.tags}" th:text="${tag}" 
+                                                      class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                                                </span>
+                                            </div>
+                                            <p class="text-sm text-blue-800" th:text="${hole.story.whatToFix}">What to fix</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-xs font-bold text-blue-900" th:text="${hole.story.storyNumber}">#123</p>
+                                            <p class="text-[10px] text-blue-600" th:text="${hole.story.priority}">Priority</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Linked Postmortem Holes -->
+                            <div th:each="linkedPm : ${postmortem.localPostmortems}" class="mt-4 first:mt-0">
+                                <div th:each="lLayer : ${linkedPm.layers}" th:if="${lLayer.name == layerName}">
+                                    <div th:each="hole : ${lLayer.holes}" class="space-y-4 pt-6 border-t border-gray-100 mt-6 first:mt-0 first:border-0 first:pt-0">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1">
+                                                <div class="flex items-center space-x-2 mb-1">
+                                                    <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                                                    <h5 class="font-bold text-blue-900 italic">Linked Root Cause (from <span th:text="${'#' + linkedPm.uuid.toString().substring(0,8)}">#1</span>)</h5>
+                                                </div>
+                                                <p class="text-gray-600 ml-4 italic" th:text="${hole.description}">Hole description</p>
+                                            </div>
+                                            <span class="text-xs font-medium text-blue-400 bg-blue-50 px-2 py-1 rounded" th:text="${hole.teamName}">Team</span>
+                                        </div>
+                                        
+                                        <div class="ml-4 p-4 bg-blue-50/50 rounded-lg border border-blue-100 border-dashed">
+                                            <div class="flex items-center space-x-2 mb-2">
+                                                <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i>
+                                                <h5 class="text-sm font-bold text-blue-900 italic">Linked Remedial Action</h5>
+                                            </div>
+                                            <p class="text-sm text-blue-800 mb-2 italic" th:text="${hole.remedialAction}">Action</p>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-900" th:text="${hole.actionStatus}">Status</span>
+                                        </div>
+
+                                        <div th:if="${hole.story != null}" class="ml-4 p-4 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
+                                            <div>
+                                                <div class="flex items-center space-x-2 mb-1">
+                                                    <i data-lucide="external-link" class="w-4 h-4 text-slate-500"></i>
+                                                    <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Linked Story</span>
+                                                </div>
+                                                <p class="text-sm text-slate-600 italic" th:text="${hole.story.whatToFix}">What to fix</p>
+                                            </div>
+                                            <div class="text-right">
+                                                <p class="text-xs font-bold text-slate-700" th:text="${hole.story.storyNumber}">#123</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </th:block>
+                    
+                    <!-- Handle Custom Layers (not in STANDARD_LAYERS) -->
+                    <div th:each="layer : ${postmortem.layers}" 
+                         th:if="${layer.name != null and !T(com.melomarit.melopost.model.Postmortem).STANDARD_LAYERS.contains(layer.name) and layer.holes != null and !layer.holes.isEmpty()}"
+                         class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
                         <div class="bg-gray-50 px-6 py-3 border-b border-gray-100">
                             <h4 class="font-bold text-gray-700 uppercase tracking-wider text-xs" th:text="${layer.name}">Layer Name</h4>
                         </div>
@@ -157,12 +305,6 @@
                                             <h5 class="font-bold text-gray-900">Root Cause / Hole</h5>
                                         </div>
                                         <p class="text-gray-600 ml-4" th:text="${hole.description}">Hole description</p>
-                                        <div class="flex flex-wrap gap-1 mt-2 ml-4">
-                                            <span th:each="tag : ${hole.tags}" th:if="${!#strings.isEmpty(tag)}" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
-                                                <i data-lucide="tag" class="w-3 h-3 mr-1"></i>
-                                                <span th:text="${tag}">Tag</span>
-                                            </span>
-                                        </div>
                                     </div>
                                     <span class="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded" th:text="${hole.teamName}">Team</span>
                                 </div>
@@ -182,16 +324,10 @@
                                             <i data-lucide="external-link" class="w-4 h-4 text-blue-600"></i>
                                             <span class="text-xs font-bold text-blue-900 uppercase tracking-wide">Linked Story</span>
                                         </div>
-                                        <div class="flex flex-wrap gap-1 mb-2" th:if="${hole.story.tags != null && !hole.story.tags.empty}">
-                                            <span th:each="tag : ${hole.story.tags}" th:text="${tag}" 
-                                                  class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
-                                            </span>
-                                        </div>
                                         <p class="text-sm text-blue-800" th:text="${hole.story.whatToFix}">What to fix</p>
                                     </div>
                                     <div class="text-right">
                                         <p class="text-xs font-bold text-blue-900" th:text="${hole.story.storyNumber}">#123</p>
-                                        <p class="text-[10px] text-blue-600" th:text="${hole.story.priority}">Priority</p>
                                     </div>
                                 </div>
                             </div>
@@ -202,6 +338,41 @@
 
             <!-- Right Column: Sidebar info -->
             <div class="space-y-8">
+                <!-- Linked Postmortems Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Linked Postmortems</h3>
+                        <div class="flex items-center">
+                            <form th:action="@{/postmortems/{id}/link(id=${postmortem.uuid})}" method="post" class="flex items-center space-x-1">
+                                <select name="linkedId" class="w-24 text-[10px] border-gray-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 py-1" required>
+                                    <option value="" disabled selected>Link...</option>
+                                    <option th:each="pm : ${allPostmortems}" 
+                                            th:if="${pm.uuid != postmortem.uuid and (postmortem.localPostmortemUuids == null or !postmortem.localPostmortemUuids.contains(pm.uuid))}"
+                                            th:value="${pm.uuid}" 
+                                            th:text="${'#' + pm.uuid.toString().substring(0,8) + ' - ' + pm.title}">#1 - Title</option>
+                                </select>
+                                <button type="submit" class="flex-shrink-0 inline-flex items-center px-2 py-1 bg-blue-600 text-[10px] font-medium rounded-lg text-white hover:bg-blue-700 transition-colors">
+                                    Link
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <div th:if="${linkedPostmortems.isEmpty()}" class="text-xs text-gray-400 italic">
+                            No postmortems linked yet.
+                        </div>
+                        <div th:each="lp : ${linkedPostmortems}" class="inline-flex items-center bg-gray-50 border border-gray-200 rounded-full px-3 py-1 group">
+                            <a th:href="@{/postmortems/details/{id}(id=${lp.uuid})}" class="text-xs font-bold text-blue-600 hover:text-blue-800 mr-2" th:text="${'#' + lp.uuid.toString().substring(0,8)}">#1</a>
+                            <form th:action="@{/postmortems/{id}/unlink(id=${postmortem.uuid})}" method="post" class="inline-flex">
+                                <input type="hidden" name="linkedId" th:value="${lp.uuid}">
+                                <button type="submit" class="text-gray-400 hover:text-red-600 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <i data-lucide="x" class="w-3 h-3"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Metadata Card -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Metadata</h3>
@@ -245,23 +416,7 @@
                     </dl>
                 </div>
 
-                <!-- Linked Local Postmortems Card -->
-                <div th:if="${(postmortem.type == 'Major Post Mortem' || postmortem.type == 'Major Postmortem') && !postmortem.localPostmortems.isEmpty()}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Included Local Postmortems</h3>
-                        <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-bold" th:text="${postmortem.localPostmortems.size()}">0</span>
-                    </div>
-                    <div class="space-y-3">
-                        <a th:each="lp : ${postmortem.localPostmortems}" th:href="@{/postmortems/details/{id}(id=${lp.id})}" 
-                           class="block p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-100">
-                            <p class="text-sm font-bold text-gray-900 truncate" th:text="${lp.title}">Local Postmortem Title</p>
-                            <div class="flex items-center justify-between mt-1">
-                                <span class="text-[10px] text-gray-500" th:text="${lp.incidentRef}">INC-123</span>
-                                <span class="text-[10px] text-gray-400" th:text="${lp.incidentDate != null ? #temporals.format(lp.incidentDate, 'MMM dd, yyyy') : ''}">Date</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
+                <!-- Linked Local Postmortems Card (Removed as it is now at the top) -->
 
                 <!-- Documents Card -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -275,20 +430,20 @@
                         <p class="text-xs text-gray-400 italic">No documents attached yet.</p>
                     </div>
 
-                    <div class="space-y-3 mb-6" th:if="${!postmortem.documents.isEmpty()}">
-                        <div th:each="doc : ${postmortem.documents}" class="group p-3 bg-gray-50 hover:bg-gray-100 rounded-lg flex items-center justify-between transition-colors">
+                    <div class="space-y-3 mb-6" th:if="${!documents.isEmpty()}">
+                        <div th:each="doc : ${documents}" class="group p-3 bg-gray-50 hover:bg-gray-100 rounded-lg flex items-center justify-between transition-colors">
                             <div class="flex items-center min-w-0 mr-3">
                                 <i data-lucide="file" class="w-5 h-5 text-blue-500 mr-2 flex-shrink-0"></i>
                                 <div class="min-w-0">
                                     <p class="text-sm font-medium text-gray-900 truncate" th:text="${doc.fileName}">filename.pdf</p>
-                                    <p class="text-[10px] text-gray-500" th:text="${#numbers.formatInteger(doc.size / 1024, 0) + ' KB • ' + #temporals.format(doc.uploadedAt, 'MMM dd, yyyy')}">1.2 MB • Oct 10, 2023</p>
+                                    <p class="text-[10px] text-gray-500" th:text="${#numbers.formatInteger(doc.size / 1024, 0) + ' KB • ' + (doc.uploadDate != null ? #temporals.format(doc.uploadDate, 'MMM dd, yyyy') : 'N/A')}">1.2 MB • Oct 10, 2023</p>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <a th:href="@{/postmortems/{id}/documents/{docId}/download(id=${postmortem.id}, docId=${doc.id})}" target="_blank" class="p-1 text-gray-400 hover:text-blue-600">
+                                <a th:href="@{/postmortems/{id}/documents/{docId}/download(id=${postmortem.uuid}, docId=${doc.uuid})}" target="_blank" class="p-1 text-gray-400 hover:text-blue-600">
                                     <i data-lucide="external-link" class="w-4 h-4"></i>
                                 </a>
-                                <form th:action="@{/postmortems/{id}/documents/{docId}/delete(id=${postmortem.id}, docId=${doc.id})}" method="post" class="inline">
+                                <form th:action="@{/postmortems/{id}/documents/{docId}/delete(id=${postmortem.uuid}, docId=${doc.uuid})}" method="post" class="inline">
                                     <button type="submit" class="p-1 text-gray-400 hover:text-red-600" onclick="return confirm('Are you sure you want to delete this document?')">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
@@ -297,7 +452,7 @@
                         </div>
                     </div>
 
-                    <form th:action="@{/postmortems/{id}/documents/upload(id=${postmortem.id})}" method="post" enctype="multipart/form-data" class="pt-4 border-t border-gray-50">
+                    <form th:action="@{/postmortems/{id}/documents/upload(id=${postmortem.uuid})}" method="post" enctype="multipart/form-data" class="pt-4 border-t border-gray-50">
                         <label class="block mb-3">
                             <span class="sr-only">Choose file</span>
                             <input type="file" name="file" class="block w-full text-xs text-gray-500
@@ -323,66 +478,66 @@
                     
                     <div class="space-y-6 mb-6">
                         <!-- General Information questions -->
-                        <div th:if="${!#lists.isEmpty(postmortem.questions.?[cheeseLayer == 'General Information' || cheeseLayer == 'General' || cheeseLayer == null || cheeseLayer == ''])}" class="space-y-2">
+                        <div th:if="${!#lists.isEmpty(postmortem.questions?.?[cheeseLayer == 'General Information' or cheeseLayer == 'General' or cheeseLayer == null or cheeseLayer == ''])}" class="space-y-2">
                             <h4 class="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center">
                                 <span>General Information</span>
                                 <span class="ml-2 flex-grow border-t border-blue-50 opacity-40"></span>
                             </h4>
                             <div class="space-y-3">
-                                <div th:each="q : ${postmortem.questions}" th:if="${q.cheeseLayer == 'General Information' || q.cheeseLayer == 'General' || q.cheeseLayer == null || q.cheeseLayer == ''}" class="group p-3 bg-gray-50 rounded-lg relative">
-                                    <form th:action="@{/postmortems/{id}/questions/{qId}/remove(id=${postmortem.id}, qId=${q.id})}" method="post" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div th:each="q : ${postmortem.questions}" th:if="${q.cheeseLayer == 'General Information' or q.cheeseLayer == 'General' or q.cheeseLayer == null or q.cheeseLayer == ''}" class="group p-3 bg-gray-50 rounded-lg relative">
+                                    <form th:action="@{/postmortems/{id}/questions/{qUuid}/remove(id=${postmortem.uuid}, qUuid=${q.uuid})}" method="post" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button type="submit" class="text-gray-400 hover:text-red-500">
                                             <i data-lucide="trash-2" class="w-3 h-3"></i>
                                         </button>
                                     </form>
                                     <p class="text-sm font-medium text-gray-900" th:text="${q.question}">Question?</p>
-                                    <p th:if="${q.answer != null && !q.answer.isEmpty()}" class="text-sm text-gray-600 mt-1 italic border-l-2 border-gray-200 pl-2" th:text="${q.answer}">Answer</p>
+                                    <p th:if="${q.answer != null and !q.answer.isEmpty()}" class="text-sm text-gray-600 mt-1 italic border-l-2 border-gray-200 pl-2" th:text="${q.answer}">Answer</p>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Incident Timeline questions -->
-                        <div th:if="${!#lists.isEmpty(postmortem.questions.?[cheeseLayer == 'Incident Timeline'])}" class="space-y-2">
+                        <div th:if="${!#lists.isEmpty(postmortem.questions?.?[cheeseLayer == 'Incident Timeline'])}" class="space-y-2">
                             <h4 class="text-[10px] font-bold text-amber-600 uppercase tracking-widest flex items-center">
                                 <span>Incident Timeline</span>
                                 <span class="ml-2 flex-grow border-t border-amber-50 opacity-40"></span>
                             </h4>
                             <div class="space-y-3">
                                 <div th:each="q : ${postmortem.questions}" th:if="${q.cheeseLayer == 'Incident Timeline'}" class="group p-3 bg-gray-50 rounded-lg relative">
-                                    <form th:action="@{/postmortems/{id}/questions/{qId}/remove(id=${postmortem.id}, qId=${q.id})}" method="post" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <form th:action="@{/postmortems/{id}/questions/{qUuid}/remove(id=${postmortem.uuid}, qUuid=${q.uuid})}" method="post" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button type="submit" class="text-gray-400 hover:text-red-500">
                                             <i data-lucide="trash-2" class="w-3 h-3"></i>
                                         </button>
                                     </form>
                                     <p class="text-sm font-medium text-gray-900" th:text="${q.question}">Question?</p>
-                                    <p th:if="${q.answer != null && !q.answer.isEmpty()}" class="text-sm text-gray-600 mt-1 italic border-l-2 border-gray-200 pl-2" th:text="${q.answer}">Answer</p>
+                                    <p th:if="${q.answer != null and !q.answer.isEmpty()}" class="text-sm text-gray-600 mt-1 italic border-l-2 border-gray-200 pl-2" th:text="${q.answer}">Answer</p>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Standard layers questions -->
                         <div th:each="layerName : ${T(com.melomarit.melopost.model.Postmortem).STANDARD_LAYERS}" class="space-y-2">
-                            <div th:if="${!#lists.isEmpty(postmortem.questions.?[cheeseLayer == '__${layerName}__'])}">
+                            <div th:if="${!#lists.isEmpty(postmortem.questions?.?[cheeseLayer == '__${layerName}__'])}">
                                 <h4 class="text-[10px] font-bold text-purple-600 uppercase tracking-widest flex items-center">
                                     <span th:text="${layerName}">Layer</span>
                                     <span class="ml-2 flex-grow border-t border-purple-50 opacity-40"></span>
                                 </h4>
                                 <div class="space-y-3">
-                                    <div th:each="q : ${postmortem.questions}" th:if="${q.cheeseLayer == layerName}" class="group p-3 bg-gray-50 rounded-lg relative">
-                                        <form th:action="@{/postmortems/{id}/questions/{qId}/remove(id=${postmortem.id}, qId=${q.id})}" method="post" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div th:each="q : ${postmortem.questions}" th:if="${q.cheeseLayer == layerName}" class="group p-3 bg-gray-50 rounded-lg relative">
+                                    <form th:action="@{/postmortems/{id}/questions/{qUuid}/remove(id=${postmortem.uuid}, qUuid=${q.uuid})}" method="post" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button type="submit" class="text-gray-400 hover:text-red-500">
                                                 <i data-lucide="trash-2" class="w-3 h-3"></i>
                                             </button>
                                         </form>
                                         <p class="text-sm font-medium text-gray-900" th:text="${q.question}">Question?</p>
-                                        <p th:if="${q.answer != null && !q.answer.isEmpty()}" class="text-sm text-gray-600 mt-1 italic border-l-2 border-gray-200 pl-2" th:text="${q.answer}">Answer</p>
+                                        <p th:if="${q.answer != null and !q.answer.isEmpty()}" class="text-sm text-gray-600 mt-1 italic border-l-2 border-gray-200 pl-2" th:text="${q.answer}">Answer</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Custom / Other layers questions -->
-                        <div th:each="customLayer : ${#sets.toSet(postmortem.questions.![cheeseLayer]).?[!T(com.melomarit.melopost.model.Postmortem).STANDARD_LAYERS.contains(#this) && #this != 'General Information' && #this != 'General' && #this != 'Incident Timeline' && #this != null && #this != '']}" 
+                        <div th:each="customLayer : ${#sets.toSet(postmortem.questions != null ? postmortem.questions?.![cheeseLayer] : {}).?[#this != null and !T(com.melomarit.melopost.model.Postmortem).STANDARD_LAYERS.contains(#this) and #this != 'General Information' and #this != 'General' and #this != 'Incident Timeline' and #this != '']}"
                              class="space-y-2">
                             <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center">
                                 <span th:text="${customLayer}">Custom Layer</span>
@@ -390,23 +545,23 @@
                             </h4>
                             <div class="space-y-3">
                                 <div th:each="q : ${postmortem.questions}" th:if="${q.cheeseLayer == customLayer}" class="group p-3 bg-gray-50 rounded-lg relative">
-                                    <form th:action="@{/postmortems/{id}/questions/{qId}/remove(id=${postmortem.id}, qId=${q.id})}" method="post" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <form th:action="@{/postmortems/{id}/questions/{qId}/remove(id=${postmortem.uuid}, qId=${q.uuid})}" method="post" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button type="submit" class="text-gray-400 hover:text-red-500">
                                             <i data-lucide="trash-2" class="w-3 h-3"></i>
                                         </button>
                                     </form>
                                     <p class="text-sm font-medium text-gray-900" th:text="${q.question}">Question?</p>
-                                    <p th:if="${q.answer != null && !q.answer.isEmpty()}" class="text-sm text-gray-600 mt-1 italic border-l-2 border-gray-200 pl-2" th:text="${q.answer}">Answer</p>
+                                    <p th:if="${q.answer != null and !q.answer.isEmpty()}" class="text-sm text-gray-600 mt-1 italic border-l-2 border-gray-200 pl-2" th:text="${q.answer}">Answer</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div th:if="${postmortem.questions.isEmpty()}" class="text-center py-4">
+                        <div th:if="${postmortem.questions == null or postmortem.questions.isEmpty()}" class="text-center py-4">
                             <p class="text-xs text-gray-400 italic">No questions added yet.</p>
                         </div>
                     </div>
 
-                    <form th:action="@{/postmortems/{id}/questions/add(id=${postmortem.id})}" method="post" class="space-y-3 pt-4 border-t border-gray-50">
+                    <form th:action="@{/postmortems/{id}/questions/add(id=${postmortem.uuid})}" method="post" class="space-y-3 pt-4 border-t border-gray-50">
                         <div>
                             <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Slice / Layer</label>
                             <select name="cheeseLayer" class="w-full text-xs border-gray-200 rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
@@ -415,7 +570,7 @@
                                         th:value="${layerName}" th:text="${layerName}">Layer</option>
                                 <!-- Dynamic ones that are not standard -->
                                 <option th:each="layer : ${postmortem.layers}" 
-                                        th:if="${!T(com.melomarit.melopost.model.Postmortem).STANDARD_LAYERS.contains(layer.name)}"
+                                        th:if="${layer.name != null and !T(com.melomarit.melopost.model.Postmortem).STANDARD_LAYERS.contains(layer.name)}"
                                         th:value="${layer.name}" th:text="${layer.name}">Layer</option>
                             </select>
                         </div>
@@ -452,7 +607,8 @@
         </div>
     </div>
     <th:block layout:fragment="script">
-        <script>
+        <script th:inline="javascript">
+        /*<![CDATA[*/
             function toggleShareDropdown() {
                 const menu = document.getElementById('shareMenu');
                 menu.classList.toggle('hidden');
@@ -462,18 +618,18 @@
             window.addEventListener('click', function(e) {
                 const dropdown = document.getElementById('shareDropdown');
                 const menu = document.getElementById('shareMenu');
-                if (!dropdown.contains(e.target)) {
+                if (menu && dropdown && !dropdown.contains(e.target)) {
                     menu.classList.add('hidden');
                 }
             });
 
             function shareViaEmail() {
-                const title = "[[${postmortem.title}]]";
-                const description = "[[${postmortem.description}]]";
-                const incidentRef = "[[${postmortem.incidentRef}]]";
-                const source = "[[${postmortem.incidentSource}]]";
-                const app = "[[${postmortem.storyStore}]]";
-                const tags = "[[${#strings.listJoin(postmortem.tags, ', ')}]]";
+                const title = /*[[${postmortem.title}]]*/ "Postmortem Title";
+                const description = /*[[${postmortem.description}]]*/ "Description";
+                const incidentRef = /*[[${postmortem.incidentRef}]]*/ "INC-000";
+                const source = /*[[${postmortem.incidentSource}]]*/ "Source";
+                const app = /*[[${postmortem.storyStore}]]*/ "App";
+                const tags = /*[[${#strings.listJoin(postmortem.tags, ', ')}]]*/ "";
                 const url = window.location.href;
 
                 let body = `Check out this postmortem: ${url}\n\n`;
@@ -514,6 +670,108 @@
                     toast.classList.add('translate-y-20', 'opacity-0');
                 }, 3000);
             }
+
+            function toggleTimelineView(view) {
+                const listView = document.getElementById('timelineListView');
+                const graphView = document.getElementById('timelineGraphView');
+                const btnList = document.getElementById('btnTimelineList');
+                const btnGraph = document.getElementById('btnTimelineGraph');
+
+                if (view === 'list') {
+                    listView.classList.remove('hidden');
+                    graphView.classList.add('hidden');
+                    btnList.classList.replace('bg-gray-100', 'bg-blue-100');
+                    btnList.classList.replace('text-gray-600', 'text-blue-600');
+                    btnGraph.classList.replace('bg-blue-100', 'bg-gray-100');
+                    btnGraph.classList.replace('text-blue-600', 'text-gray-600');
+                } else {
+                    listView.classList.add('hidden');
+                    graphView.classList.remove('hidden');
+                    btnGraph.classList.replace('bg-gray-100', 'bg-blue-100');
+                    btnGraph.classList.replace('text-blue-600', 'text-blue-600');
+                    btnList.classList.replace('bg-blue-100', 'bg-gray-100');
+                    btnList.classList.replace('text-blue-600', 'text-gray-600');
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const timelineEvents = /*[[${postmortem.timelineEvents}]]*/ [];
+                if (timelineEvents && timelineEvents.length > 0) {
+                    let mermaidSource = "timeline\n    title Incident Timeline\n";
+                    
+                    const groups = {};
+                    timelineEvents.sort((a, b) => new Date(a.eventTime) - new Date(b.eventTime)).forEach(event => {
+                        if (!event.description) return; // Skip events without description
+                        
+                        const date = new Date(event.eventTime);
+                        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                            .replace(/:/g, " ") // Replace colons in date string to avoid Mermaid parsing issues
+                            .replace(/"/g, "") // Remove quotes from date string
+                            .trim();
+                        if (!groups[dateStr]) groups[dateStr] = [];
+                        // Escape quotes and other special characters for Mermaid
+                        const escapedDescription = event.description
+                            .replace(/"/g, "'")
+                            .replace(/:/g, " ") // Colons are delimiters in timeline
+                            .replace(/[()\[\]{}]/g, "") // Remove brackets and curly braces
+                            .replace(/#/g, "")
+                            .replace(/;/g, ",")
+                            .replace(/--/g, "-") // Mermaid can be sensitive to double dashes
+                            .replace(/\n/g, " ") // No newlines allowed in timeline event text
+                            .trim();
+                        if (escapedDescription) {
+                            groups[dateStr].push(`"${escapedDescription}"`);
+                        }
+                    });
+
+                    let hasValidData = false;
+                    for (const [date, events] of Object.entries(groups)) {
+                        if (events.length > 0) {
+                            // Standard timeline format: "Period" : "Event 1" : "Event 2"
+                            // Avoiding 'section' as it causes issues in some Mermaid versions
+                            mermaidSource += `    "${date}" : ${events.join(' : ')}\n`;
+                            hasValidData = true;
+                        }
+                    }
+
+                    if (!hasValidData) return;
+
+                    const container = document.getElementById('mermaidContainer');
+                    if (container) {
+                        container.textContent = mermaidSource;
+                        // Trigger mermaid manually
+                        const renderTimeline = () => {
+                            if (window.mermaid && typeof window.mermaid.run === 'function') {
+                                window.mermaid.run({
+                                    nodes: [container]
+                                }).catch(err => {
+                                    console.error('Mermaid render failed:', err);
+                                    // Fallback display
+                                    container.innerHTML = `<div class="p-4 text-red-600 bg-red-50 rounded-lg border border-red-200">
+                                        <p class="font-bold">Timeline Visualization Error</p>
+                                        <p class="text-sm">Could not render the graphical timeline. Please use the "List View" instead.</p>
+                                        <details class="mt-2 text-xs opacity-75">
+                                            <summary>Error Details</summary>
+                                            <pre class="mt-1 overflow-auto whitespace-pre-wrap">${err.message || err}</pre>
+                                            <pre class="mt-1 overflow-auto whitespace-pre-wrap">${mermaidSource}</pre>
+                                        </details>
+                                    </div>`;
+                                });
+                            } else if (window.mermaid && typeof window.mermaid.render === 'function') {
+                                // Fallback for versions where run() might not be the right method or if it's an older 10.x
+                                window.mermaid.contentLoaded();
+                            } else {
+                                // If mermaid is not yet available, wait a bit
+                                setTimeout(renderTimeline, 200);
+                            }
+                        };
+                        
+                        // Small delay to ensure module script has executed
+                        setTimeout(renderTimeline, 100);
+                    }
+                }
+            });
+                /*]]>*/
         </script>
     </th:block>
 </body>

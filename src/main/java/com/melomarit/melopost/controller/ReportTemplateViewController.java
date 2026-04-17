@@ -6,6 +6,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @Controller
 @RequestMapping("/templates")
 public class ReportTemplateViewController {
@@ -35,13 +37,13 @@ public class ReportTemplateViewController {
     }
 
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model) {
+    public String showEditForm(@PathVariable UUID id, Model model) {
         model.addAttribute("template", service.findById(id).orElseThrow());
         return "templates/form";
     }
 
     @GetMapping("/delete/{id}")
-    public String delete(@PathVariable Long id) {
+    public String delete(@PathVariable UUID id) {
         service.deleteById(id);
         return "redirect:/templates";
     }

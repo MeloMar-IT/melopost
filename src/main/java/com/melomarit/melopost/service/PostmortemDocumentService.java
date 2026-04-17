@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class PostmortemDocumentService {
@@ -22,19 +23,19 @@ public class PostmortemDocumentService {
         return repository.findAll();
     }
 
-    public Optional<PostmortemDocument> findById(Long id) {
+    public Optional<PostmortemDocument> findById(UUID id) {
         return repository.findById(id);
     }
 
-    public List<PostmortemDocument> findByPostmortemId(Long postmortemId) {
-        return repository.findByPostmortemId(postmortemId);
+    public List<PostmortemDocument> findByPostmortemUuid(UUID postmortemUuid) {
+        return repository.findByPostmortemUuid(postmortemUuid);
     }
 
     public PostmortemDocument save(PostmortemDocument document) {
         return repository.save(document);
     }
 
-    public void deleteById(Long id) {
+    public void deleteById(UUID id) {
         repository.deleteById(id);
     }
 
@@ -45,7 +46,8 @@ public class PostmortemDocumentService {
             doc.setContentType(file.getContentType());
             doc.setSize(file.getSize());
             doc.setData(file.getBytes());
-            doc.setPostmortem(postmortem);
+            doc.setPostmortemUuid(postmortem.getUuid());
+            doc.setUploadDate(java.time.LocalDateTime.now());
             pmAddDocument(postmortem, doc);
             repository.save(doc);
         }

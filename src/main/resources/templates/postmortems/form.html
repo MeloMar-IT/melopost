@@ -3,22 +3,22 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{fragments/layout}">
 <head>
-    <title th:text="${postmortem.id == null ? 'Create New Postmortem' : 'Edit Postmortem'}"></title>
+    <title th:text="${postmortem.uuid == null ? 'Create New Postmortem' : 'Edit Postmortem'}"></title>
 </head>
 <body>
     <div layout:fragment="header-title">
         <div class="flex items-center space-x-2 text-sm text-gray-500 mb-1">
             <a href="/postmortems" class="hover:text-blue-600">Postmortems</a>
             <i data-lucide="chevron-right" class="w-3 h-3"></i>
-            <span th:text="${postmortem.id == null ? 'New' : 'Edit'}">Action</span>
+            <span th:text="${postmortem.uuid == null ? 'New' : 'Edit'}">Action</span>
         </div>
-        <div th:text="${postmortem.id == null ? 'Create New Postmortem' : 'Edit Postmortem'}">Form</div>
+        <div th:text="${postmortem.uuid == null ? 'Create New Postmortem' : 'Edit Postmortem'}">Form</div>
     </div>
 
     <div layout:fragment="content">
         <div class="max-w-5xl mx-auto">
             <form th:action="@{/postmortems/save}" th:object="${postmortem}" method="post" enctype="multipart/form-data" class="space-y-8">
-                <input type="hidden" th:field="*{id}"/>
+                <input type="hidden" th:field="*{uuid}"/>
                 
                 <!-- Basic Info -->
                 <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 space-y-6">
@@ -97,11 +97,30 @@
                                 <option th:each="t : ${T(com.melomarit.melopost.model.Postmortem).POSTMORTEM_TYPES}" th:value="${t}" th:text="${t}">Type</option>
                             </select>
                         </div>
+                        <div class="space-y-2">
+                            <label for="status" class="block text-sm font-semibold text-gray-700">Status</label>
+                            <select id="status" th:field="*{status}"
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-white">
+                                <option th:each="s : ${postmortemStates}" th:value="${s}" th:text="${s}" th:selected="${s == postmortem.status}">Status</option>
+                            </select>
+                        </div>
                         <div id="local-postmortems-section" class="space-y-2 col-span-full" style="display: none;">
-                            <label for="localPostmortems" class="block text-sm font-semibold text-gray-700">Include Local Postmortems</label>
-                            <select id="localPostmortems" th:field="*{localPostmortems}" multiple
+                            <label for="localPostmortemUuids" class="block text-sm font-semibold text-gray-700">Include Local Postmortems</label>
+                            
+                            <!-- Search filter for postmortems -->
+                            <div class="relative">
+                                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                                <input type="text" id="pmSearch" onkeyup="filterPostmortems()" 
+                                       placeholder="Search for local postmortems..." 
+                                       class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            </div>
+
+                            <select id="localPostmortemUuids" th:field="*{localPostmortemUuids}" multiple
                                     class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-white h-32">
-                                <option th:each="pm : ${localPostmortems}" th:value="${pm.id}" th:text="|${pm.incidentRef != null ? pm.incidentRef + ' - ' : ''}${pm.title}|">Local Postmortem Title</option>
+                                <option th:each="pm : ${allPostmortems}" 
+                                        th:if="${pm.uuid != postmortem.uuid}"
+                                        th:value="${pm.uuid}" 
+                                        th:text="|${pm.incidentRef != null ? pm.incidentRef + ' - ' : ''}${pm.title}|">Local Postmortem Title</option>
                             </select>
                             <p class="text-[10px] text-gray-400">Hold Ctrl (Cmd) to select multiple records.</p>
                         </div>
@@ -127,10 +146,42 @@
                     </div>
 
                     <div class="space-y-2">
-                        <label for="note" class="block text-sm font-semibold text-gray-700">Analysis Notes</label>
-                        <textarea id="note" th:field="*{note}" rows="10"
-                                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-                                  placeholder="Detailed analysis notes, thoughts, and conclusions..."></textarea>
+                        <div class="flex items-center justify-between">
+                            <label for="note" class="block text-sm font-semibold text-gray-700">Analysis Notes</label>
+                            <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200" x-data="{ viewMode: 'code' }">
+                                <button type="button" @click="viewMode = 'code'; $dispatch('view-mode-changed-note', 'code')"
+                                        :class="viewMode === 'code' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'"
+                                        class="px-3 py-1 text-xs font-medium rounded-md transition-all">
+                                    Code
+                                </button>
+                                <button type="button" @click="viewMode = 'split'; $dispatch('view-mode-changed-note', 'split')"
+                                        :class="viewMode === 'split' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'"
+                                        class="px-3 py-1 text-xs font-medium rounded-md transition-all">
+                                    Split
+                                </button>
+                                <button type="button" @click="viewMode = 'view'; $dispatch('view-mode-changed-note', 'view')"
+                                        :class="viewMode === 'view' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'"
+                                        class="px-3 py-1 text-xs font-medium rounded-md transition-all">
+                                    View
+                                </button>
+                            </div>
+                        </div>
+                        <div x-data="{ mode: 'code' }" @view-mode-changed-note.window="mode = $event.detail" class="space-y-4">
+                            <div :class="mode === 'view' ? 'hidden' : (mode === 'split' ? 'grid grid-cols-2 gap-4' : 'block')">
+                                <div :class="mode === 'split' ? 'h-[500px]' : ''">
+                                    <textarea id="note" th:field="*{note}" rows="10"
+                                              class="w-full h-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none font-mono text-sm"
+                                              placeholder="Detailed analysis notes, thoughts, and conclusions (Markdown supported)..."
+                                              @input="updateNotePreview()"></textarea>
+                                </div>
+                                <div :class="mode === 'split' ? 'block border rounded-lg p-4 overflow-auto h-[500px] bg-white prose max-w-none' : 'hidden'"
+                                     id="notePreviewSplit">
+                                </div>
+                            </div>
+                            <div :class="mode === 'view' ? 'block border rounded-lg p-6 overflow-auto min-h-[300px] bg-white prose max-w-none' : 'hidden'"
+                                 id="notePreviewOnly">
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Document Upload in Form -->
@@ -181,10 +232,12 @@
                                 <tr>
                                     <th class="px-8 py-3 w-64">Date & Time</th>
                                     <th class="px-8 py-3">Event Description</th>
+                                    <th class="px-8 py-3 w-16"></th>
                                 </tr>
                             </thead>
                             <tbody id="timeline-body" class="divide-y divide-gray-100">
                                 <tr th:each="event, eventStat : *{timelineEvents}">
+                                    <input type="hidden" th:field="*{timelineEvents[__${eventStat.index}__].uuid}"/>
                                     <td class="px-8 py-4">
                                         <input type="datetime-local" th:field="*{timelineEvents[__${eventStat.index}__].eventTime}" 
                                                class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" required>
@@ -192,6 +245,11 @@
                                     <td class="px-8 py-4">
                                         <input type="text" th:field="*{timelineEvents[__${eventStat.index}__].description}" 
                                                class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="What happened?">
+                                    </td>
+                                    <td class="px-8 py-4 text-right">
+                                        <button type="button" onclick="this.closest('tr').remove(); updateTimelineIndices();" class="text-red-500 hover:text-red-700">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -207,7 +265,7 @@
                     </h3>
                     
                     <div th:each="layer, layerStat : *{layers}" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <input type="hidden" th:field="*{layers[__${layerStat.index}__].id}"/>
+                        <input type="hidden" th:field="*{layers[__${layerStat.index}__].uuid}"/>
                         <div class="bg-slate-50 px-8 py-4 border-b border-gray-100 flex justify-between items-center">
                             <h4 class="font-bold text-slate-700" th:text="${layer.name}">Layer Name</h4>
                             <input type="hidden" th:name="|layers[${layerStat.index}].name|" th:value="${layer.name}" />
@@ -217,8 +275,11 @@
                             </button>
                         </div>
                         <div class="p-8 space-y-8" th:id="|holes-container-${layerStat.index}|">
-                            <div th:each="hole, holeStat : ${layer.holes}" class="bg-slate-50 border border-slate-200 rounded-xl p-6 space-y-6">
-                                <input type="hidden" th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].id}"/>
+                            <div th:each="hole, holeStat : ${layer.holes}" class="relative bg-slate-50 border border-slate-200 rounded-xl p-6 space-y-6 hole-item">
+                                <button type="button" th:onclick="|this.closest('div.hole-item').remove(); updateHoleIndices(${layerStat.index});|" class="absolute top-4 right-4 text-red-500 hover:text-red-700">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                                <input type="hidden" th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].uuid}"/>
                                 <div class="flex items-center space-x-2 text-slate-800 border-b border-slate-200 pb-3">
                                     <i data-lucide="circle-dot" class="w-5 h-5 text-red-500"></i>
                                     <h5 class="font-bold">Hole Definition</h5>
@@ -248,7 +309,7 @@
                                 </div>
 
                                     <div class="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
-                                        <input type="hidden" th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.id}"/>
+                                        <input type="hidden" th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.uuid}"/>
                                         <div class="flex items-center space-x-2 text-blue-900 font-bold text-sm">
                                         <i data-lucide="ticket" class="w-4 h-4"></i>
                                         <span>Linked Engineering Story</span>
@@ -281,7 +342,7 @@
                                             <textarea th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.whatToFix}" 
                                                       class="w-full border border-slate-200 rounded px-3 py-1.5 text-sm focus:border-blue-500 outline-none" rows="2"></textarea>
                                         </div>
-                                        <div class="space-y-1" th:if="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.tags != null && !layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.tags.empty}">
+                                        <div class="space-y-1" th:if="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.tags != null and !layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.tags.empty}">
                                             <label class="text-[10px] font-bold text-slate-400 uppercase">System Tags</label>
                                             <div class="flex flex-wrap gap-1">
                                                 <span th:each="tag, tagStat : *{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.tags}" 
@@ -311,7 +372,8 @@
         </div>
     </div>
 
-    <script layout:fragment="scripts">
+    <th:block layout:fragment="script">
+    <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function() {
             updateDueDate();
             toggleLocalPostmortems();
@@ -324,6 +386,22 @@
                 localSection.style.display = 'block';
             } else {
                 localSection.style.display = 'none';
+            }
+        }
+
+        function filterPostmortems() {
+            const input = document.getElementById('pmSearch');
+            const filter = input.value.toLowerCase();
+            const select = document.getElementById('localPostmortemUuids');
+            const options = select.getElementsByTagName('option');
+
+            for (let i = 0; i < options.length; i++) {
+                const text = options[i].text || options[i].innerText;
+                if (text.toLowerCase().indexOf(filter) > -1) {
+                    options[i].style.display = "";
+                } else {
+                    options[i].style.display = "none";
+                }
             }
         }
 
@@ -350,7 +428,7 @@
 
         function addTimelineEvent() {
             const body = document.getElementById('timeline-body');
-            const index = body.rows.length;
+            const index = body.querySelectorAll('tr').length;
             const html = `
                 <tr class="divide-y divide-gray-100">
                     <td class="px-8 py-4">
@@ -361,16 +439,40 @@
                         <input type="text" name="timelineEvents[${index}].description" 
                                class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="What happened?">
                     </td>
+                    <td class="px-8 py-4 text-right">
+                        <button type="button" onclick="this.closest('tr').remove(); updateTimelineIndices();" class="text-red-500 hover:text-red-700">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
                 </tr>
             `;
             body.insertAdjacentHTML('beforeend', html);
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        function updateTimelineIndices() {
+            const body = document.getElementById('timeline-body');
+            const rows = body.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                const inputs = row.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    if (input.name) {
+                        input.name = input.name.replace(/timelineEvents\[\d+\]/, `timelineEvents[${index}]`);
+                    }
+                });
+            });
         }
 
         function addHole(layerIndex) {
             const container = document.getElementById(`holes-container-${layerIndex}`);
-            const index = container.children.length;
+            const index = container.querySelectorAll('.hole-item').length;
             const html = `
-                <div class="bg-slate-50 border border-slate-200 rounded-xl p-6 space-y-6">
+                <div class="relative bg-slate-50 border border-slate-200 rounded-xl p-6 space-y-6 hole-item">
+                    <button type="button" onclick="this.closest('div.hole-item').remove(); updateHoleIndices(${layerIndex});" class="absolute top-4 right-4 text-red-500 hover:text-red-700">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
                     <div class="flex items-center space-x-2 text-slate-800 border-b border-slate-200 pb-3">
                         <i data-lucide="circle-dot" class="w-5 h-5 text-red-500"></i>
                         <h5 class="font-bold">Hole Definition</h5>
@@ -436,8 +538,39 @@
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
-            lucide.createIcons();
+            if (window.lucide) {
+                lucide.createIcons();
+            }
         }
+
+        function updateHoleIndices(layerIndex) {
+            const container = document.getElementById(`holes-container-${layerIndex}`);
+            const holes = container.querySelectorAll('.hole-item');
+            holes.forEach((hole, index) => {
+                const inputs = hole.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    if (input.name) {
+                        const regex = new RegExp(`layers\\[${layerIndex}\\]\\.holes\\[\\d+\\]`, 'g');
+                        input.name = input.name.replace(regex, `layers[${layerIndex}].holes[${index}]`);
+                    }
+                });
+            });
+        }
+
+        function updateNotePreview() {
+            const noteArea = document.getElementById('note');
+            const previewSplit = document.getElementById('notePreviewSplit');
+            const previewOnly = document.getElementById('notePreviewOnly');
+            const html = md.render(noteArea.value);
+            if (previewSplit) previewSplit.innerHTML = html;
+            if (previewOnly) previewOnly.innerHTML = html;
+        }
+
+        // Initialize preview on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateNotePreview();
+        });
     </script>
+    </th:block>
 </body>
 </html>

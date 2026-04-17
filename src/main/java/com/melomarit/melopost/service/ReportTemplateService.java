@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class ReportTemplateService {
@@ -21,7 +22,7 @@ public class ReportTemplateService {
         return repository.findAll();
     }
 
-    public Optional<ReportTemplate> findById(Long id) {
+    public Optional<ReportTemplate> findById(UUID id) {
         return repository.findById(id);
     }
 
@@ -29,11 +30,10 @@ public class ReportTemplateService {
         return repository.findByIsDefaultTrue();
     }
 
-    @Transactional
     public ReportTemplate save(ReportTemplate template) {
         if (template.isDefault()) {
             repository.findByIsDefaultTrue().ifPresent(t -> {
-                if (!t.getId().equals(template.getId())) {
+                if (!t.getUuid().equals(template.getUuid())) {
                     t.setDefault(false);
                     repository.save(t);
                 }
@@ -42,7 +42,7 @@ public class ReportTemplateService {
         return repository.save(template);
     }
 
-    public void deleteById(Long id) {
+    public void deleteById(UUID id) {
         repository.deleteById(id);
     }
 }

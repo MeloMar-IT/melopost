@@ -50,7 +50,7 @@
                 <div class="p-0">
                     <ul class="divide-y divide-gray-100">
                         <li th:each="pm : ${recentPostmortems}" class="p-0 hover:bg-gray-50 transition-colors">
-                            <a th:href="@{/postmortems/details/{id}(id=${pm.id})}" class="block p-6">
+                            <a th:href="@{/postmortems/details/{id}(id=${pm.uuid})}" class="block p-6">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-4">
                                         <div class="w-2 h-2 rounded-full bg-blue-500"></div>

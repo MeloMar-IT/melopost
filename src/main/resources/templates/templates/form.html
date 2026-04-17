@@ -3,15 +3,15 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{fragments/layout}">
 <head>
-    <title th:text="${template.id == null ? 'New Template' : 'Edit Template'}">Template Form</title>
+    <title th:text="${template.uuid == null ? 'New Template' : 'Edit Template'}">Template Form</title>
 </head>
 <body>
-    <div layout:fragment="header-title" th:text="${template.id == null ? 'New Template' : 'Edit Template'}">Template Form</div>
+    <div layout:fragment="header-title" th:text="${template.uuid == null ? 'New Template' : 'Edit Template'}">Template Form</div>
 
     <div layout:fragment="content">
         <div class="max-w-4xl mx-auto">
             <form th:action="@{/templates/save}" th:object="${template}" method="post" class="space-y-6">
-                <input type="hidden" th:field="*{id}" />
+                <input type="hidden" th:field="*{uuid}" />
                 
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
                     <div>
@@ -22,7 +22,7 @@
                     </div>
 
                     <div class="flex items-center">
-                        <input type="checkbox" id="isDefault" th:field="*{default}"
+                        <input type="checkbox" id="isDefault" th:field="*{isDefault}"
                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                         <label for="isDefault" class="ml-2 block text-sm text-gray-700">
                             Set as Default Template

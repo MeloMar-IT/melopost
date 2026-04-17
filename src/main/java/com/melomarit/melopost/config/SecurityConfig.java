@@ -23,20 +23,21 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/h2-console/**"))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/error", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                .requestMatchers("/login", "/error", "/css/**", "/js/**", "/images/**", "/webjars/**", "/docs/**", "/help").permitAll()
                 .requestMatchers("/h2-console/**").hasRole("ADMIN")
                 .requestMatchers("/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().authenticated()
             )
+            .httpBasic(Customizer.withDefaults())
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .exceptionHandling(ex -> ex
-                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
                 .defaultAuthenticationEntryPointFor(
                     (request, response, authException) -> response.sendError(401, "Unauthorized"),
                     new AntPathRequestMatcher("/api/**")
                 )
+                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
             )
             .formLogin(form -> form
                 .loginPage("/login")

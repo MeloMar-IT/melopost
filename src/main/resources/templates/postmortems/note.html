@@ -31,23 +31,6 @@
                         </div>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200" x-data="{ viewMode: 'code' }">
-                            <button type="button" @click="viewMode = 'code'; $dispatch('view-mode-changed', 'code')"
-                                    :class="viewMode === 'code' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'"
-                                    class="px-3 py-1 text-xs font-medium rounded-md transition-all">
-                                Code
-                            </button>
-                            <button type="button" @click="viewMode = 'split'; $dispatch('view-mode-changed', 'split')"
-                                    :class="viewMode === 'split' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'"
-                                    class="px-3 py-1 text-xs font-medium rounded-md transition-all">
-                                Split
-                            </button>
-                            <button type="button" @click="viewMode = 'view'; $dispatch('view-mode-changed', 'view')"
-                                    :class="viewMode === 'view' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'"
-                                    class="px-3 py-1 text-xs font-medium rounded-md transition-all">
-                                View
-                            </button>
-                        </div>
                         <div class="text-right min-w-[120px]">
                             <span id="charCount" class="text-sm font-medium text-gray-500">0 / 1,000,000</span>
                         </div>
@@ -55,23 +38,13 @@
                 </div>
                 
                 <form th:action="@{/postmortems/{id}/note(id=${postmortem.uuid})}" method="post" class="p-6">
-                    <div class="mb-6" x-data="{ mode: 'code' }" @view-mode-changed.window="mode = $event.detail">
-                        <div :class="mode === 'view' ? 'hidden' : (mode === 'split' ? 'grid grid-cols-2 gap-4' : 'block')">
-                            <div :class="mode === 'split' ? 'h-[600px]' : ''">
-                                <textarea name="note" id="noteArea" rows="20" 
-                                          class="w-full h-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-gray-700 font-mono text-sm leading-relaxed"
-                                          placeholder="Enter your notes here (Markdown supported)..."
-                                          maxlength="1000000"
-                                          th:text="${postmortem.note}"
-                                          @input="updateCharCount()"></textarea>
-                            </div>
-                            <div :class="mode === 'split' ? 'block border rounded-lg p-4 overflow-auto h-[600px] bg-white prose max-w-none' : 'hidden'"
-                                 id="markdownPreviewSplit">
-                            </div>
-                        </div>
-                        <div :class="mode === 'view' ? 'block border rounded-lg p-6 overflow-auto min-h-[500px] bg-white prose max-w-none' : 'hidden'"
-                             id="markdownPreviewOnly">
-                        </div>
+                    <div class="mb-6">
+                        <textarea name="note" id="noteArea" rows="20" 
+                                  class="w-full h-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-gray-700 font-mono text-sm leading-relaxed"
+                                  placeholder="Enter your notes here..."
+                                  maxlength="1000000"
+                                  th:text="${postmortem.note}"></textarea>
+                        <script>document.addEventListener('DOMContentLoaded', () => initFroalaEditor('noteArea', '500px'));</script>
                     </div>
                     
                     <div class="flex items-center justify-between">
@@ -95,10 +68,9 @@
         <script>
             const noteArea = document.getElementById('noteArea');
             const charCount = document.getElementById('charCount');
-            const previewSplit = document.getElementById('markdownPreviewSplit');
-            const previewOnly = document.getElementById('markdownPreviewOnly');
 
             function updateCharCount() {
+                if (!noteArea || !charCount) return;
                 const length = noteArea.value.length;
                 charCount.textContent = `${length.toLocaleString()} / 1,000,000`;
                 
@@ -109,15 +81,12 @@
                     charCount.classList.remove('text-red-500');
                     charCount.classList.add('text-gray-500');
                 }
-
-                // Update markdown previews
-                const html = md.render(noteArea.value);
-                if (previewSplit) previewSplit.innerHTML = html;
-                if (previewOnly) previewOnly.innerHTML = html;
             }
 
-            noteArea.addEventListener('input', updateCharCount);
-            // Initial count and preview
+            if (noteArea) {
+                noteArea.addEventListener('input', updateCharCount);
+            }
+            // Initial count
             updateCharCount();
         </script>
     </th:block>

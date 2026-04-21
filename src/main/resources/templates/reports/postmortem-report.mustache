@@ -159,10 +159,10 @@
                 
                 {{#holes}}
                     <div class="hole">
-                        <strong>Hole:</strong> {{description}} 
+                        <strong>Hole:</strong> {{{description}}} 
                         {{#sourcePostmortem}}<span style="color: #7f8c8d; font-size: 0.9em;">(Source: {{sourcePostmortem}})</span>{{/sourcePostmortem}}<br/>
                         <strong>Team:</strong> {{teamName}}<br/>
-                        <strong>Remedial Action:</strong> {{remedialAction}} ({{actionStatus}})
+                        <strong>Remedial Action:</strong> {{{remedialAction}}} ({{actionStatus}})
                         {{#tags}}
                             <span class="tag">{{.}}</span>
                         {{/tags}}

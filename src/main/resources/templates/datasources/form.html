@@ -3,7 +3,7 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{fragments/layout}">
 <head>
-    <title th:text="${datasource.id == null ? 'Create Data Source' : 'Edit Data Source'}"></title>
+    <title th:text="${datasource.uuid == null ? 'Create Data Source' : 'Edit Data Source'}"></title>
     <script>
         function applyTemplate() {
             var select = document.getElementById("templateSelect");
@@ -23,16 +23,16 @@
         <div class="flex items-center space-x-2 text-sm text-gray-500 mb-1">
             <a href="/datasources" class="hover:text-blue-600">Data Sources</a>
             <i data-lucide="chevron-right" class="w-3 h-3"></i>
-            <span th:text="${datasource.id == null ? 'New' : 'Edit'}">Action</span>
+            <span th:text="${datasource.uuid == null ? 'New' : 'Edit'}">Action</span>
         </div>
-        <div th:text="${datasource.id == null ? 'Create Data Source' : 'Edit Data Source'}">Form</div>
+        <div th:text="${datasource.uuid == null ? 'Create Data Source' : 'Edit Data Source'}">Form</div>
     </div>
 
     <div layout:fragment="content">
         <div class="max-w-3xl mx-auto">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <!-- Template Selection -->
-                <div class="p-6 bg-slate-50 border-b border-gray-100" th:if="${datasource.id == null}">
+                <div class="p-6 bg-slate-50 border-b border-gray-100" th:if="${datasource.uuid == null}">
                     <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">Start with a template</h3>
                     <select id="templateSelect" class="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" onchange="applyTemplate()">
                         <option value="">-- Select a tool to integrate --</option>
@@ -47,7 +47,7 @@
                 </div>
 
                 <form th:action="@{/datasources/save}" th:object="${datasource}" method="post" class="p-8 space-y-6">
-                    <input type="hidden" th:field="*{id}">
+                    <input type="hidden" th:field="*{uuid}">
                     
                     <div class="space-y-2">
                         <label for="name" class="block text-sm font-semibold text-gray-700">Source Name</label>
@@ -98,6 +98,7 @@
                         <textarea id="description" th:field="*{description}" rows="3"
                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
                                   placeholder="Optional description of this data source..."></textarea>
+                        <script>document.addEventListener('DOMContentLoaded', () => initFroalaEditor('description', '150px'));</script>
                     </div>
 
                     <div class="pt-4 flex items-center justify-end space-x-4">

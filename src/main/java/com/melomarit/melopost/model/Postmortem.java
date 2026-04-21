@@ -77,15 +77,23 @@ public class Postmortem {
     private List<String> tags = new ArrayList<>();
 
     @Column("layers")
-    @CassandraType(type = CassandraType.Name.LIST, typeArguments = CassandraType.Name.UDT, userTypeName = "cheese_layer")
+    @CassandraType(type = Name.LIST, typeArguments = Name.UDT, userTypeName = "cheese_layer")
     private List<CheeseLayerUDT> layers = new ArrayList<>();
 
     @Column("timeline_events")
-    @CassandraType(type = CassandraType.Name.LIST, typeArguments = CassandraType.Name.UDT, userTypeName = "timeline_event")
+    @CassandraType(type = Name.LIST, typeArguments = Name.UDT, userTypeName = "timeline_event")
     private List<TimelineEventUDT> timelineEvents = new ArrayList<>();
 
+    @Column("service_impacts")
+    @CassandraType(type = Name.LIST, typeArguments = Name.UDT, userTypeName = "service_impact")
+    private List<ServiceImpactUDT> serviceImpacts = new ArrayList<>();
+
+    @Column("cbs_impacts")
+    @CassandraType(type = Name.LIST, typeArguments = Name.UDT, userTypeName = "cbs_impact")
+    private List<CbsImpactUDT> cbsImpacts = new ArrayList<>();
+
     @Column("questions")
-    @CassandraType(type = CassandraType.Name.LIST, typeArguments = CassandraType.Name.UDT, userTypeName = "postmortem_question")
+    @CassandraType(type = Name.LIST, typeArguments = Name.UDT, userTypeName = "postmortem_question")
     private List<PostmortemQuestionUDT> questions = new ArrayList<>();
 
     // Documents are stored in a separate table, but we can keep a list of their UUIDs if needed
@@ -154,6 +162,18 @@ public class Postmortem {
         return timelineEvents;
     }
     public void setTimelineEvents(List<TimelineEventUDT> timelineEvents) { this.timelineEvents = timelineEvents; }
+
+    public List<ServiceImpactUDT> getServiceImpacts() {
+        if (serviceImpacts == null) serviceImpacts = new ArrayList<>();
+        return serviceImpacts;
+    }
+    public void setServiceImpacts(List<ServiceImpactUDT> serviceImpacts) { this.serviceImpacts = serviceImpacts; }
+
+    public List<CbsImpactUDT> getCbsImpacts() {
+        if (cbsImpacts == null) cbsImpacts = new ArrayList<>();
+        return cbsImpacts;
+    }
+    public void setCbsImpacts(List<CbsImpactUDT> cbsImpacts) { this.cbsImpacts = cbsImpacts; }
 
     public List<PostmortemQuestionUDT> getQuestions() {
         if (questions == null) questions = new ArrayList<>();

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -112,6 +113,12 @@ public class DatabaseAdminRestController {
                         } else if ("postmortem_question".equals(udtName)) {
                             List<UdtValue> questions = row.getList("questions", UdtValue.class);
                             if (questions != null) count += questions.size();
+                        } else if ("service_impact".equals(udtName)) {
+                            List<UdtValue> impacts = row.getList("service_impacts", UdtValue.class);
+                            if (impacts != null) count += impacts.size();
+                        } else if ("cbs_impact".equals(udtName)) {
+                            List<UdtValue> impacts = row.getList("cbs_impacts", UdtValue.class);
+                            if (impacts != null) count += impacts.size();
                         }
                     }
                     dto.setRowCount(count);
@@ -391,6 +398,36 @@ public class DatabaseAdminRestController {
                                         rowData.add(convertValue(question.getObject(fieldId)));
                                     }
                                     uniqueItems.put(qText, rowData);
+                                }
+                            }
+                        }
+                    } else if ("service_impact".equals(tableName)) {
+                        List<UdtValue> impacts = row.getList("service_impacts", UdtValue.class);
+                        if (impacts != null) {
+                            for (UdtValue impact : impacts) {
+                                UUID uuid = impact.getUuid("uuid");
+                                String key = uuid != null ? uuid.toString() : impact.toString();
+                                if (!uniqueItems.containsKey(key)) {
+                                    List<Object> rowData = new ArrayList<>();
+                                    for (CqlIdentifier fieldId : fieldNames) {
+                                        rowData.add(convertValue(impact.getObject(fieldId)));
+                                    }
+                                    uniqueItems.put(key, rowData);
+                                }
+                            }
+                        }
+                    } else if ("cbs_impact".equals(tableName)) {
+                        List<UdtValue> impacts = row.getList("cbs_impacts", UdtValue.class);
+                        if (impacts != null) {
+                            for (UdtValue impact : impacts) {
+                                UUID uuid = impact.getUuid("uuid");
+                                String key = uuid != null ? uuid.toString() : impact.toString();
+                                if (!uniqueItems.containsKey(key)) {
+                                    List<Object> rowData = new ArrayList<>();
+                                    for (CqlIdentifier fieldId : fieldNames) {
+                                        rowData.add(convertValue(impact.getObject(fieldId)));
+                                    }
+                                    uniqueItems.put(key, rowData);
                                 }
                             }
                         }

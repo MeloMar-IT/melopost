@@ -1,13 +1,15 @@
 # Melopost API Documentation
 
 Melopost provides a RESTful API for all core entities. All endpoints require authentication.
+Administrative endpoints are restricted to users with the `ROLE_ADMIN` role.
 
 ## Table of Contents
 1. [Postmortems](#postmortems)
-2. [Stories](#stories)
-3. [Data Sources](#data-sources)
-4. [Report Templates](#report-templates)
+2. [Postmortem Documents](#postmortem-documents)
+3. [Stories](#stories)
+4. [Data Sources](#data-sources)
 5. [Users](#users)
+6. [Database Administration (ADMIN)](#database-administration-admin)
 
 ---
 
@@ -17,7 +19,23 @@ Base Endpoint: `/api/postmortems`
 
 ### Get All Postmortems
 - **Method**: `GET`
-- **Response**: List of Postmortem objects.
+- **Response**: List of `Postmortem` objects.
+
+### Get Recent Postmortems
+- **Method**: `GET`
+- **Path**: `/api/postmortems/recent`
+- **Response**: List of the 5 most recent `Postmortem` objects.
+
+### Get Postmortem by UUID
+- **Method**: `GET`
+- **Path**: `/api/postmortems/{uuid}`
+- **Response**: `Postmortem` object.
+
+### Search Postmortems
+- **Method**: `GET`
+- **Path**: `/api/postmortems/search`
+- **Query Parameter**: `keyword` (String) - Search in title, reference, description, and tags.
+- **Response**: List of `PostmortemSearchResultDTO` objects.
 
 ### Create Postmortem
 - **Method**: `POST`
@@ -36,7 +54,6 @@ Base Endpoint: `/api/postmortems`
   "department": "Operations",
   "failedApplication": "User Authentication",
   "type": "Orchestrated P1",
-  "status": "In Analysis",
   "tags": ["ui", "auth"],
   "layers": [
     {
@@ -56,23 +73,70 @@ Base Endpoint: `/api/postmortems`
       "eventTime": "2026-03-21T09:50:00",
       "description": "Event 1: Progress during incident handling."
     }
+  ],
+  "questions": [
+    {
+      "question": "Was the monitoring effective?",
+      "answer": "Yes, it triggered immediately."
+    }
   ]
 }
 ```
 
+### Import Postmortem from Document
+- **Method**: `POST`
+- **Path**: `/api/postmortems/import`
+- **Form Data**: `file` (MultipartFile) - Supported formats: .docx, .pdf, .txt.
+- **Response**: `Postmortem` object parsed from the document.
+
 ### Update Postmortem
 - **Method**: `PUT`
-- **Path**: `/api/postmortems/{id}`
+- **Path**: `/api/postmortems/{uuid}`
 - **Body**: `Postmortem` object (partial updates supported).
 
 ### Delete Postmortem
 - **Method**: `DELETE`
-- **Path**: `/api/postmortems/{id}`
+- **Path**: `/api/postmortems/{uuid}`
 
 ### Download PDF Report
 - **Method**: `GET`
-- **Path**: `/api/postmortems/{id}/report`
-- **Response**: PDF File.
+- **Path**: `/api/postmortems/{uuid}/report`
+- **Response**: PDF File stream.
+
+---
+
+## Postmortem Documents
+
+Base Endpoint: `/api/postmortem-documents`
+
+### Get All Documents
+- **Method**: `GET`
+- **Response**: List of `PostmortemDocument` metadata.
+
+### Get Document by UUID
+- **Method**: `GET`
+- **Path**: `/api/postmortem-documents/{uuid}`
+- **Response**: `PostmortemDocument` metadata.
+
+### Get Documents for Postmortem
+- **Method**: `GET`
+- **Path**: `/api/postmortem-documents/postmortem/{postmortemUuid}`
+- **Response**: List of `PostmortemDocument` metadata for the specified postmortem.
+
+### Download Document
+- **Method**: `GET`
+- **Path**: `/api/postmortem-documents/{uuid}/download`
+- **Response**: File stream.
+
+### Upload Document
+- **Method**: `POST`
+- **Path**: `/api/postmortem-documents/upload/{postmortemUuid}`
+- **Form Data**: `file` (MultipartFile)
+- **Response**: The created `PostmortemDocument` metadata.
+
+### Delete Document
+- **Method**: `DELETE`
+- **Path**: `/api/postmortem-documents/{uuid}`
 
 ---
 
@@ -80,23 +144,7 @@ Base Endpoint: `/api/postmortems`
 
 Base Endpoint: `/api/stories`
 
-### Get All Stories
-- **Method**: `GET`
-
-### Create Story
-- **Method**: `POST`
-- **Example JSON Request**:
-```json
-{
-  "storyNumber": "STR-1001",
-  "teamName": "Identity Team",
-  "backlogName": "Product Backlog",
-  "platform": "Jira",
-  "whatToFix": "Fix token expiration bug",
-  "priority": "High",
-  "status": "In Progress"
-}
-```
+Note: Stories are currently managed as part of Postmortem Holes.
 
 ---
 
@@ -106,6 +154,17 @@ Base Endpoint: `/api/datasources`
 
 ### Get All Data Sources
 - **Method**: `GET`
+- **Response**: List of `DataSource` objects.
+
+### Get Data Source by UUID
+- **Method**: `GET`
+- **Path**: `/api/datasources/{uuid}`
+- **Response**: `DataSource` object.
+
+### Get Template Data Sources
+- **Method**: `GET`
+- **Path**: `/api/datasources/templates`
+- **Response**: List of pre-defined `DataSource` templates.
 
 ### Create Data Source
 - **Method**: `POST`
@@ -114,7 +173,7 @@ Base Endpoint: `/api/datasources`
 {
   "name": "Production Jira",
   "type": "Jira",
-  "operation": "Create",
+  "operation": "CREATE_STORY",
   "url": "https://jira.example.com",
   "username": "api-user",
   "password": "secure-password",
@@ -122,13 +181,13 @@ Base Endpoint: `/api/datasources`
 }
 ```
 
----
+### Update Data Source
+- **Method**: `PUT`
+- **Path**: `/api/datasources/{uuid}`
 
-## Report Templates
-
-Base Endpoint: `/api/report-templates` (handled via `ReportTemplateViewController` for UI and potentially internal API).
-
-*Note: Administrative UI for managing templates is available at `/templates`.*
+### Delete Data Source
+- **Method**: `DELETE`
+- **Path**: `/api/datasources/{uuid}`
 
 ---
 
@@ -138,8 +197,14 @@ Base Endpoint: `/api/users`
 
 ### Get All Users
 - **Method**: `GET`
+- **Response**: List of `User` objects.
 
-### Create/Update User
+### Get User by UUID
+- **Method**: `GET`
+- **Path**: `/api/users/{uuid}`
+- **Response**: `User` object.
+
+### Create User
 - **Method**: `POST`
 - **Example JSON Request**:
 ```json
@@ -150,6 +215,32 @@ Base Endpoint: `/api/users`
   "firstName": "John",
   "lastName": "Doe",
   "roles": ["ROLE_USER"],
-  "allowedDepartments": ["IT", "Operations"]
+  "active": true
 }
 ```
+
+### Update User
+- **Method**: `PUT`
+- **Path**: `/api/users/{uuid}`
+
+### Delete User
+- **Method**: `DELETE`
+- **Path**: `/api/users/{uuid}`
+
+---
+
+## Database Administration (ADMIN)
+
+Base Endpoint: `/api/admin/database`
+
+### List Tables and Types
+- **Method**: `GET`
+- **Path**: `/api/admin/database/tables`
+- **Query Parameter**: `includeCounts` (boolean, default: true)
+- **Response**: List of `DatabaseTableDTO` containing names, types (TABLE/TYPE), row counts, and column names.
+
+### Execute Raw Query
+- **Method**: `POST`
+- **Path**: `/api/admin/database/query`
+- **Body**: `{"query": "SELECT * FROM postmortem"}`
+- **Response**: `QueryResultDTO` containing results and metadata.

@@ -134,4 +134,45 @@ public class DatabaseAdminRestControllerTest {
                 .andExpect(jsonPath("$.data.rows[0][0]").value("Test Layer"))
                 .andExpect(jsonPath("$.data.message").value(org.hamcrest.Matchers.containsString("Found 1 unique instances")));
     }
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    public void testGetTableInfoForServiceImpact() throws Exception {
+        CqlIdentifier keyspace = CqlIdentifier.fromInternal("melopost");
+        when(session.getKeyspace()).thenReturn(Optional.of(keyspace));
+        
+        Metadata metadata = mock(Metadata.class);
+        when(session.getMetadata()).thenReturn(metadata);
+        
+        KeyspaceMetadata keyspaceMetadata = mock(KeyspaceMetadata.class);
+        when(metadata.getKeyspace(keyspace)).thenReturn(Optional.of(keyspaceMetadata));
+        when(metadata.getKeyspace(anyString())).thenReturn(Optional.of(keyspaceMetadata));
+        when(metadata.getKeyspace(any(CqlIdentifier.class))).thenReturn(Optional.of(keyspaceMetadata));
+        when(keyspaceMetadata.getTable(anyString())).thenReturn(Optional.empty());
+        
+        UserDefinedType udt = mock(UserDefinedType.class);
+        CqlIdentifier udtName = CqlIdentifier.fromInternal("service_impact");
+        when(udt.getFieldNames()).thenReturn(Collections.singletonList(CqlIdentifier.fromInternal("service")));
+        when(udt.getFieldTypes()).thenReturn(Collections.singletonList(com.datastax.oss.driver.api.core.type.DataTypes.TEXT));
+        when(keyspaceMetadata.getUserDefinedType("service_impact")).thenReturn(Optional.of(udt));
+        when(keyspaceMetadata.getUserDefinedType(CqlIdentifier.fromInternal("service_impact"))).thenReturn(Optional.of(udt));
+
+        ResultSet rs = mock(ResultSet.class);
+        when(session.execute(anyString())).thenReturn(rs);
+        
+        Row row = mock(Row.class);
+        com.datastax.oss.driver.api.core.data.UdtValue udtValue = mock(com.datastax.oss.driver.api.core.data.UdtValue.class);
+        java.util.UUID impactUuid = java.util.UUID.randomUUID();
+        when(udtValue.getUuid("uuid")).thenReturn(impactUuid);
+        when(udtValue.getObject(any(CqlIdentifier.class))).thenReturn("Test Service");
+        
+        when(row.getList("service_impacts", com.datastax.oss.driver.api.core.data.UdtValue.class)).thenReturn(Collections.singletonList(udtValue));
+        when(rs.iterator()).thenReturn(Collections.singletonList(row).iterator());
+
+        mockMvc.perform(get("/api/admin/database/table/service_impact"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("service_impact"))
+                .andExpect(jsonPath("$.type").value("TYPE"))
+                .andExpect(jsonPath("$.data.rows[0][0]").value("Test Service"))
+                .andExpect(jsonPath("$.data.message").value(org.hamcrest.Matchers.containsString("Found 1 unique instances")));
+    }
 }

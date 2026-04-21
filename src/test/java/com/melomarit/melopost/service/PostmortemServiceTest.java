@@ -195,4 +195,46 @@ public class PostmortemServiceTest {
         assertEquals(1, result.size());
         assertEquals(pmInDept.getUuid(), result.get(0).getUuid());
     }
+
+    @Test
+    void save_shouldThrowException_whenIncidentRefExists() {
+        Postmortem newPm = new Postmortem();
+        newPm.setIncidentRef("INC-123");
+        newPm.setUuid(UUID.randomUUID());
+
+        Postmortem existingPm = new Postmortem();
+        existingPm.setIncidentRef("INC-123");
+        existingPm.setUuid(UUID.randomUUID());
+
+        when(repository.findByIncidentRef("INC-123")).thenReturn(Collections.singletonList(existingPm));
+
+        assertThrows(RuntimeException.class, () -> service.save(newPm));
+    }
+
+    @Test
+    void save_shouldAllow_whenIncidentRefIsSamePostmortem() {
+        Postmortem pm = new Postmortem();
+        pm.setUuid(UUID.randomUUID());
+        pm.setIncidentRef("INC-123");
+
+        when(repository.findByIncidentRef("INC-123")).thenReturn(Collections.singletonList(pm));
+        when(repository.save(pm)).thenReturn(pm);
+
+        Postmortem saved = service.save(pm);
+        assertEquals(pm, saved);
+        verify(repository).save(pm);
+    }
+
+    @Test
+    void save_shouldAllow_whenIncidentRefIsEmpty() {
+        Postmortem pm = new Postmortem();
+        pm.setUuid(UUID.randomUUID());
+        pm.setIncidentRef("");
+
+        when(repository.save(pm)).thenReturn(pm);
+
+        Postmortem saved = service.save(pm);
+        assertEquals(pm, saved);
+        verify(repository, never()).findByIncidentRef(anyString());
+    }
 }

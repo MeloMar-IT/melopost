@@ -172,22 +172,36 @@ public class PostmortemViewController {
     }
 
     @PostMapping("/save")
-    public String save(@ModelAttribute Postmortem postmortem, @RequestParam(value = "files", required = false) MultipartFile[] files) throws IOException {
+    public String save(@ModelAttribute Postmortem postmortem, @RequestParam(value = "files", required = false) MultipartFile[] files, Model model) throws IOException {
         if (postmortem.getUuid() != null) {
-            Postmortem existing = service.findById(postmortem.getUuid());
-            if (existing != null && "Published".equals(existing.getStatus())) {
-                // If the postmortem is already published, check if the current user is an admin
-                User currentUser = service.getCurrentUser();
-                if (!service.isUserAdmin(currentUser)) {
-                    return "redirect:/postmortems/details/" + postmortem.getUuid() + "?error=locked";
+            try {
+                Postmortem existing = service.findById(postmortem.getUuid());
+                if (existing != null && "Published".equals(existing.getStatus())) {
+                    // If the postmortem is already published, check if the current user is an admin
+                    User currentUser = service.getCurrentUser();
+                    if (!service.isUserAdmin(currentUser)) {
+                        return "redirect:/postmortems/details/" + postmortem.getUuid() + "?error=locked";
+                    }
                 }
+            } catch (RuntimeException e) {
+                // If not found, it might be a manual UUID assignment (unlikely but possible)
             }
         }
         
         if (files != null) {
             documentService.processFiles(postmortem, files);
         }
-        service.save(postmortem);
+        try {
+            service.save(postmortem);
+        } catch (RuntimeException e) {
+            model.addAttribute("postmortem", postmortem);
+            model.addAttribute("readDataSources", dataSourceService.getDataSourcesByOperation("Read"));
+            model.addAttribute("writeDataSources", dataSourceService.getDataSourcesByOperation("Create"));
+            model.addAttribute("allPostmortems", service.findAll());
+            model.addAttribute("postmortemStates", Postmortem.POSTMORTEM_STATES);
+            model.addAttribute("error", e.getMessage());
+            return "postmortems/form";
+        }
         return "redirect:/postmortems";
     }
 

@@ -108,6 +108,20 @@ public class TestDataInitializer {
         "What was the Mean Time to Recovery (MTTR) for this incident?"
     };
 
+    private final String[] services = {
+        "User Authentication", "Payment Gateway", "Order Management", "Inventory Sync", 
+        "Product Search", "Shopping Cart", "Email Notifications", "Analytics Dashboard"
+    };
+
+    private final String[] countries = {
+        "Global", "United Kingdom", "Germany", "France", "Netherlands", "United States", "Japan", "Brazil"
+    };
+
+    private final String[] cbsNames = {
+        "CBS - Core Banking System", "CBS - Wealth Management", "CBS - Retail Banking", 
+        "CBS - Corporate Loans", "CBS - Payments HUB"
+    };
+
     private final String[] incidentNoteContents = {
         "#### Timeline Observation\nInvestigated the logs from `api-gateway-748f9d6b5c-2x9v4`. Found multiple `java.net.SocketTimeoutException` occurring around 14:05 UTC. This matches the start of the latency spike reported by monitoring.",
         "#### Investigation Update\nChecked the database connection pool metrics. The `hikari-pool-1` was exhausted (100/100 connections in use). Most connections were in `ACTIVE` state, executing a slow `JOIN` query on the `orders` and `transactions` tables.",
@@ -377,6 +391,34 @@ public class TestDataInitializer {
                 question.setCheeseLayer("General");
             }
             pm.getQuestions().add(question);
+        }
+
+        // Add 1-3 Service Impacts
+        int serviceImpactCount = 1 + random.nextInt(3);
+        for (int i = 0; i < serviceImpactCount; i++) {
+            ServiceImpactUDT si = new ServiceImpactUDT();
+            si.setUuid(UUID.randomUUID());
+            si.setService(services[random.nextInt(services.length)]);
+            si.setCountry(countries[random.nextInt(countries.length)]);
+            si.setStartTime(pm.getStartDate().plusMinutes(random.nextInt(60)));
+            si.setEndTime(si.getStartTime().plusMinutes(30 + random.nextInt(120)));
+            si.setDuration("1h 30m"); // Simplified
+            si.setImpactDescription("Degraded performance and intermittent timeouts for users in " + si.getCountry());
+            pm.getServiceImpacts().add(si);
+        }
+
+        // Add 1-2 CBS Impacts
+        int cbsImpactCount = 1 + random.nextInt(2);
+        for (int i = 0; i < cbsImpactCount; i++) {
+            CbsImpactUDT ci = new CbsImpactUDT();
+            ci.setUuid(UUID.randomUUID());
+            ci.setCbsName(cbsNames[random.nextInt(cbsNames.length)]);
+            ci.setItServices("Trading, Settlements, Reporting");
+            ci.setStartTime(pm.getStartDate().plusMinutes(random.nextInt(60)));
+            ci.setEndTime(ci.getStartTime().plusMinutes(60 + random.nextInt(180)));
+            ci.setDuration("2h 15m"); // Simplified
+            ci.setToleranceLevelExceeded(random.nextBoolean() ? "Yes" : "No");
+            pm.getCbsImpacts().add(ci);
         }
 
         return pm;

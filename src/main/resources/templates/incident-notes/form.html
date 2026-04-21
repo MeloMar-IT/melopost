@@ -44,45 +44,13 @@
                                    placeholder="e.g. INC-1234567">
                         </div>
 
-                        <div class="flex items-center justify-between mb-2">
-                            <label for="content" class="block text-sm font-semibold text-gray-700">Notes Content</label>
-                            <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200" x-data="{ viewMode: 'code' }">
-                                <button type="button" @click="viewMode = 'code'; $dispatch('view-mode-changed', 'code')"
-                                        :class="viewMode === 'code' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'"
-                                        class="px-3 py-1 text-xs font-medium rounded-md transition-all">
-                                    Code
-                                </button>
-                                <button type="button" @click="viewMode = 'split'; $dispatch('view-mode-changed', 'split')"
-                                        :class="viewMode === 'split' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'"
-                                        class="px-3 py-1 text-xs font-medium rounded-md transition-all">
-                                    Split
-                                </button>
-                                <button type="button" @click="viewMode = 'view'; $dispatch('view-mode-changed', 'view')"
-                                        :class="viewMode === 'view' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'"
-                                        class="px-3 py-1 text-xs font-medium rounded-md transition-all">
-                                    View
-                                </button>
-                            </div>
-                        </div>
-                        <div x-data="{ mode: 'code' }" @view-mode-changed.window="mode = $event.detail" class="space-y-4">
-                            <div :class="mode === 'view' ? 'hidden' : (mode === 'split' ? 'grid grid-cols-2 gap-4' : 'block')">
-                                <div :class="mode === 'split' ? 'h-[600px]' : ''">
-                                    <textarea th:field="*{content}" id="contentArea" rows="20" required
-                                              class="w-full h-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-gray-700 font-mono text-sm leading-relaxed"
-                                              placeholder="Start writing notes here (Markdown supported)..."
-                                              maxlength="1000000"
-                                              @input="updateCharCount()"></textarea>
-                                </div>
-                                <div th:if="${false}" id="dummy-for-split"></div> <!-- This is just to help visualization -->
-                                <div :class="mode === 'split' ? 'block border rounded-lg p-4 overflow-auto h-[600px] bg-white prose max-w-none' : 'hidden'"
-                                     id="markdownPreviewSplit">
-                                    <!-- Preview content for split view will be updated via JS -->
-                                </div>
-                            </div>
-                            <div :class="mode === 'view' ? 'block border rounded-lg p-6 overflow-auto min-h-[500px] bg-white prose max-w-none' : 'hidden'"
-                                 id="markdownPreviewOnly">
-                                <!-- Preview content for full view will be updated via JS -->
-                            </div>
+                        <div class="space-y-2 mb-4">
+                            <label for="contentArea" class="block text-sm font-semibold text-gray-700">Notes Content</label>
+                            <textarea th:field="*{content}" id="contentArea" rows="20" required
+                                      class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-gray-700 font-mono text-sm leading-relaxed"
+                                      placeholder="Start writing notes here..."
+                                      maxlength="1000000"></textarea>
+                            <script>document.addEventListener('DOMContentLoaded', () => initFroalaEditor('contentArea', '500px'));</script>
                         </div>
                     </div>
                     
@@ -114,10 +82,9 @@
         <script>
             const contentArea = document.getElementById('contentArea');
             const charCount = document.getElementById('charCount');
-            const previewSplit = document.getElementById('markdownPreviewSplit');
-            const previewOnly = document.getElementById('markdownPreviewOnly');
 
             function updateCharCount() {
+                if (!contentArea || !charCount) return;
                 const length = contentArea.value.length;
                 charCount.textContent = `${length.toLocaleString()} / 1,000,000`;
                 
@@ -128,15 +95,12 @@
                     charCount.classList.remove('text-red-500');
                     charCount.classList.add('text-gray-500');
                 }
-                
-                // Also update markdown previews
-                const html = md.render(contentArea.value);
-                if (previewSplit) previewSplit.innerHTML = html;
-                if (previewOnly) previewOnly.innerHTML = html;
             }
 
-            contentArea.addEventListener('input', updateCharCount);
-            // Initial count and preview
+            if (contentArea) {
+                contentArea.addEventListener('input', updateCharCount);
+            }
+            // Initial count
             updateCharCount();
         </script>
     </th:block>

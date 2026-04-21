@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{fragments/layout}">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns="http://www.w3.org/1999/html" layout:decorate="~{fragments/layout}">
 <head>
     <title>Help & Documentation</title>
 </head>
@@ -78,7 +79,7 @@
                                 MeloPost is a specialized application designed to help organizations move beyond simple "blame games" and into structured, systematic root cause analysis. By using the <strong>Swiss Cheese Model</strong>, MeloPost helps teams identify not just <em>who</em> made a mistake, but <em>what</em> layers of defense failed and <em>how</em> to prevent similar issues in the future.
                             </p>
                             <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
-                                <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.50.28.png" alt="MeloPost Dashboard" class="w-full">
+                                <img src="/docs/sceenshots/Dashboard.png" alt="MeloPost Dashboard" class="w-full">
                                 <p class="p-3 text-sm text-gray-500 italic text-center bg-white border-t border-gray-100">Figure 1: The MeloPost Dashboard provides a central hub for incident management.</p>
                             </div>
                         </section>
@@ -114,7 +115,7 @@
                         </section>
 
                         <!-- Dashboard & Search -->
-                        <section id="dashboard">
+                        <section id="getting-started">
                             <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                                 <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">3</span>
                                 Getting Started
@@ -123,23 +124,68 @@
                                 Upon logging in, you are greeted with the Dashboard. Here you can see key metrics and recent postmortems. Use the search bar to find specific incidents using keywords or tags.
                             </p>
                             <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50 mb-6">
-                                <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.50.41.png" alt="Dashboard Overview" class="w-full">
-                                <p class="p-3 text-sm text-gray-500 italic text-center bg-white border-t border-gray-100">Figure 2: Dashboard Overview and Search.</p>
+                                <img src="/docs/sceenshots/login screen.png" alt="Login Screen" class="w-full">
+                                <p class="p-3 text-sm text-gray-500 italic text-center bg-white border-t border-gray-100">Figure 2: Access the platform via the secure login screen.</p>
                             </div>
                         </section>
 
-                        <!-- Creating Postmortem -->
-                        <section id="creating">
+                        <!-- Managing Postmortems -->
+                        <section id="managing">
                             <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                                 <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">4</span>
                                 Managing Postmortems
                             </h2>
-                            <p class="text-gray-600 mb-6">
-                                Click <strong>"Create New Postmortem"</strong> to begin. You'll need to provide basic incident data, including title, date, type (Local, Major, Orchestrated P1), and references to external systems.
-                            </p>
-                            <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50 mb-6">
-                                <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.50.50.png" alt="Create Postmortem" class="w-full">
-                                <p class="p-3 text-sm text-gray-500 italic text-center bg-white border-t border-gray-100">Figure 3: Incident creation form.</p>
+                            <div class="space-y-8">
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">View and Filter</h3>
+                                    <p class="text-gray-600 mb-4">The "All Postmortems" view provides a filterable list of every incident in the system.</p>
+                                    <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
+                                        <img src="/docs/sceenshots/List of postmortems All postmortem view.png" alt="List of Postmortems" class="w-full">
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Creating a Postmortem</h3>
+                                    <p class="text-gray-600 mb-4">Click <strong>"Create New Postmortem"</strong> to begin. You'll need to provide basic incident data, including title, date, type, and references.</p>
+                                    <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
+                                        <img src="/docs/sceenshots/Create Post mortem General Information.png" alt="Create Postmortem" class="w-full">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Impact & Evidence</h3>
+                                    <p class="text-gray-600 mb-4">Document the full impact and attach relevant documents like logs or screenshots.</p>
+                                    <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
+                                        <img src="/docs/sceenshots/PostMortem create Impact section and attach documents.png" alt="Impact Section" class="w-full">
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Defense Layers</h3>
+                                    <p class="text-gray-600 mb-4">Analyze the 10 standard defense layers to identify where the systemic failures occurred.</p>
+                                    <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
+                                        <img src="/docs/sceenshots/Postmortem Create swiss cheese layer.png" alt="Swiss Cheese Layers" class="w-full">
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Postmortem Notes</h3>
+                                    <p class="text-gray-600 mb-4">Capture raw data and detailed findings using the dedicated Notes section with Froala Editor V5.</p>
+                                    <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
+                                        <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                            <img src="/docs/sceenshots/Postmortem create Notes and Attach Document.png" alt="Create Note" class="w-full">
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <section>
+                            <div>
+                                <h3 class="text-xl font-semibold text-gray-800 mb-3">Incident Notes</h3>
+                                <p class="text-gray-600 mb-4">Capture raw data and detailed findings during a incident the dedicated Notes section with Froala Editor V5. These can at a later time be linked to a postmortem.</p>
+                                <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                   <img src="/docs/sceenshots/Overview of all incident notes.png" alt="Notes Overview" class="w-full">
+                                 </div>
                             </div>
                         </section>
 
@@ -147,60 +193,48 @@
                         <section id="analysis">
                             <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                                 <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">5</span>
-                                In-Depth Incident Analysis
+                                Swiss Cheese Analysis
                             </h2>
                             <div class="space-y-8">
+
                                 <div>
-                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Timeline & Details</h3>
-                                    <p class="text-gray-600 mb-4">The details view is where you manage the timeline, analyze layers, and document holes. Every postmortem starts with a set of 10 standard defense layers.</p>
-                                    <div class="grid md:grid-cols-2 gap-4">
-                                        <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                                            <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.50.59.png" alt="Postmortem Details" class="w-full">
-                                        </div>
-                                        <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                                            <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.06.png" alt="Timeline Management" class="w-full">
-                                        </div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Stories (Remedial Actions)</h3>
+                                    <p class="text-gray-600 mb-4">Link identified holes to actionable tasks (Stories) and track them through to completion.</p>
+                                    <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
+                                        <img src="/docs/sceenshots/Overview of all stories with filter.png" alt="Stories Overview" class="w-full">
                                     </div>
-                                    <p class="mt-2 text-sm text-gray-500 italic">Figure 4 & 5: Postmortem details view and Timeline management.</p>
                                 </div>
 
                                 <div>
-                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Cheese Layers & Holes</h3>
-                                    <p class="text-gray-600 mb-4">Analyze each layer to identify where the defense failed. Add "Holes" to document these specific failures and assign remedial actions.</p>
-                                    <div class="grid md:grid-cols-2 gap-4">
-                                        <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                                            <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.19.png" alt="Cheese Layers Analysis" class="w-full">
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Hole Overview</h3>
+                                    <p class="text-gray-600 mb-4">The Hole Overview provides a centralized view of all identified weaknesses across all postmortems.</p>
+                                    <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
+                                        <div class="p-8 text-center bg-white">
+                                            <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50">
+                                                <img src="docs/sceenshots/Overview holes.png" alt="Stories Overview" class="w-full">
+                                            </div>
+                                            <h4 class="text-lg font-bold text-gray-800 mb-2">Centralized Tracking</h4>
+                                            <p class="text-sm text-gray-500 max-w-xs mx-auto">Filter and analyze holes by keyword, team, layer, or status to identify recurring systemic failures.</p>
                                         </div>
-                                        <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                                            <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.26.png" alt="Hole Identification" class="w-full">
-                                        </div>
-                                    </div>
-                                    <p class="mt-2 text-sm text-gray-500 italic">Figure 6 & 7: Analyzing layers and identifying holes.</p>
-                                </div>
-
-                                <div>
-                                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Guiding Questions</h3>
-                                    <p class="text-gray-600 mb-4">Use the Questions tab to help stimulate deeper analysis and document your thought process.</p>
-                                    <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50 max-w-2xl mx-auto">
-                                        <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.32.png" alt="Guiding Questions" class="w-full">
-                                        <p class="p-3 text-sm text-gray-500 italic text-center bg-white border-t border-gray-100">Figure 8: Structured analysis through guiding questions.</p>
                                     </div>
                                 </div>
                             </div>
                         </section>
 
-                        <!-- Stories -->
-                        <section id="stories">
+                        <!-- Reporting -->
+                        <section id="reporting">
                             <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                                 <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">6</span>
-                                Remedial Actions (Stories)
+                                Reporting & Templates
                             </h2>
-                            <p class="text-gray-600 mb-6">
-                                A postmortem is only successful if it leads to improvement. "Stories" are the mechanism for this. Link holes to specific tasks in platforms like Jira, ServiceNow, or Azure DevOps.
-                            </p>
-                            <div class="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-gray-50 mb-6">
-                                <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.37.png" alt="Remedial Stories" class="w-full">
-                                <p class="p-3 text-sm text-gray-500 italic text-center bg-white border-t border-gray-100">Figure 9: Remedial stories management.</p>
+                            <p class="text-gray-600 mb-6">Create customizable report templates using Mustache and export your findings to PDF.</p>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                    <img src="/docs/sceenshots/Overview of all reporting templates.png" alt="Templates List" class="w-full">
+                                </div>
+                                <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                    <img src="/docs/sceenshots/Create new template page.png" alt="Create Template" class="w-full">
+                                </div>
                             </div>
                         </section>
 
@@ -210,19 +244,55 @@
                                 <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">7</span>
                                 Administration
                             </h2>
-                            <p class="text-gray-600 mb-6">Admin users can manage system-wide settings, including users, data sources, and report templates.</p>
-                            <div class="grid md:grid-cols-3 gap-4">
-                                <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                                    <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.50.png" alt="User Management" class="h-40 w-full object-cover">
-                                    <p class="p-2 text-xs text-center bg-white">Users</p>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                                    <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+                                        <i data-lucide="users" class="w-5 h-5 mr-2 text-blue-500"></i>
+                                        User Management
+                                    </h3>
+                                    <div class="space-y-4">
+                                        <img src="/docs/sceenshots/Overview of Users only admin.png" alt="User Management" class="rounded-lg shadow-sm">
+                                        <p class="text-xs text-gray-500 italic text-center">Manage roles and access control.</p>
+                                    </div>
                                 </div>
-                                <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                                    <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.51.55.png" alt="Data Sources" class="h-40 w-full object-cover">
-                                    <p class="p-2 text-xs text-center bg-white">Data Sources</p>
+                                <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                                    <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+                                        <i data-lucide="share-2" class="w-5 h-5 mr-2 text-blue-500"></i>
+                                        External Integrations
+                                    </h3>
+                                    <div class="space-y-4">
+                                        <img src="/docs/sceenshots/Overview of all the Exaternal intergrations.png" alt="Data Sources" class="rounded-lg shadow-sm">
+                                        <p class="text-xs text-gray-500 italic text-center">Configure Jira, ServiceNow, and DevOps connections.</p>
+                                    </div>
                                 </div>
-                                <div class="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                                    <img src="/docs/sceenshots/Screenshot 2026-04-09 at 09.52.04.png" alt="Report Templates" class="h-40 w-full object-cover">
-                                    <p class="p-2 text-xs text-center bg-white">Templates</p>
+
+                                <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 md:col-span-2">
+                                    <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+                                        <i data-lucide="database" class="w-5 h-5 mr-2 text-blue-500"></i>
+                                        Database Administration Tool
+                                    </h3>
+                                    <div class="grid md:grid-cols-2 gap-6">
+                                        <div class="space-y-4">
+                                            <img src="/docs/sceenshots/Database overview.png" alt="Database Admin" class="rounded-lg shadow-sm border border-gray-200">
+                                            <p class="text-xs text-gray-500 italic text-center">Direct access to underlying Cassandra data.</p>
+                                        </div>
+                                        <div class="flex flex-col justify-center">
+                                            <ul class="space-y-3">
+                                                <li class="flex items-start">
+                                                    <i data-lucide="terminal" class="w-4 h-4 mr-2 text-blue-500 mt-0.5"></i>
+                                                    <span class="text-sm text-gray-600"><strong>CQL Console:</strong> Execute queries directly against the keyspace.</span>
+                                                </li>
+                                                <li class="flex items-start">
+                                                    <i data-lucide="table" class="w-4 h-4 mr-2 text-blue-500 mt-0.5"></i>
+                                                    <span class="text-sm text-gray-600"><strong>Schema Browser:</strong> Inspect table structures and UDTs.</span>
+                                                </li>
+                                                <li class="flex items-start">
+                                                    <i data-lucide="download" class="w-4 h-4 mr-2 text-blue-500 mt-0.5"></i>
+                                                    <span class="text-sm text-gray-600"><strong>Data Export:</strong> Download query results in CSV format.</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </section>
@@ -287,7 +357,7 @@
                         <div class="bg-blue-50 p-6 rounded-xl border border-blue-100">
                             <h2 class="text-xl font-bold text-blue-800 mb-2">Overview</h2>
                             <p class="text-blue-700 leading-relaxed">
-                                MeloPost uses an H2 file-based database with Hibernate/JPA. The schema is optimized for tracking incident histories and the Swiss Cheese Model of analysis.
+                                MeloPost uses Apache Cassandra for highly available and scalable data storage. The schema is optimized for tracking incident histories and the Swiss Cheese Model of analysis using User Defined Types (UDTs).
                             </p>
                         </div>
 

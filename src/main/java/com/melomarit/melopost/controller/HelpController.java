@@ -35,10 +35,10 @@ public class HelpController {
         
         // Postmortems API
         apis.add(new ApiEndpointDTO("GET", "/api/postmortems", "List all postmortems", 
-                "[{\"id\":1, \"title\":\"DB Outage\", \"type\":\"Major Postmortem\", \"incidentDate\":\"2026-04-09T10:00:00\", \"incidentRef\":\"INC-123\", \"department\":\"Engineering\"}]"));
+                "[{\"uuid\":\"550e8400-e29b-41d4-a716-446655440000\", \"title\":\"DB Outage\", \"type\":\"Major Postmortem\", \"incidentDate\":\"2026-04-09T10:00:00\", \"incidentRef\":\"INC-123\", \"department\":\"Engineering\"}]"));
         
         String fullPostmortemJson = "{\n" +
-                "  \"id\": 1,\n" +
+                "  \"uuid\": \"550e8400-e29b-41d4-a716-446655440000\",\n" +
                 "  \"title\": \"Production Database Outage\",\n" +
                 "  \"description\": \"Detailed description of the incident...\",\n" +
                 "  \"startDate\": \"2026-04-09T09:00:00\",\n" +
@@ -55,32 +55,20 @@ public class HelpController {
                 "  \"tags\": [\"database\", \"outage\", \"p1\"],\n" +
                 "  \"layers\": [\n" +
                 "    {\n" +
-                "      \"id\": 101,\n" +
                 "      \"name\": \"Test\",\n" +
-                "      \"description\": \"Analysis of testing phase failures\",\n" +
                 "      \"holes\": [\n" +
                 "        {\n" +
-                "          \"id\": 201,\n" +
                 "          \"description\": \"Missing load test for DB migration\",\n" +
                 "          \"teamName\": \"QA-Team\",\n" +
                 "          \"remedialAction\": \"Add automated load tests to CI/CD\",\n" +
                 "          \"actionStatus\": \"PENDING\",\n" +
-                "          \"tags\": [\"automation\", \"load-test\"],\n" +
                 "          \"story\": {\n" +
-                "            \"id\": 301,\n" +
                 "            \"storyNumber\": \"STORY-5542\",\n" +
                 "            \"teamName\": \"QA-Team\",\n" +
                 "            \"backlogName\": \"QA Backlog\",\n" +
                 "            \"platform\": \"Jira\",\n" +
                 "            \"whatToFix\": \"Implement load testing suite\",\n" +
-                "            \"foundByDepartment\": \"Infrastructure\",\n" +
-                "            \"toSolveByDepartment\": \"QA\",\n" +
-                "            \"priority\": \"High\",\n" +
-                "            \"managerName\": \"John Doe\",\n" +
-                "            \"storyLink\": \"https://jira.example.com/browse/STORY-5542\",\n" +
-                "            \"status\": \"In Progress\",\n" +
-                "            \"notes\": \"Initial research started\",\n" +
-                "            \"tags\": [\"performance\"]\n" +
+                "            \"status\": \"In Progress\"\n" +
                 "          }\n" +
                 "        }\n" +
                 "      ]\n" +
@@ -88,13 +76,16 @@ public class HelpController {
                 "  ],\n" +
                 "  \"timelineEvents\": [\n" +
                 "    {\n" +
-                "      \"id\": 401,\n" +
                 "      \"eventTime\": \"2026-04-09T10:05:00\",\n" +
                 "      \"description\": \"Alert triggered: DB connection pool exhausted\"\n" +
                 "    }\n" +
                 "  ],\n" +
-                "  \"createdAt\": \"2026-04-09T11:00:00\",\n" +
-                "  \"updatedAt\": \"2026-04-09T11:15:00\"\n" +
+                "  \"questions\": [\n" +
+                "    {\n" +
+                "      \"question\": \"Was the monitoring effective?\",\n" +
+                "      \"answer\": \"Yes, it triggered immediately.\"\n" +
+                "    }\n" +
+                "  ]\n" +
                 "}";
         
         apis.add(new ApiEndpointDTO("GET", "/api/postmortems/{uuid}", "Get details for a specific postmortem", fullPostmortemJson));
@@ -114,12 +105,22 @@ public class HelpController {
                 "  \"failedApplication\": \"WebPortal\",\n" +
                 "  \"tags\": [\"frontend\", \"login\"]\n" +
                 "}"));
+        apis.add(new ApiEndpointDTO("POST", "/api/postmortems/import", "Import postmortem from .docx/.pdf/.txt file",
+                "Multipart Form Data (file) -> Returns Postmortem JSON"));
         apis.add(new ApiEndpointDTO("PUT", "/api/postmortems/{uuid}", "Update an existing postmortem",
                 "{\"title\":\"Updated Incident Title\", \"note\":\"Added more analysis notes.\"}"));
         apis.add(new ApiEndpointDTO("DELETE", "/api/postmortems/{uuid}", "Delete a postmortem",
-                "{\"message\":\"Postmortem deleted successfully\"}"));
+                "204 No Content"));
         apis.add(new ApiEndpointDTO("GET", "/api/postmortems/{uuid}/report", "Download PDF report for a postmortem",
                 "Binary PDF Stream"));
+        
+        // Postmortem Documents API
+        apis.add(new ApiEndpointDTO("GET", "/api/postmortem-documents/postmortem/{uuid}", "List documents for a postmortem",
+                "[{\"uuid\":\"550e8400-e29b-41d4-a716-446655440005\", \"fileName\":\"evidence.png\", \"contentType\":\"image/png\"}]"));
+        apis.add(new ApiEndpointDTO("GET", "/api/postmortem-documents/{uuid}/download", "Download a specific document",
+                "Binary File Stream"));
+        apis.add(new ApiEndpointDTO("POST", "/api/postmortem-documents/upload/{postmortemUuid}", "Upload document to postmortem",
+                "Multipart Form Data (file) -> Returns Document JSON"));
 
         // Users API
         apis.add(new ApiEndpointDTO("GET", "/api/users", "List all users",
@@ -137,7 +138,7 @@ public class HelpController {
         apis.add(new ApiEndpointDTO("PUT", "/api/users/{uuid}", "Update an existing user",
                 "{\"email\":\"updated@example.com\", \"active\":true}"));
         apis.add(new ApiEndpointDTO("DELETE", "/api/users/{uuid}", "Delete a user",
-                "{\"message\":\"User deleted successfully\"}"));
+                "204 No Content"));
 
         // DataSources API
         apis.add(new ApiEndpointDTO("GET", "/api/datasources", "List all data sources",
@@ -152,22 +153,15 @@ public class HelpController {
                 "  \"description\": \"Main production instance\",\n" +
                 "  \"operation\": \"INCIDENT_SYNC\"\n" +
                 "}"));
-        apis.add(new ApiEndpointDTO("PUT", "/api/datasources/{uuid}", "Update an existing data source",
-                "{\"description\":\"Updated connection settings\"}"));
-        apis.add(new ApiEndpointDTO("DELETE", "/api/datasources/{uuid}", "Delete a data source",
-                "{\"message\":\"Data source deleted successfully\"}"));
         apis.add(new ApiEndpointDTO("GET", "/api/datasources/templates", "List template data sources",
                 "[{\"name\":\"ServiceNow Template\", \"type\":\"ServiceNow\"}]"));
 
         // Admin Database API
         apis.add(new ApiEndpointDTO("GET", "/api/admin/database/tables", "List all Cassandra tables (ADMIN)",
-                "[{\"name\":\"postmortem\", \"rowCount\":25}]"));
-        apis.add(new ApiEndpointDTO("GET", "/api/admin/database/table/{name}", "Get details for a specific table (ADMIN)",
-                "{\"name\":\"users\", \"columns\":[\"uuid\",\"username\"], \"data\":[[\"550e8400-e29b-41d4-a716-446655440001\",\"admin\"]]}"));
+                "[{\"name\":\"postmortem\", \"rowCount\":25, \"type\":\"TABLE\"}]"));
         apis.add(new ApiEndpointDTO("POST", "/api/admin/database/query", "Execute raw SQL query (ADMIN)",
                 "{\n" +
-                "  \"query\": \"SELECT * FROM USERS WHERE ACTIVE = TRUE\",\n" +
-                "  \"results\": []\n" +
+                "  \"query\": \"SELECT * FROM USERS WHERE ACTIVE = TRUE\"\n" +
                 "}"));
 
         return apis;

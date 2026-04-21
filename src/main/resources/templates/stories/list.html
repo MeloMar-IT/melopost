@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Stories Overview</title>
+</head>
+<body>
+    <div layout:fragment="header-title">Stories Overview</div>
+
+    <div layout:fragment="content">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">All Remedial Stories</h1>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 p-4">
+            <form th:action="@{/postmortems/stories}" method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Keyword</label>
+                    <input type="text" name="keyword" th:value="${keyword}" placeholder="Story #, fix, notes, title..." 
+                           class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Team</label>
+                    <select name="teamName" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">All Teams</option>
+                        <option th:each="team : ${teamNames}" th:value="${team}" th:text="${team}" th:selected="${team == selectedTeam}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Status</label>
+                    <select name="status" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">All Statuses</option>
+                        <option th:each="st : ${statuses}" th:value="${st}" th:text="${st}" th:selected="${st == selectedStatus}"></option>
+                    </select>
+                </div>
+                <div class="flex items-end space-x-2">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-lg transition-colors">
+                        Filter
+                    </button>
+                    <a th:href="@{/postmortems/stories}" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center text-sm font-semibold py-2 rounded-lg transition-colors">
+                        Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Stories Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100">
+                            <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Story #</th>
+                            <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">What to Fix</th>
+                            <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Team</th>
+                            <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Postmortem</th>
+                            <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
+                            <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        <tr th:each="item : ${stories}" class="hover:bg-blue-50/30 transition-colors group">
+                            <td class="px-6 py-4">
+                                <span class="text-sm font-bold text-gray-900" th:text="${item.story.storyNumber}">STORY-123</span>
+                                <div class="text-[10px] text-gray-400" th:text="${item.story.platform}">Jira</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900 max-w-xs truncate" th:title="${item.story.whatToFix}" th:text="${item.story.whatToFix}">Fix description</div>
+                                <div class="text-[10px] text-gray-500 truncate" th:if="${item.holeDescription}" th:utext="'Hole: ' + ${item.holeDescription}">Hole info</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-600" th:text="${item.story.teamName}">Team</div>
+                                <div class="text-[10px] text-gray-400" th:text="${item.story.backlogName}">Backlog</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <a th:href="@{'/postmortems/details/' + ${item.postmortemId}}" 
+                                   class="text-sm text-blue-600 hover:text-blue-800 font-medium" 
+                                   th:text="${item.postmortemTitle}">Postmortem Title</a>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span th:text="${item.story.priority}" 
+                                      class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                      th:classappend="${item.story.priority == 'P1' or item.story.priority == 'HIGH' ? 'bg-red-100 text-red-700' : (item.story.priority == 'P2' or item.story.priority == 'MEDIUM' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700')}">
+                                    Priority
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span th:if="${item.story.status == 'CLOSED' or item.story.status == 'DONE'}" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Closed</span>
+                                <span th:if="${item.story.status == 'OPEN' or item.story.status == 'TO DO'}" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Open</span>
+                                <span th:if="${item.story.status != 'CLOSED' and item.story.status != 'DONE' and item.story.status != 'OPEN' and item.story.status != 'TO DO'}" 
+                                      class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" 
+                                      th:text="${item.story.status}">Status</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <a th:if="${item.story.storyLink}" th:href="${item.story.storyLink}" target="_blank" class="text-gray-400 hover:text-blue-600 transition-colors">
+                                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(stories)}">
+                            <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                                <div class="flex flex-col items-center">
+                                    <i data-lucide="info" class="w-8 h-8 mb-2 text-gray-300"></i>
+                                    <p>No stories found matching your criteria.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

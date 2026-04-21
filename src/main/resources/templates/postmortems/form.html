@@ -17,6 +17,18 @@
 
     <div layout:fragment="content">
         <div class="max-w-5xl mx-auto">
+            <!-- Error Alert -->
+            <div th:if="${error}" class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i data-lucide="alert-circle" class="h-5 w-5 text-red-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700" th:text="${error}"></p>
+                    </div>
+                </div>
+            </div>
+
             <form th:action="@{/postmortems/save}" th:object="${postmortem}" method="post" enctype="multipart/form-data" class="space-y-8">
                 <input type="hidden" th:field="*{uuid}"/>
                 
@@ -36,6 +48,7 @@
                         <textarea id="description" th:field="*{description}" rows="3"
                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
                                   placeholder="Summary of what happened and the impact..."></textarea>
+                        <script>document.addEventListener('DOMContentLoaded', () => initFroalaEditor('description', '100px'));</script>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -146,42 +159,11 @@
                     </div>
 
                     <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                            <label for="note" class="block text-sm font-semibold text-gray-700">Analysis Notes</label>
-                            <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200" x-data="{ viewMode: 'code' }">
-                                <button type="button" @click="viewMode = 'code'; $dispatch('view-mode-changed-note', 'code')"
-                                        :class="viewMode === 'code' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'"
-                                        class="px-3 py-1 text-xs font-medium rounded-md transition-all">
-                                    Code
-                                </button>
-                                <button type="button" @click="viewMode = 'split'; $dispatch('view-mode-changed-note', 'split')"
-                                        :class="viewMode === 'split' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'"
-                                        class="px-3 py-1 text-xs font-medium rounded-md transition-all">
-                                    Split
-                                </button>
-                                <button type="button" @click="viewMode = 'view'; $dispatch('view-mode-changed-note', 'view')"
-                                        :class="viewMode === 'view' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'"
-                                        class="px-3 py-1 text-xs font-medium rounded-md transition-all">
-                                    View
-                                </button>
-                            </div>
-                        </div>
-                        <div x-data="{ mode: 'code' }" @view-mode-changed-note.window="mode = $event.detail" class="space-y-4">
-                            <div :class="mode === 'view' ? 'hidden' : (mode === 'split' ? 'grid grid-cols-2 gap-4' : 'block')">
-                                <div :class="mode === 'split' ? 'h-[500px]' : ''">
-                                    <textarea id="note" th:field="*{note}" rows="10"
-                                              class="w-full h-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none font-mono text-sm"
-                                              placeholder="Detailed analysis notes, thoughts, and conclusions (Markdown supported)..."
-                                              @input="updateNotePreview()"></textarea>
-                                </div>
-                                <div :class="mode === 'split' ? 'block border rounded-lg p-4 overflow-auto h-[500px] bg-white prose max-w-none' : 'hidden'"
-                                     id="notePreviewSplit">
-                                </div>
-                            </div>
-                            <div :class="mode === 'view' ? 'block border rounded-lg p-6 overflow-auto min-h-[300px] bg-white prose max-w-none' : 'hidden'"
-                                 id="notePreviewOnly">
-                            </div>
-                        </div>
+                        <label for="note" class="block text-sm font-semibold text-gray-700">Analysis Notes</label>
+                        <textarea id="note" th:field="*{note}" rows="10"
+                                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none font-mono text-sm"
+                                  placeholder="Detailed analysis notes, thoughts, and conclusions..."></textarea>
+                        <script>document.addEventListener('DOMContentLoaded', () => initFroalaEditor('note', '400px'));</script>
                     </div>
 
                     <!-- Document Upload in Form -->
@@ -213,6 +195,121 @@
                                     <span class="text-[10px] text-gray-400" th:text="${#numbers.formatInteger(doc.size / 1024, 0) + ' KB'}">12 KB</span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- IMPACT SECTION -->
+                <section class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-8 border-b border-gray-100">
+                        <h3 class="text-lg font-bold text-gray-900">IMPACT</h3>
+                    </div>
+                    
+                    <!-- Services Impact Table -->
+                    <div class="p-8 space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-md font-bold text-gray-800">Services Impact</h4>
+                            <button type="button" onclick="addServiceImpact()" class="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700">
+                                <i data-lucide="plus-circle" class="w-4 h-4 mr-1"></i>
+                                Add Service Impact
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gray-50 border-b border-gray-100 text-[10px] font-semibold text-gray-500 uppercase">
+                                    <tr>
+                                        <th class="px-4 py-3">Services</th>
+                                        <th class="px-4 py-3">Country</th>
+                                        <th class="px-4 py-3">Start Date/time</th>
+                                        <th class="px-4 py-3">End Date/time</th>
+                                        <th class="px-4 py-3">Duration</th>
+                                        <th class="px-4 py-3">Impact description</th>
+                                        <th class="px-4 py-3 w-10"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="service-impact-body" class="divide-y divide-gray-100">
+                                    <tr th:each="si, siStat : *{serviceImpacts}">
+                                        <input type="hidden" th:field="*{serviceImpacts[__${siStat.index}__].uuid}"/>
+                                        <td class="px-4 py-3">
+                                            <input type="text" th:field="*{serviceImpacts[__${siStat.index}__].service}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input type="text" th:field="*{serviceImpacts[__${siStat.index}__].country}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input type="datetime-local" th:field="*{serviceImpacts[__${siStat.index}__].startTime}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input type="datetime-local" th:field="*{serviceImpacts[__${siStat.index}__].endTime}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input type="text" th:field="*{serviceImpacts[__${siStat.index}__].duration}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input type="text" th:field="*{serviceImpacts[__${siStat.index}__].impactDescription}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                                        </td>
+                                        <td class="px-4 py-3 text-right">
+                                            <button type="button" onclick="this.closest('tr').remove(); updateServiceImpactIndices();" class="text-red-500 hover:text-red-700">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- CBS Impact Table -->
+                    <div class="p-8 space-y-4 border-t border-gray-100">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-md font-bold text-gray-800">CBS Impact</h4>
+                            <button type="button" onclick="addCbsImpact()" class="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700">
+                                <i data-lucide="plus-circle" class="w-4 h-4 mr-1"></i>
+                                Add CBS Impact
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gray-50 border-b border-gray-100 text-[10px] font-semibold text-gray-500 uppercase">
+                                    <tr>
+                                        <th class="px-4 py-3">CBS Name</th>
+                                        <th class="px-4 py-3">IT Services</th>
+                                        <th class="px-4 py-3">Start Date/Time</th>
+                                        <th class="px-4 py-3">End Date/Time</th>
+                                        <th class="px-4 py-3">Duration</th>
+                                        <th class="px-4 py-3">Tolerance level Exceeded</th>
+                                        <th class="px-4 py-3 w-10"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cbs-impact-body" class="divide-y divide-gray-100">
+                                    <tr th:each="ci, ciStat : *{cbsImpacts}">
+                                        <input type="hidden" th:field="*{cbsImpacts[__${ciStat.index}__].uuid}"/>
+                                        <td class="px-4 py-3">
+                                            <input type="text" th:field="*{cbsImpacts[__${ciStat.index}__].cbsName}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input type="text" th:field="*{cbsImpacts[__${ciStat.index}__].itServices}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input type="datetime-local" th:field="*{cbsImpacts[__${ciStat.index}__].startTime}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input type="datetime-local" th:field="*{cbsImpacts[__${ciStat.index}__].endTime}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input type="text" th:field="*{cbsImpacts[__${ciStat.index}__].duration}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input type="text" th:field="*{cbsImpacts[__${ciStat.index}__].toleranceLevelExceeded}" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                                        </td>
+                                        <td class="px-4 py-3 text-right">
+                                            <button type="button" onclick="this.closest('tr').remove(); updateCbsImpactIndices();" class="text-red-500 hover:text-red-700">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </section>
@@ -286,20 +383,33 @@
                                 </div>
                                 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div class="space-y-2">
+                                    <div class="space-y-2 md:col-span-2">
                                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Hole Description</label>
-                                        <input type="text" th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].description}" 
-                                               class="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Missing validation">
+                                        <textarea th:id="'holeDescription-' + ${layerStat.index} + '-' + ${holeStat.index}"
+                                                  th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].description}" 
+                                                  class="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" rows="2"
+                                                  placeholder="e.g. Missing validation"></textarea>
+                                        <script th:inline="javascript">
+                                            document.addEventListener('DOMContentLoaded', () => {
+                                                initFroalaEditor(/*[[${'holeDescription-' + layerStat.index + '-' + holeStat.index}]]*/ '', '100px');
+                                            });
+                                        </script>
                                     </div>
-                                    <div class="space-y-2">
+                                    <div class="space-y-2 md:col-span-2">
                                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Team Responsible</label>
                                         <input type="text" th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].teamName}" 
                                                class="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                                     </div>
                                     <div class="space-y-2 md:col-span-2">
                                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Remedial Action</label>
-                                        <input type="text" th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].remedialAction}" 
-                                               class="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <textarea th:id="'remedialAction-' + ${layerStat.index} + '-' + ${holeStat.index}"
+                                                  th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].remedialAction}" 
+                                                  class="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" rows="2"></textarea>
+                                        <script th:inline="javascript">
+                                            document.addEventListener('DOMContentLoaded', () => {
+                                                initFroalaEditor(/*[[${'remedialAction-' + layerStat.index + '-' + holeStat.index}]]*/ '', '100px');
+                                            });
+                                        </script>
                                     </div>
                                     <div class="space-y-2 md:col-span-2">
                                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Hole Tags (comma separated)</label>
@@ -339,8 +449,14 @@
                                     </div>
                                         <div class="space-y-1">
                                             <label class="text-[10px] font-bold text-slate-400 uppercase">Implementation Details (What to fix)</label>
-                                            <textarea th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.whatToFix}" 
+                                            <textarea th:id="'whatToFix-' + ${layerStat.index} + '-' + ${holeStat.index}"
+                                                      th:field="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.whatToFix}"
                                                       class="w-full border border-slate-200 rounded px-3 py-1.5 text-sm focus:border-blue-500 outline-none" rows="2"></textarea>
+                                            <script th:inline="javascript">
+                                                document.addEventListener('DOMContentLoaded', () => {
+                                                    initFroalaEditor(/*[[${'whatToFix-' + layerStat.index + '-' + holeStat.index}]]*/ '', '100px');
+                                                });
+                                            </script>
                                         </div>
                                         <div class="space-y-1" th:if="*{layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.tags != null and !layers[__${layerStat.index}__].holes[__${holeStat.index}__].story.tags.empty}">
                                             <label class="text-[10px] font-bold text-slate-400 uppercase">System Tags</label>
@@ -465,6 +581,100 @@
             });
         }
 
+        function addServiceImpact() {
+            const body = document.getElementById('service-impact-body');
+            const index = body.querySelectorAll('tr').length;
+            const html = `
+                <tr class="divide-y divide-gray-100">
+                    <td class="px-4 py-3">
+                        <input type="text" name="serviceImpacts[${index}].service" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="text" name="serviceImpacts[${index}].country" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="datetime-local" name="serviceImpacts[${index}].startTime" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="datetime-local" name="serviceImpacts[${index}].endTime" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="text" name="serviceImpacts[${index}].duration" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="text" name="serviceImpacts[${index}].impactDescription" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <button type="button" onclick="this.closest('tr').remove(); updateServiceImpactIndices();" class="text-red-500 hover:text-red-700">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            body.insertAdjacentHTML('beforeend', html);
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function updateServiceImpactIndices() {
+            const body = document.getElementById('service-impact-body');
+            const rows = body.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                const inputs = row.querySelectorAll('input');
+                inputs.forEach(input => {
+                    if (input.name) {
+                        input.name = input.name.replace(/serviceImpacts\[\d+\]/, `serviceImpacts[${index}]`);
+                    }
+                });
+            });
+        }
+
+        function addCbsImpact() {
+            const body = document.getElementById('cbs-impact-body');
+            const index = body.querySelectorAll('tr').length;
+            const html = `
+                <tr class="divide-y divide-gray-100">
+                    <td class="px-4 py-3">
+                        <input type="text" name="cbsImpacts[${index}].cbsName" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="text" name="cbsImpacts[${index}].itServices" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="datetime-local" name="cbsImpacts[${index}].startTime" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="datetime-local" name="cbsImpacts[${index}].endTime" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="text" name="cbsImpacts[${index}].duration" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="text" name="cbsImpacts[${index}].toleranceLevelExceeded" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none">
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <button type="button" onclick="this.closest('tr').remove(); updateCbsImpactIndices();" class="text-red-500 hover:text-red-700">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            body.insertAdjacentHTML('beforeend', html);
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function updateCbsImpactIndices() {
+            const body = document.getElementById('cbs-impact-body');
+            const rows = body.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                const inputs = row.querySelectorAll('input');
+                inputs.forEach(input => {
+                    if (input.name) {
+                        input.name = input.name.replace(/cbsImpacts\[\d+\]/, `cbsImpacts[${index}]`);
+                    }
+                });
+            });
+        }
+
         function addHole(layerIndex) {
             const container = document.getElementById(`holes-container-${layerIndex}`);
             const index = container.querySelectorAll('.hole-item').length;
@@ -479,20 +689,21 @@
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
+                        <div class="space-y-2 md:col-span-2">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Hole Description</label>
-                            <input type="text" name="layers[${layerIndex}].holes[${index}].description" 
-                                   class="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <textarea id="holeDescription-${layerIndex}-${index}" name="layers[${layerIndex}].holes[${index}].description" 
+                                      class="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" rows="2"
+                                      placeholder="e.g. Missing validation"></textarea>
                         </div>
-                        <div class="space-y-2">
+                        <div class="space-y-2 md:col-span-2">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Team Responsible</label>
                             <input type="text" name="layers[${layerIndex}].holes[${index}].teamName" 
                                    class="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Remedial Action</label>
-                            <input type="text" name="layers[${layerIndex}].holes[${index}].remedialAction" 
-                                   class="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <textarea id="remedialAction-${layerIndex}-${index}" name="layers[${layerIndex}].holes[${index}].remedialAction" 
+                                      class="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" rows="2"></textarea>
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Hole Tags (comma separated)</label>
@@ -531,13 +742,16 @@
                         </div>
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">Implementation Details (What to fix)</label>
-                            <textarea name="layers[${layerIndex}].holes[${index}].story.whatToFix" 
+                            <textarea id="whatToFix-${layerIndex}-${index}" name="layers[${layerIndex}].holes[${index}].story.whatToFix" 
                                       class="w-full border border-slate-200 rounded px-3 py-1.5 text-sm focus:border-blue-500 outline-none" rows="2"></textarea>
                         </div>
                     </div>
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
+            initFroalaEditor(`holeDescription-${layerIndex}-${index}`, '100px');
+            initFroalaEditor(`remedialAction-${layerIndex}-${index}`, '100px');
+            initFroalaEditor(`whatToFix-${layerIndex}-${index}`, '100px');
             if (window.lucide) {
                 lucide.createIcons();
             }
@@ -568,7 +782,7 @@
 
         // Initialize preview on load
         document.addEventListener('DOMContentLoaded', () => {
-            updateNotePreview();
+            // updateNotePreview();
         });
     </script>
     </th:block>

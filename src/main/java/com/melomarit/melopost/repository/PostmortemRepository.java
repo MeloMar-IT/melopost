@@ -17,4 +17,7 @@ public interface PostmortemRepository extends CassandraRepository<Postmortem, UU
     // In a real scenario, we would use an search index or a more specialized repository
     @AllowFiltering
     List<Postmortem> findByTitleContaining(String keyword);
+
+    @AllowFiltering
+    List<Postmortem> findByIncidentRef(String incidentRef);
 }

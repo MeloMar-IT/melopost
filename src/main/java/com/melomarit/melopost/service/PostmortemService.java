@@ -76,6 +76,16 @@ public class PostmortemService {
     }
 
     public Postmortem save(Postmortem postmortem) {
+        // Ensure unique Incident Ref
+        if (postmortem.getIncidentRef() != null && !postmortem.getIncidentRef().trim().isEmpty()) {
+            List<Postmortem> existing = repository.findByIncidentRef(postmortem.getIncidentRef());
+            for (Postmortem pm : existing) {
+                if (!pm.getUuid().equals(postmortem.getUuid())) {
+                    throw new RuntimeException("A postmortem with this Incident Ref already exists: " + postmortem.getIncidentRef());
+                }
+            }
+        }
+
         // Since we moved to UDTs, we don't need separate repository calls for layers/holes/stories
         // Similarity check logic needs to be adapted or simplified
         return repository.save(postmortem);

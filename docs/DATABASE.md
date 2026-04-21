@@ -32,6 +32,8 @@ The primary table for incident analysis.
 | `tags` | LIST<TEXT> | Categorization tags |
 | `layers` | LIST<FROZEN<cheese_layer>> | Defense layers (Nested UDT) |
 | `timeline_events` | LIST<FROZEN<timeline_event>> | Incident timeline (Nested UDT) |
+| `service_impacts` | LIST<FROZEN<service_impact>> | Service impacts (Nested UDT) |
+| `cbs_impacts` | LIST<FROZEN<cbs_impact>> | CBS impacts (Nested UDT) |
 | `questions` | LIST<FROZEN<postmortem_question>> | Guided analysis (Nested UDT) |
 | `document_uuids` | LIST<UUID> | References to attached documents |
 | `local_postmortem_uuids` | LIST<UUID> | Linked local postmortems (for Major) |
@@ -44,22 +46,59 @@ Stores metadata and content for attached files.
 | :--- | :--- | :--- |
 | `uuid` | UUID | Primary Key |
 | `postmortem_uuid` | UUID | Reference to parent postmortem |
-| `filename` | TEXT | Name of the file |
+| `file_name` | TEXT | Name of the file |
 | `content_type` | TEXT | MIME type |
+| `size` | BIGINT | File size in bytes |
 | `data` | BLOB | Binary file content |
-| `upload_time` | TIMESTAMP | When it was uploaded |
+| `upload_date` | TIMESTAMP | When it was uploaded |
 
 ### 3. `users`
 System user accounts.
 | Column | Type | Description |
 | :--- | :--- | :--- |
 | `uuid` | UUID | Primary Key |
-| `username` | TEXT | Unique username |
+| `username` | TEXT | Unique username (Indexed) |
 | `password` | TEXT | Encrypted password |
 | `email` | TEXT | User email |
+| `first_name` | TEXT | User's first name |
+| `last_name` | TEXT | User's last name |
 | `roles` | SET<TEXT> | Assigned roles (e.g., ROLE_ADMIN) |
 | `allowed_departments` | SET<TEXT> | Accessible departments |
 | `active` | BOOLEAN | Account status |
+
+### 4. `incident_note`
+External incident notes indexed by reference.
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `uuid` | UUID | Primary Key |
+| `incident_ref` | TEXT | External incident reference (Indexed) |
+| `content` | TEXT | Note content |
+| `created_at` | TIMESTAMP | Creation timestamp |
+| `updated_at` | TIMESTAMP | Last update timestamp |
+
+### 5. `data_source`
+Configuration for external data sources.
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `uuid` | UUID | Primary Key |
+| `name` | TEXT | Data source name |
+| `type` | TEXT | Type of source |
+| `operation` | TEXT | Operation type |
+| `url` | TEXT | Connection URL |
+| `username` | TEXT | Login username |
+| `password` | TEXT | Login password |
+| `description` | TEXT | Purpose of source |
+| `created_at` | TIMESTAMP | Creation timestamp |
+| `updated_at` | TIMESTAMP | Last update timestamp |
+
+### 6. `report_template`
+Mustache templates for report generation.
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `uuid` | UUID | Primary Key |
+| `name` | TEXT | Template name |
+| `content` | TEXT | Mustache template content |
+| `is_default` | BOOLEAN | If this is the default template |
 
 ---
 
@@ -78,30 +117,54 @@ Represents a layer of defense in the Swiss Cheese Model.
 Represents a weakness identified within a layer.
 - `uuid`: UUID
 - `description`: TEXT
-- `team_name`: TEXT
-- `remedial_action`: TEXT
-- `action_status`: TEXT
+- `teamname`: TEXT
+- `remedialaction`: TEXT
+- `actionstatus`: TEXT
+- `tags`: LIST<TEXT>
 - `story`: FROZEN<story> (Optional nested UDT)
 
 ### `story`
 Represents a remedial action task.
 - `uuid`: UUID
-- `story_number`: TEXT (External ID)
-- `team_name`: TEXT
-- `backlog_name`: TEXT
+- `storynumber`: TEXT (External ID)
+- `teamname`: TEXT
+- `backlogname`: TEXT
 - `platform`: TEXT
-- `what_to_fix`: TEXT
+- `whattofix`: TEXT
+- `foundbydepartment`: TEXT
+- `tosolvebydepartment`: TEXT
 - `priority`: TEXT
+- `managername`: TEXT
+- `storylink`: TEXT
 - `status`: TEXT
-- `story_link`: TEXT
+- `notes`: TEXT
+- `tags`: LIST<TEXT>
 
 ### `timeline_event`
 - `uuid`: UUID
-- `event_time`: TIMESTAMP
+- `eventtime`: TIMESTAMP
 - `description`: TEXT
+
+### `service_impact`
+- `uuid`: UUID
+- `service`: TEXT
+- `country`: TEXT
+- `start_time`: TIMESTAMP
+- `end_time`: TIMESTAMP
+- `duration`: TEXT
+- `impact_description`: TEXT
+
+### `cbs_impact`
+- `uuid`: UUID
+- `cbs_name`: TEXT
+- `it_services`: TEXT
+- `start_time`: TIMESTAMP
+- `end_time`: TIMESTAMP
+- `duration`: TEXT
+- `tolerance_level_exceeded`: TEXT
 
 ### `postmortem_question`
 - `uuid`: UUID
-- `cheese_layer`: TEXT
+- `cheeselayer`: TEXT
 - `question`: TEXT
 - `answer`: TEXT

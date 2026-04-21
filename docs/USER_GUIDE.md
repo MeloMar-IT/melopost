@@ -1,116 +1,189 @@
 # Melopost User Guide
 
-Welcome to the Melopost User Guide. Melopost is a specialized application designed to manage incident postmortems and facilitate root cause analysis using the **Swiss Cheese Model**.
+Welcome to the comprehensive Melopost User Guide. Melopost is a specialized platform designed for systematic incident postmortems and root cause analysis using the **Swiss Cheese Model**. Our goal is to move beyond simple blame and identify the systemic weaknesses that allow incidents to occur.
+
+---
 
 ## Table of Contents
-1. [Getting Started](#getting-started)
-2. [Dashboard](#dashboard)
-3. [Managing Postmortems](#managing-postmortems)
-4. [Swiss Cheese Analysis](#swiss-cheese-analysis)
-5. [Timeline Tracking](#timeline-tracking)
-6. [Remedial Actions (Stories)](#remedial-actions)
-7. [Reporting](#reporting)
-8. [Data Sources](#data-sources)
-9. [User Management](#user-management)
+1. [Introduction](#1-introduction)
+2. [Getting Started](#2-getting-started)
+3. [Dashboard & Overview](#3-dashboard--overview)
+4. [Managing Postmortems](#4-managing-postmortems)
+    - [Creating a Postmortem](#creating-a-postmortem)
+    - [Impact Section & Documents](#impact-section--documents)
+    - [Incident Notes](#incident-notes)
+5. [Swiss Cheese Analysis](#5-swiss-cheese-analysis)
+    - [Defense Layers](#defense-layers)
+    - [Identifying Holes](#identifying-holes)
+    - [Hole Overview](#hole-overview)
+6. [Remedial Actions (Stories)](#6-remedial-actions-stories)
+7. [Reporting](#7-reporting)
+8. [Administration](#8-administration)
+    - [User Management](#user-management)
+    - [Data Sources](#data-sources)
+    - [Report Templates](#report-templates)
+    - [Database Administration Tool](#database-administration-tool)
+9. [API & Database Documentation](#9-api--database-documentation)
 
 ---
 
-## Getting Started
+## 1. Introduction
 
-### Login
-To access Melopost, navigate to the application URL (default: `http://localhost:8080`). You will be greeted by the login screen.
-
-![Login Screen](sceenshots/Screenshot%202026-04-09%20at%2009.50.28.png)
-
-- **Default Credentials**: `admin` / `admin`
-- Enter your username and password to continue to the Dashboard.
+MeloPost helps teams perform deep-dive analysis into why things went wrong. By visualizing defenses as slices of Swiss cheese, we can identify where the "holes" (weaknesses) aligned to create a path for an incident.
 
 ---
 
-## Dashboard
+## 2. Getting Started
 
-The Dashboard provides a high-level overview of the incident management state. It includes:
-- **Statistics**: View total postmortems, active incidents, and completion rate of remedies.
-- **Filtering**: Filter postmortems by status, type, or department.
-- **Recent Postmortems**: Quick access to the latest incident analyses.
-- **Quick Actions**: Start a new postmortem or manage data sources directly.
+### Access & Login
+Navigate to your Melopost instance (e.g., `http://localhost:8080`).
+
+![Login Screen](sceenshots/login%20screen.png)
+
+- **Default Credentials**: `admin` / `admin` (Please change these upon first login).
+- Enter your credentials to access the central dashboard.
 
 ---
 
-## Managing Postmortems
+## 3. Dashboard & Overview
+
+The Dashboard is your command center, providing high-level metrics and quick access to recent work.
+
+![Dashboard](sceenshots/Dashboard.png)
+
+- **Metrics**: Track total postmortems, active analysis, and remedial action progress.
+- **Search**: Quickly find postmortems by title, reference, or tags.
+- **Recent Activity**: View the latest incidents being analyzed.
+
+---
+
+## 4. Managing Postmortems
 
 ### View All Postmortems
-The Postmortems page lists all incident analyses in the system.
+The "All Postmortems" view provides a filterable list of every incident in the system.
 
-From here you can:
-- **Search and Filter**: Search for specific incidents or filter by Status and Type.
-- **Create**: Create a new postmortem.
-- **View/Edit**: View or Edit existing postmortems.
-- **State Overview**: See at a glance the Status, Type, and the number of layers/holes identified for each incident.
+![List of Postmortems](sceenshots/List%20of%20postmortems%20All%20postmortem%20view.png)
 
-### Postmortem Details
-Clicking on a postmortem opens its detailed view.
+- **Filtering**: Filter by Status (In Analysis, Actioned, Published), Type, or Department.
+- **Quick Status**: See the number of identified holes and remedial stories at a glance.
 
-- **Overview**: A summary of the incident.
-- **Metadata**: Details like Incident Date, Start Date, Due Date, Status, Type, and relevant departments.
-- **Tags**: Categorize your incidents for better searchability.
+### Creating a Postmortem
+Click **"Create New Postmortem"** to start the analysis process.
 
----
+![Create Postmortem](sceenshots/Create%20Post%20mortem%20General%20Information.png)
 
-## Swiss Cheese Analysis
+Fill in the essential details:
+- **Title & Reference**: Clear name and incident tracking number (e.g., INC-1234).
+- **Type & Status**: Define the severity and current phase of analysis.
+- **Incident Dates**: Capture when the incident started and when it was resolved.
 
-Melopost uses 10 standard layers of defense to map incidents:
-1. Define
-2. Design
-3. Build
-4. Test
-5. Release
-6. Run
-7. Resilience
-8. Observability
-9. Incident Handling
-10. Human
+### Impact Section & Documents
+A thorough postmortem requires documenting the full impact and gathering evidence.
 
-For each layer, you can identify "Holes" (weaknesses) that contributed to the incident.
+![Impact Section](sceenshots/PostMortem%20create%20Impact%20section%20and%20attach%20documents.png)
 
----
+- **Impact Description**: Detailed narrative of the incident's effect on customers and systems.
+- **Document Attachments**: Upload logs, screenshots, or chat transcripts directly to the postmortem record.
 
-## Timeline Tracking
+### Postmortem Notes
+Melopost includes a dedicated "Incident Notes" feature (replacing legacy Loop systems) for raw data collection.
 
-Build a chronological view of the incident by adding timeline events. This helps in understanding the sequence of failures and the response process.
+![Incident Notes](sceenshots/Postmortem%20create%20Notes%20and%20Attach%20Document.png)
+
+- **Rich Text Editing**: Use the integrated Froala Editor V5 for professional documentation.
+- **Note Management**: View and filter all incident notes across the platform.
+
 
 ---
 
-## Remedial Actions (Stories)
+## 5. Swiss Cheese Analysis
 
-Identified "holes" can be linked to actionable tasks called **Stories**.
-- Track what needs to be fixed.
-- Assign responsibility to departments.
-- Monitor progress and status.
-- Link directly to external systems like Jira, ServiceNow, or Azure DevOps.
+This is the core of Melopost. We use 10 standard defense layers to map the incident.
 
----
+### Defense Layers
+Every postmortem automatically includes layers such as **Define, Design, Build, Test, Release, Run, Resilience, Observability, Incident Handling, and Human**.
 
-## Reporting
+![Swiss Cheese Layers](sceenshots/Postmortem%20Create%20swiss%20cheese%20layer.png)
 
-Generate professional PDF reports for your postmortems.
-- Use customizable **Mustache templates**.
-- Download reports to share with stakeholders.
-- Reports include the overview, timeline, Swiss cheese analysis, and remedial actions.
+### Identifying Holes
+For each layer, you identify "Holes" – specific weaknesses that allowed the incident to progress.
 
----
+### Hole Overview
+The **Hole Overview** provides a centralized view of all identified weaknesses across all postmortems. This is crucial for identifying recurring systemic issues that may affect multiple services or departments.
 
-## Data Sources
+![Stories Overview](sceenshots/Overview%20holes.png)
 
-Configure external system integrations in the Data Sources section.
-- Support for **ServiceNow**, **Jira**, and **Azure DevOps**.
-- Configure connection details and operation types (Read/Create).
+- **Filtering**: Search for holes by keyword, team, layer, or status.
+- **Aggregated View**: See the status of all "plugs" (remedial actions) in one place.
 
 ---
 
-## User Management
+## 6. Remedial Actions (Stories)
 
-(Administrators Only)
-- Manage user accounts and active status.
-- Assign roles for access control.
-- Configure department-based access restrictions.
+Holes must be plugged. In Melopost, we create **Stories** to track these remedial actions.
+
+![Stories Overview](sceenshots/Overview%20of%20all%20stories%20with%20filter.png)
+
+- **External Integration**: Link stories directly to **Jira**, **ServiceNow**, or **Azure DevOps**.
+- **Assignment**: Assign responsibility to specific departments.
+- **Tracking**: Monitor the status of every remedy to ensure the hole is truly closed.
+
+---
+### Incident Notes
+
+![Overview of Notes](sceenshots/Overview%20of%20all%20incident%20notes.png)
+
+---
+
+## 7. Reporting
+
+Generate professional PDF reports to share with stakeholders and leadership.
+
+![Reporting Templates](sceenshots/Overview%20of%20all%20reporting%20templates.png)
+
+- **Mustache Templates**: Create and manage customizable reporting templates.
+- **One-Click Export**: Generate a full postmortem report including timeline, impact, analysis, and actions.
+
+![Create Template](sceenshots/Create%20new%20template%20page.png)
+
+---
+
+## 8. Administration
+
+### User Management
+Control access to the platform and assign roles.
+
+![User List](sceenshots/Overview%20of%20Users%20only%20admin.png)
+![Edit User](sceenshots/Create:edit%20user%20only%20admin.png)
+
+### Data Sources
+Configure integrations with external ticket systems.
+
+![Data Sources List](sceenshots/Overview%20of%20all%20the%20Exaternal%20intergrations.png)
+![Edit Data Source](sceenshots/Create%20:%20edit%20datasource.png)
+
+### Database Administration Tool
+For administrators, Melopost includes a built-in database management tool to inspect the underlying data directly.
+
+![Database Admin](sceenshots/Database%20overview.png)
+
+- **SQL Console**: Run CQL (Cassandra Query Language) queries directly against the database.
+- **Schema Browser**: Browse all tables and User Defined Types (UDTs).
+- **Data Export**: Export query results to CSV for external analysis.
+
+---
+
+## 9. API & Database Documentation
+
+For advanced users and developers, Melopost provides built-in documentation for its internal workings.
+
+### API Documentation
+Explore available endpoints for automation and integration.
+
+![API Documentation](sceenshots/API%20documentation.png)
+
+### Database Schema
+View the underlying Cassandra data model and UDTs (User Defined Types).
+
+![Database Documentation](sceenshots/Database%20documentation.png)
+![Database Overview](sceenshots/Database%20overview.png)

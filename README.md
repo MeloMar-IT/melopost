@@ -73,6 +73,8 @@ The test suite has two tiers:
 
 CI (`.github/workflows/ci.yml`) runs `./mvnw -B verify` on every push and pull request. It requires Docker on the runner, and it fails if the Cassandra test classes report any skipped test. The surefire and failsafe reports are uploaded as the `test-reports` artifact.
 
+The `python-tests` job runs the Python tests in `tests/python` (`python -m unittest discover -s tests/python`) on Python 3.9 and 3.12. It is pinned to `ubuntu-24.04` because `ubuntu-latest` no longer provides Python 3.9. The matrix uses `fail-fast: false`, so a failure on one Python version does not cancel the other.
+
 ### Running with Different Environments (DTAP)
 Melopost supports different configurations for Development, Testing, Acceptance, and Production environments using Spring Profiles.
 

@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-public class PostmortemFunctionalTest {
+public class PostmortemFunctionalTest extends com.melomarit.melopost.support.AbstractCassandraIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

@@ -4,7 +4,6 @@ import com.melomarit.melopost.model.*;
 import com.melomarit.melopost.repository.DataSourceRepository;
 import com.melomarit.melopost.repository.IncidentNoteRepository;
 import com.melomarit.melopost.repository.PostmortemRepository;
-import com.melomarit.melopost.repository.ReportTemplateRepository;
 import com.melomarit.melopost.repository.UserRepository;
 import com.melomarit.melopost.service.DataSourceService;
 import org.slf4j.Logger;
@@ -13,10 +12,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ResourceLoader;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +24,8 @@ import java.util.Set;
 import java.util.UUID;
 
 @Configuration
+@Profile("(dev | test) & !prod & !acc")
+@ConditionalOnProperty(name = "melopost.seed.enabled", havingValue = "true")
 public class TestDataInitializer {
     private static final Logger log = LoggerFactory.getLogger(TestDataInitializer.class);
     private final Random random = new Random();
@@ -141,22 +142,16 @@ public class TestDataInitializer {
     };
 
     @Bean
-    @Order(3)
+    @Order(5)
     public CommandLineRunner initTestData(
             PostmortemRepository postmortemRepository,
             DataSourceRepository dataSourceRepository,
             DataSourceService dataSourceService,
             IncidentNoteRepository incidentNoteRepository,
             UserRepository userRepository,
-            ReportTemplateRepository reportTemplateRepository,
-            ResourceLoader resourceLoader,
             PasswordEncoder passwordEncoder) {
         return args -> {
-            log.info("[TEST_DATA] Removing existing test data...");
-            
-            postmortemRepository.deleteAll();
-            dataSourceRepository.deleteAll();
-            incidentNoteRepository.deleteAll();
+            log.warn("[TEST_DATA] Seeding is enabled: creating demo users with well-known passwords. Never use this in production.");
 
             // Initialize User
             if (userRepository.count() <= 1) { // If only admin or no users exist
@@ -197,59 +192,9 @@ public class TestDataInitializer {
                 log.info("[TEST_DATA] Initialized test users (user1, user2).");
             }
 
-            // Initialize Default Report Template
-            if (reportTemplateRepository.count() >= 0) { // Changed to always check/update to ensure latest template
-                try {
-                    // Default Template
-                    String templateName = "Standard Postmortem Report";
-                    var existingTemplate = reportTemplateRepository.findByName(templateName);
-
-                    var resource = resourceLoader.getResource("classpath:templates/reports/postmortem-report.mustache");
-                    String content = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-
-                    if (existingTemplate.isPresent()) {
-                        ReportTemplate t = existingTemplate.get();
-                        if (!content.equals(t.getContent())) {
-                            t.setContent(content);
-                            reportTemplateRepository.save(t);
-                            log.info("[TEST_DATA] Updated existing default report template with latest content.");
-                        }
-                    } else {
-                        ReportTemplate template = new ReportTemplate();
-                        template.setUuid(UUID.randomUUID());
-                        template.setName(templateName);
-                        template.setContent(content);
-                        template.setDefault(true);
-                        reportTemplateRepository.save(template);
-                        log.info("[TEST_DATA] Initialized default report template.");
-                    }
-
-                    // Test Template
-                    String testTemplateName = "Test Mustache Template";
-                    var existingTestTemplate = reportTemplateRepository.findByName(testTemplateName);
-
-                    var testResource = resourceLoader.getResource("classpath:templates/reports/test.mustache");
-                    String testContent = new String(testResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-
-                    if (existingTestTemplate.isPresent()) {
-                        ReportTemplate t = existingTestTemplate.get();
-                        if (!testContent.equals(t.getContent())) {
-                            t.setContent(testContent);
-                            reportTemplateRepository.save(t);
-                            log.info("[TEST_DATA] Updated existing test report template with latest content.");
-                        }
-                    } else {
-                        ReportTemplate testTemplate = new ReportTemplate();
-                        testTemplate.setUuid(UUID.randomUUID());
-                        testTemplate.setName(testTemplateName);
-                        testTemplate.setContent(testContent);
-                        testTemplate.setDefault(false);
-                        reportTemplateRepository.save(testTemplate);
-                        log.info("[TEST_DATA] Initialized test report template.");
-                    }
-                } catch (Exception e) {
-                    log.error("[TEST_DATA] Error initializing/updating report templates: {}", e.getMessage());
-                }
+            if (postmortemRepository.count() > 0) {
+                log.info("[TEST_DATA] Postmortems already exist; not adding sample data.");
+                return;
             }
 
             log.info("[TEST_DATA] Initializing test data...");

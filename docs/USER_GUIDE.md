@@ -12,6 +12,7 @@ Welcome to the comprehensive Melopost User Guide. Melopost is a specialized plat
     - [Creating a Postmortem](#creating-a-postmortem)
     - [Impact Section & Documents](#impact-section--documents)
     - [Incident Notes](#incident-notes)
+    - [Department Access & the Published Lock](#department-access--the-published-lock)
 5. [Swiss Cheese Analysis](#5-swiss-cheese-analysis)
     - [Defense Layers](#defense-layers)
     - [Identifying Holes](#identifying-holes)
@@ -40,7 +41,7 @@ Navigate to your Melopost instance (e.g., `http://localhost:8080`).
 
 ![Login Screen](sceenshots/login%20screen.png)
 
-- **Default Credentials**: `admin` / `admin` (Please change these upon first login).
+- **Administrator**: user `admin`. The password is set by the operator at the first start (environment variable `MELOPOST_ADMIN_INITIAL_PASSWORD`). Ask your operator if you do not have it. Change it upon first login.
 - Enter your credentials to access the central dashboard.
 
 ---
@@ -96,6 +97,19 @@ Melopost includes a dedicated "Incident Notes" feature (replacing legacy Loop sy
 
 ---
 
+### Department Access & the Published Lock
+Postmortems belong to the department they are filed under. What you can see and change depends on your account:
+
+- **Your departments**: You only see postmortems, documents, and reports of the departments assigned to your account. Postmortems of other departments are left out of lists and searches. Opening one directly shows a 403 access-denied page.
+- **Moving a postmortem**: To change a postmortem's department, you must also have access to the new department.
+- **Linking postmortems**: You can only link postmortems you are allowed to see.
+- **Published postmortems are locked**: Once a postmortem is set to **Published**, only administrators can change or delete it, including its documents. Other users see a notice that the postmortem is locked when they try to save, and the change is not stored.
+- **Administrators** are not limited by department or by the lock.
+
+If you need a change to a locked or foreign-department postmortem, ask an administrator.
+
+---
+
 ## 5. Swiss Cheese Analysis
 
 This is the core of Melopost. We use 10 standard defense layers to map the incident.
@@ -107,6 +121,9 @@ Every postmortem automatically includes layers such as **Define, Design, Build, 
 
 ### Identifying Holes
 For each layer, you identify "Holes" – specific weaknesses that allowed the incident to progress.
+
+- **Hole descriptions and remedial actions** may contain basic formatting (paragraphs, lists, bold, links). Before they are shown, Melopost removes everything outside a fixed list of safe tags and attributes, including scripts, event-handler attributes and `javascript:` links. The stored text is not changed; only the displayed view is cleaned.
+- Text you enter in incident notes is shown as Markdown without raw HTML, so HTML tags you type are displayed as text rather than rendered.
 
 ### Hole Overview
 The **Hole Overview** provides a centralized view of all identified weaknesses across all postmortems. This is crucial for identifying recurring systemic issues that may affect multiple services or departments.
@@ -170,6 +187,7 @@ For administrators, Melopost includes a built-in database management tool to ins
 - **SQL Console**: Run CQL (Cassandra Query Language) queries directly against the database.
 - **Schema Browser**: Browse all tables and User Defined Types (UDTs).
 - **Data Export**: Export query results to CSV for external analysis.
+- **Plain-text display**: Table names, column names, schema details and query results are always shown as plain text. Data stored in the database is never run as HTML or script in your session, so you can inspect records that contain markup safely.
 
 ---
 

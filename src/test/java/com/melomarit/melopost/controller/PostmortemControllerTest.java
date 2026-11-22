@@ -2,6 +2,9 @@ package com.melomarit.melopost.controller;
 
 import com.melomarit.melopost.model.Postmortem;
 import com.melomarit.melopost.service.DocumentImportService;
+import com.melomarit.melopost.service.PostmortemAccessDeniedException;
+import com.melomarit.melopost.service.PostmortemAccessPolicy.Action;
+import com.melomarit.melopost.service.PostmortemLockedException;
 import com.melomarit.melopost.service.PostmortemService;
 import com.melomarit.melopost.service.ReportService;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,16 +66,43 @@ public class PostmortemControllerTest {
     }
 
     @Test
-    void create_shouldSavePostmortem() {
-        when(service.save(any(Postmortem.class))).thenReturn(postmortem);
+    void getById_accessDeniedIsNotSwallowed() {
+        when(service.findById(pmId)).thenThrow(new PostmortemAccessDeniedException("denied"));
+        assertThrows(PostmortemAccessDeniedException.class, () -> controller.getById(pmId));
+    }
+
+    @Test
+    void update_lockedIsNotSwallowed() {
+        when(service.findAuthorized(pmId, Action.UPDATE)).thenThrow(new PostmortemLockedException(pmId));
+        assertThrows(PostmortemLockedException.class, () -> controller.update(pmId, new Postmortem()));
+        verify(service, never()).save(any(Postmortem.class));
+    }
+
+    @Test
+    void downloadReport_accessDeniedIsNotTurnedInto500() {
+        when(service.findById(pmId)).thenThrow(new PostmortemAccessDeniedException("denied"));
+        assertThrows(PostmortemAccessDeniedException.class, () -> controller.downloadReport(pmId));
+    }
+
+    @Test
+    void importFromDocument_accessDeniedIsNotTurnedInto500() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "test.docx", "application/octet-stream", "data".getBytes());
+        when(importService.importFromDocument(file)).thenThrow(new PostmortemAccessDeniedException("denied"));
+        assertThrows(PostmortemAccessDeniedException.class, () -> controller.importFromDocument(file));
+    }
+
+    @Test
+    void create_shouldCreatePostmortem() {
+        when(service.create(any(Postmortem.class))).thenReturn(postmortem);
         Postmortem result = controller.create(new Postmortem());
         assertNotNull(result);
-        verify(service).save(any(Postmortem.class));
+        verify(service).create(any(Postmortem.class));
+        verify(service, never()).save(any(Postmortem.class));
     }
 
     @Test
     void update_shouldUpdateExisting() {
-        when(service.findById(pmId)).thenReturn(postmortem);
+        when(service.findAuthorized(pmId, Action.UPDATE)).thenReturn(postmortem);
         when(service.save(any(Postmortem.class))).thenReturn(postmortem);
         
         Postmortem updateData = new Postmortem();

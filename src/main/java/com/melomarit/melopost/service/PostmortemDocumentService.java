@@ -3,20 +3,67 @@ package com.melomarit.melopost.service;
 import com.melomarit.melopost.model.Postmortem;
 import com.melomarit.melopost.model.PostmortemDocument;
 import com.melomarit.melopost.repository.PostmortemDocumentRepository;
+import com.melomarit.melopost.service.PostmortemAccessPolicy.Action;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class PostmortemDocumentService {
     private final PostmortemDocumentRepository repository;
+    private final PostmortemService postmortemService;
 
-    public PostmortemDocumentService(PostmortemDocumentRepository repository) {
+    public PostmortemDocumentService(PostmortemDocumentRepository repository, PostmortemService postmortemService) {
         this.repository = repository;
+        this.postmortemService = postmortemService;
+    }
+
+    /** All documents whose owning postmortem the current user may see. */
+    public List<PostmortemDocument> findAllVisible() {
+        List<PostmortemDocument> all = repository.findAll();
+        if (postmortemService.currentUserIsUnrestricted()) {
+            return all;
+        }
+        Set<UUID> visibleIds = postmortemService.findAll().stream()
+                .map(Postmortem::getUuid)
+                .collect(Collectors.toSet());
+        return all.stream()
+                .filter(d -> d.getPostmortemUuid() != null && visibleIds.contains(d.getPostmortemUuid()))
+                .collect(Collectors.toList());
+    }
+
+    /** The document, after authorizing the action on its owning postmortem. 404 if missing or orphaned (non-admin). */
+    public PostmortemDocument findAccessible(UUID docId, Action action) {
+        PostmortemDocument doc = repository.findById(docId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found"));
+        if (doc.getPostmortemUuid() == null) {
+            if (!postmortemService.currentUserIsUnrestricted()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found");
+            }
+            return doc;
+        }
+        postmortemService.findAuthorized(doc.getPostmortemUuid(), action);
+        return doc;
+    }
+
+    /** The document only if it belongs to the given postmortem; otherwise 404. */
+    public PostmortemDocument findInPostmortem(UUID postmortemId, UUID docId) {
+        return repository.findById(docId)
+                .filter(d -> postmortemId.equals(d.getPostmortemUuid()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found"));
+    }
+
+    public void deleteAccessible(UUID docId) {
+        findAccessible(docId, Action.UPDATE);
+        repository.deleteById(docId);
     }
 
     public List<PostmortemDocument> findAll() {

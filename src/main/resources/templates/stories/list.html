@@ -69,7 +69,7 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm text-gray-900 max-w-xs truncate" th:title="${item.story.whatToFix}" th:text="${item.story.whatToFix}">Fix description</div>
-                                <div class="text-[10px] text-gray-500 truncate" th:if="${item.holeDescription}" th:utext="'Hole: ' + ${item.holeDescription}">Hole info</div>
+                                <div class="text-[10px] text-gray-500 truncate" th:if="${item.holeDescription}" th:utext="'Hole: ' + ${richText.sanitize(item.holeDescription)}">Hole info</div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm text-gray-600" th:text="${item.story.teamName}">Team</div>

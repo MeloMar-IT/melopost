@@ -237,4 +237,232 @@ public class PostmortemServiceTest {
         assertEquals(pm, saved);
         verify(repository, never()).findByIncidentRef(anyString());
     }
+
+    @Test
+    void save_incidentRefClash_throwsDuplicateIncidentRefException() {
+        Postmortem newPm = new Postmortem();
+        newPm.setIncidentRef("INC-9");
+        Postmortem other = new Postmortem();
+        other.setIncidentRef("INC-9");
+        when(repository.findByIncidentRef("INC-9")).thenReturn(Collections.singletonList(other));
+        assertThrows(DuplicateIncidentRefException.class, () -> service.save(newPm));
+        verify(repository, never()).save(any());
+    }
+
+    // ---- authorization ----
+
+    @Test
+    void findById_otherDepartment_throwsAccessDenied() {
+        mockUser(regularUser);
+        when(repository.findById(pmOtherDept.getUuid())).thenReturn(Optional.of(pmOtherDept));
+        assertThrows(PostmortemAccessDeniedException.class, () -> service.findById(pmOtherDept.getUuid()));
+    }
+
+    @Test
+    void findById_missing_throwsNotFound() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
+        org.springframework.web.server.ResponseStatusException e = assertThrows(
+                org.springframework.web.server.ResponseStatusException.class, () -> service.findById(id));
+        assertEquals(404, e.getStatusCode().value());
+    }
+
+    @Test
+    void findById_noDepartment_deniedForRegularUserAllowedForAdmin() {
+        pmInDept.setDepartment(null);
+        when(repository.findById(pmInDept.getUuid())).thenReturn(Optional.of(pmInDept));
+        mockUser(regularUser);
+        assertThrows(PostmortemAccessDeniedException.class, () -> service.findById(pmInDept.getUuid()));
+
+        pmInDept.setDepartment("   ");
+        assertThrows(PostmortemAccessDeniedException.class, () -> service.findById(pmInDept.getUuid()));
+    }
+
+    @Test
+    void findById_noDepartment_allowedForAdmin() {
+        pmInDept.setDepartment(null);
+        when(repository.findById(pmInDept.getUuid())).thenReturn(Optional.of(pmInDept));
+        mockUser(adminUser);
+        assertSame(pmInDept, service.findById(pmInDept.getUuid()));
+    }
+
+    @Test
+    void authorize_publishedOwnDepartment_updateAndDeleteLocked_viewAllowed() {
+        mockUser(regularUser);
+        pmInDept.setStatus("Published");
+        assertThrows(PostmortemLockedException.class, () -> service.authorize(pmInDept, PostmortemAccessPolicy.Action.UPDATE));
+        assertThrows(PostmortemLockedException.class, () -> service.authorize(pmInDept, PostmortemAccessPolicy.Action.DELETE));
+        assertDoesNotThrow(() -> service.authorize(pmInDept, PostmortemAccessPolicy.Action.VIEW));
+    }
+
+    @Test
+    void authorize_publishedOwnDepartment_adminMayUpdate() {
+        mockUser(adminUser);
+        pmInDept.setStatus("Published");
+        assertDoesNotThrow(() -> service.authorize(pmInDept, PostmortemAccessPolicy.Action.UPDATE));
+    }
+
+    @Test
+    void authorize_roleAdminAuthorityWithoutDbUser_isUnrestricted() {
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        doReturn(List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN")))
+                .when(authentication).getAuthorities();
+        assertDoesNotThrow(() -> service.authorize(pmOtherDept, PostmortemAccessPolicy.Action.DELETE));
+    }
+
+    @Test
+    void authenticatedUserMissingInDb_seesNothingAndIsDenied() {
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("ghost");
+        when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+        when(repository.findAll()).thenReturn(Arrays.asList(pmInDept, pmOtherDept));
+        assertTrue(service.findAll().isEmpty());
+        assertThrows(PostmortemAccessDeniedException.class,
+                () -> service.authorize(pmInDept, PostmortemAccessPolicy.Action.VIEW));
+    }
+
+    @Test
+    void save_overExistingOtherDepartmentRow_isDeniedAndNothingSaved() {
+        mockUser(regularUser);
+        Postmortem incoming = new Postmortem();
+        incoming.setUuid(pmOtherDept.getUuid());
+        incoming.setDepartment("IT");
+        when(repository.findById(pmOtherDept.getUuid())).thenReturn(Optional.of(pmOtherDept));
+        assertThrows(PostmortemAccessDeniedException.class, () -> service.save(incoming));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void save_overExistingPublishedRow_isLockedAndNothingSaved() {
+        mockUser(regularUser);
+        pmInDept.setStatus("Published");
+        Postmortem incoming = new Postmortem();
+        incoming.setUuid(pmInDept.getUuid());
+        incoming.setDepartment("IT");
+        when(repository.findById(pmInDept.getUuid())).thenReturn(Optional.of(pmInDept));
+        assertThrows(PostmortemLockedException.class, () -> service.save(incoming));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void save_movingToNonAllowedDepartment_isDenied() {
+        mockUser(regularUser);
+        Postmortem incoming = new Postmortem();
+        incoming.setUuid(pmInDept.getUuid());
+        incoming.setDepartment("HR");
+        when(repository.findById(pmInDept.getUuid())).thenReturn(Optional.of(pmInDept));
+        assertThrows(PostmortemAccessDeniedException.class, () -> service.save(incoming));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void save_newPostmortemInNonAllowedOrBlankDepartment_isDenied() {
+        mockUser(regularUser);
+        Postmortem hr = new Postmortem();
+        hr.setDepartment("HR");
+        Postmortem blank = new Postmortem();
+        blank.setDepartment("");
+        assertThrows(PostmortemAccessDeniedException.class, () -> service.save(hr));
+        assertThrows(PostmortemAccessDeniedException.class, () -> service.save(blank));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void save_newPostmortemInOwnDepartment_isSaved() {
+        mockUser(regularUser);
+        Postmortem fresh = new Postmortem();
+        fresh.setDepartment("IT");
+        when(repository.save(fresh)).thenReturn(fresh);
+        assertSame(fresh, service.save(fresh));
+    }
+
+    @Test
+    void save_newLinkToInvisiblePostmortem_isDenied() {
+        mockUser(regularUser);
+        Postmortem fresh = new Postmortem();
+        fresh.setDepartment("IT");
+        fresh.getLocalPostmortemUuids().add(pmOtherDept.getUuid());
+        when(repository.findById(fresh.getUuid())).thenReturn(Optional.empty());
+        when(repository.findById(pmOtherDept.getUuid())).thenReturn(Optional.of(pmOtherDept));
+        assertThrows(PostmortemAccessDeniedException.class, () -> service.save(fresh));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void save_existingInvisibleLinkIsPreserved() {
+        mockUser(regularUser);
+        Postmortem stored = new Postmortem();
+        stored.setDepartment("IT");
+        stored.getLocalPostmortemUuids().add(pmOtherDept.getUuid());
+        Postmortem incoming = new Postmortem();
+        incoming.setUuid(stored.getUuid());
+        incoming.setDepartment("IT");
+        incoming.getLocalPostmortemUuids().add(pmOtherDept.getUuid());
+        when(repository.findById(stored.getUuid())).thenReturn(Optional.of(stored));
+        when(repository.save(incoming)).thenReturn(incoming);
+        assertSame(incoming, service.save(incoming));
+    }
+
+    @Test
+    void create_replacesSuppliedUuid() {
+        Postmortem incoming = new Postmortem();
+        UUID supplied = pmOtherDept.getUuid();
+        incoming.setUuid(supplied);
+        when(repository.save(incoming)).thenReturn(incoming);
+        Postmortem created = service.create(incoming);
+        assertNotEquals(supplied, created.getUuid());
+    }
+
+    @Test
+    void deleteById_otherDepartment_isDeniedAndNothingDeleted() {
+        mockUser(regularUser);
+        when(repository.findById(pmOtherDept.getUuid())).thenReturn(Optional.of(pmOtherDept));
+        assertThrows(PostmortemAccessDeniedException.class, () -> service.deleteById(pmOtherDept.getUuid()));
+        verify(repository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteById_publishedOwnDepartment_isLocked() {
+        mockUser(regularUser);
+        pmInDept.setStatus("Published");
+        when(repository.findById(pmInDept.getUuid())).thenReturn(Optional.of(pmInDept));
+        assertThrows(PostmortemLockedException.class, () -> service.deleteById(pmInDept.getUuid()));
+        verify(repository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteById_missing_isNotFound() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> service.deleteById(id));
+        verify(repository, never()).deleteById(any());
+    }
+
+    @Test
+    void findByType_regularUser_isFiltered() {
+        mockUser(regularUser);
+        when(repository.findByType("Local postmortem")).thenReturn(Arrays.asList(pmInDept, pmOtherDept));
+        List<Postmortem> result = service.findByType("Local postmortem");
+        assertEquals(List.of(pmInDept), result);
+    }
+
+    @Test
+    void findMajorPostmortems_regularUser_isFiltered() {
+        mockUser(regularUser);
+        UUID localUuid = UUID.randomUUID();
+        pmInDept.setLocalPostmortemUuids(Collections.singletonList(localUuid));
+        pmOtherDept.setLocalPostmortemUuids(Collections.singletonList(localUuid));
+        when(repository.findAll()).thenReturn(Arrays.asList(pmInDept, pmOtherDept));
+        assertEquals(List.of(pmInDept), service.findMajorPostmortems(localUuid));
+    }
+
+    @Test
+    void findVisibleByIds_regularUser_isFiltered() {
+        mockUser(regularUser);
+        List<UUID> ids = Arrays.asList(pmInDept.getUuid(), pmOtherDept.getUuid());
+        when(repository.findAllById(ids)).thenReturn(Arrays.asList(pmInDept, pmOtherDept));
+        assertEquals(List.of(pmInDept), service.findVisibleByIds(ids));
+        assertTrue(service.findVisibleByIds(Collections.emptyList()).isEmpty());
+        assertTrue(service.findVisibleByIds(null).isEmpty());
+    }
 }

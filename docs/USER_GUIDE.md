@@ -84,7 +84,7 @@ A thorough postmortem requires documenting the full impact and gathering evidenc
 ![Impact Section](sceenshots/PostMortem%20create%20Impact%20section%20and%20attach%20documents.png)
 
 - **Impact Description**: Detailed narrative of the incident's effect on customers and systems.
-- **Document Attachments**: Upload logs, screenshots, or chat transcripts directly to the postmortem record.
+- **Document Attachments**: Upload logs, screenshots, or chat transcripts directly to the postmortem record. Allowed types are PDF, DOCX, XLSX, PNG, JPEG, TXT and CSV; other file types are refused and nothing is saved.
 
 ### Postmortem Notes
 Melopost includes a dedicated "Incident Notes" feature (replacing legacy Loop systems) for raw data collection.

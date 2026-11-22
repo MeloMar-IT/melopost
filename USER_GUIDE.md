@@ -144,7 +144,9 @@ Once the analysis is complete, you can generate a professional report.
 ### Uploading Documents
 Keep all relevant evidence in one place.
 - Use the **"Documents"** tab to upload log files, architecture diagrams, or screenshots of dashboards.
+- Allowed file types are PDF, DOCX, XLSX, PNG, JPEG, TXT and CSV. Any other file is refused, and the page shows "This file type is not allowed". Nothing from that upload is saved.
 - Documents are stored securely and associated directly with the postmortem.
+- Downloaded documents keep their original file name, including quotes and non-ASCII characters.
 
 ### Adding Detailed Notes
 The **"Notes"** section allows for free-form, long-form documentation. Use this for detailed technical summaries, executive summaries, or any information that doesn't fit into the structured fields.

@@ -267,6 +267,102 @@ public class PostmortemViewControllerTest {
         verify(documentService, times(1)).uploadDocument(any(Postmortem.class), any());
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"garbage", "*/*"})
+    @WithMockUser
+    public void testDownloadWithBadStoredTypeIsOctetStreamAndSafeHeaders(String storedType) throws Exception {
+        UUID id = UUID.randomUUID();
+        UUID docId = UUID.randomUUID();
+        com.melomarit.melopost.model.PostmortemDocument doc = new com.melomarit.melopost.model.PostmortemDocument();
+        doc.setFileName("a\"b.txt");
+        doc.setContentType(storedType);
+        doc.setData("x".getBytes());
+        when(documentService.findInPostmortem(id, docId)).thenReturn(doc);
+
+        MvcResult result = mockMvc.perform(get("/postmortems/" + id + "/documents/" + docId + "/download"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(content().contentType("application/octet-stream"))
+                .andReturn();
+        org.springframework.http.ContentDisposition cd = org.springframework.http.ContentDisposition
+                .parse(result.getResponse().getHeader("Content-Disposition"));
+        org.junit.jupiter.api.Assertions.assertTrue(cd.isAttachment());
+        org.junit.jupiter.api.Assertions.assertEquals("a\"b.txt", cd.getFilename());
+    }
+
+    @Test
+    @WithMockUser
+    public void testUploadRefusedTypeRedirectsWithErrorAndSavesNothing() throws Exception {
+        UUID id = UUID.randomUUID();
+        Postmortem pm = new Postmortem();
+        pm.setUuid(id);
+        when(postmortemService.findAuthorized(any(UUID.class), eq(Action.UPDATE))).thenReturn(pm);
+        doThrow(new UnsupportedDocumentTypeException()).when(documentService).uploadDocument(any(), any());
+
+        mockMvc.perform(multipart("/postmortems/" + id + "/documents/upload")
+                .file(new MockMultipartFile("file", "notes.html", "text/html", "x".getBytes()))
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/postmortems/details/" + id + "?error=filetype"));
+        verify(postmortemService, never()).save(any(Postmortem.class));
+    }
+
+    @Test
+    @WithMockUser
+    public void testCreateWithRefusedFileShowsFormErrorAndStoresNothing() throws Exception {
+        Postmortem pm = new Postmortem();
+        pm.setUuid(null);
+        doThrow(new UnsupportedDocumentTypeException()).when(documentService).validateUploads(any());
+
+        mockMvc.perform(multipart("/postmortems/save")
+                .file(new MockMultipartFile("files", "a.exe", "application/octet-stream", "x".getBytes()))
+                .flashAttr("postmortem", pm)
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("postmortems/form"))
+                .andExpect(model().attributeExists("error"));
+        verify(postmortemService, never()).create(any(Postmortem.class));
+        verify(postmortemService, never()).save(any(Postmortem.class));
+        verify(documentService, never()).processFiles(any(), any());
+    }
+
+    @Test
+    @WithMockUser
+    public void testUpdateWithRefusedFileAuthorizesFirstThenShowsFormError() throws Exception {
+        UUID id = UUID.randomUUID();
+        Postmortem pm = new Postmortem();
+        pm.setUuid(id);
+        doThrow(new UnsupportedDocumentTypeException()).when(documentService).validateUploads(any());
+
+        mockMvc.perform(multipart("/postmortems/save")
+                .file(new MockMultipartFile("files", "a.exe", "application/octet-stream", "x".getBytes()))
+                .flashAttr("postmortem", pm)
+                .with(csrf()))
+                .andExpect(view().name("postmortems/form"))
+                .andExpect(model().attributeExists("error"));
+        org.mockito.InOrder order = inOrder(postmortemService, documentService);
+        order.verify(postmortemService).findAuthorized(id, Action.UPDATE);
+        order.verify(documentService).validateUploads(any());
+        verify(postmortemService, never()).save(any(Postmortem.class));
+    }
+
+    @Test
+    @WithMockUser
+    public void testUpdateWithRefusedFileButForbiddenStaysForbidden() throws Exception {
+        UUID id = UUID.randomUUID();
+        Postmortem pm = new Postmortem();
+        pm.setUuid(id);
+        when(postmortemService.findAuthorized(id, Action.UPDATE)).thenThrow(new PostmortemAccessDeniedException("denied"));
+
+        mockMvc.perform(multipart("/postmortems/save")
+                .file(new MockMultipartFile("files", "a.exe", "application/octet-stream", "x".getBytes()))
+                .flashAttr("postmortem", pm)
+                .with(csrf()))
+                .andExpect(status().isForbidden());
+        verify(documentService, never()).validateUploads(any());
+    }
+
     @Test
     @WithMockUser(username = "user", roles = {"USER"})
     public void testSaveLockedPostmortemFailsForNonAdmin() throws Exception {

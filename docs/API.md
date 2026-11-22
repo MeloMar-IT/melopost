@@ -160,15 +160,19 @@ All document routes check access through the owning postmortem (see [Access Cont
 ### Download Document
 - **Method**: `GET`
 - **Path**: `/api/postmortem-documents/{uuid}/download`
-- **Response**: File stream.
+- **Response**: File stream, sent as an attachment with `Content-Disposition: attachment; filename="..."; filename*=UTF-8''...`. The `filename*` parameter carries the exact stored name; the quoted `filename` is an ASCII fallback in which quotes and backslashes are escaped.
+- **Headers**: `X-Content-Type-Options: nosniff`.
+- **Content type**: The stored type when it is one of the allowed types (see [Upload Document](#upload-document)). Otherwise, including for a missing, empty, malformed or wildcard stored type, `application/octet-stream`.
 - **Errors**: `403` or `404` as for get by UUID.
 
 ### Upload Document
 - **Method**: `POST`
 - **Path**: `/api/postmortem-documents/upload/{postmortemUuid}`
 - **Form Data**: `file` (MultipartFile)
+- **Allowed types**: PDF (`.pdf`), DOCX (`.docx`), XLSX (`.xlsx`), PNG (`.png`), JPEG (`.jpg`, `.jpeg`), plain text (`.txt`), CSV (`.csv`). The file name must end in one of these extensions. The declared Content-Type may be empty, `application/octet-stream`, the canonical type for the extension, or a known alias for it (for example `application/csv` for CSV).
+- **Stored values**: The file name is reduced to its last path segment. The stored Content-Type is always the canonical type for the extension, not the client's value.
 - **Response**: The created `PostmortemDocument` metadata.
-- **Errors**: `403` if the caller may not update the postmortem (other department, or Published for a non-admin); `404` if the postmortem does not exist.
+- **Errors**: `400 Bad Request` if the file type is not allowed; nothing is stored. `403` if the caller may not update the postmortem (other department, or Published for a non-admin); `404` if the postmortem does not exist.
 
 ### Delete Document
 - **Method**: `DELETE`

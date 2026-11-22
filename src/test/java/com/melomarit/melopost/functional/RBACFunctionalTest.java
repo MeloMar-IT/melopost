@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class RBACFunctionalTest {
+public class RBACFunctionalTest extends com.melomarit.melopost.support.AbstractCassandraIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

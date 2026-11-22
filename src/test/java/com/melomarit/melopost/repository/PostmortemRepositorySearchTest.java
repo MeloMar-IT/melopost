@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("test")
-public class PostmortemRepositorySearchTest {
+public class PostmortemRepositorySearchTest extends com.melomarit.melopost.support.AbstractCassandraIntegrationTest {
 
     @Autowired
     private PostmortemRepository postmortemRepository;

@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class DatabaseAdminRestControllerIntegrationTest {
+public class DatabaseAdminRestControllerIntegrationTest extends com.melomarit.melopost.support.AbstractCassandraIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

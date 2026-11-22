@@ -66,14 +66,21 @@ A structured list optimized for a visual vertical timeline.
 
 *Use `{{#hasGraphicalTimeline}}...{{/hasGraphicalTimeline}}` to conditionally show this section.*
 
-#### 3. Mermaid/Kroki Integration (`mermaidSource`)
-If timeline events exist, Melopost generates a [Mermaid.js](https://mermaid.js.org/) timeline diagram. This diagram is encoded and can be displayed using [Kroki](https://kroki.io/).
+#### 3. Mermaid/Kroki Integration (`mermaidSource`, `krokiTimelineUrl`)
+Kroki is **off by default**. When it is turned on (`melopost.report.kroki.enabled=true`, with a self-hosted `melopost.report.kroki.base-url`), Melopost generates a [Mermaid.js](https://mermaid.js.org/) timeline diagram and renders it through that Kroki server. Incident data is then sent only to your own server, never to a public service.
+
+- `{{krokiTimelineUrl}}`: the full image URL. It is present only when Kroki is on.
+- `{{mermaidSource}}`: the encoded diagram source. It is present only when Kroki is on.
+
+While Kroki is off, the default report template shows the built-in graphical timeline instead (`{{^krokiTimelineUrl}}...{{/krokiTimelineUrl}}`). Custom templates can use the same inverted section to show their own content in that case.
 
 ```mustache
-{{#mermaidSource}}
-    <img src="https://kroki.io/mermaid/png/{{mermaidSource}}" alt="Incident Timeline" />
-{{/mermaidSource}}
+{{#krokiTimelineUrl}}
+    <img src="{{krokiTimelineUrl}}" alt="Incident Timeline" />
+{{/krokiTimelineUrl}}
 ```
+
+Do not hard-code external image URLs in a template. The PDF renderer loads only `data:` URIs and allow-listed hosts; other URLs (including loopback and `file:`) load nothing. See [PDF Reports](../README.md#pdf-reports).
 
 ---
 
@@ -162,5 +169,5 @@ References to parent or broader incident analyses.
 ## Best Practices
 1. **Conditional Sections**: Use `{{#section}}...{{/section}}` to hide empty parts of the report.
 2. **Date Formatting**: Melopost provides pre-formatted dates. Use them as-is for consistency.
-3. **Escaping**: Mustache escapes HTML by default. Use `{{{variable}}}` (triple braces) if you need to render raw HTML from the database (use with caution).
+3. **Escaping**: Mustache escapes HTML by default. Use `{{{variable}}}` (triple braces) only when you need raw HTML. Hole `{{{description}}}` and `{{{remedialAction}}}` values are already sanitized by an allow-list sanitizer and made XML-safe before rendering, so scripts, event-handler attributes and `javascript:` links are removed. Other values are not sanitized by the renderer: keep them escaped.
 4. **Styling**: Include a `<style>` block in your template to control font, colors, and page breaks for the PDF.

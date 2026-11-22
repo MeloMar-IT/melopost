@@ -113,6 +113,22 @@ MELOPOST_ADMIN_INITIAL_PASSWORD='choose-a-long-password' \
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.arguments=--melopost.seed.enabled=true
 ```
 
+### PDF Reports
+Report templates are managed by administrators only: the `/templates` pages and template saves return `403 Forbidden` for other users, and the sidebar link is shown to admins only.
+
+When a PDF is rendered, the renderer loads external resources only from an allow-list:
+- `data:` URIs are loaded.
+- `http`/`https` URIs are loaded only when their host is on the allow-list. Anything else (loopback, private addresses, `file:` and other schemes) is refused and logged as a warning. Redirects are not followed.
+- Hole descriptions and remedial actions are sanitized before they reach the template.
+
+The timeline image from Kroki is **off by default**, so no incident data leaves the server. When it is off, reports show the built-in HTML timeline. To use a self-hosted Kroki instead:
+
+| Property | Default | Description |
+| :--- | :--- | :--- |
+| `melopost.report.kroki.enabled` | `false` | Turns the Kroki timeline image on. |
+| `melopost.report.kroki.base-url` | (empty) | Base URL of your self-hosted Kroki, e.g. `https://kroki.internal.example`. Must be an `http`/`https` URL; otherwise Kroki stays off and a warning is logged. Its host is added to the allow-list automatically. |
+| `melopost.report.allowed-resource-hosts` | (empty) | Extra comma-separated hosts the renderer may load images or CSS from. |
+
 ### Database Management
 Melopost uses Cassandra for all its data. You can interact with it using `cqlsh`.
 - **Keyspace**: `melopost` (default)

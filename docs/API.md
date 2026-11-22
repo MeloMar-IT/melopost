@@ -124,6 +124,7 @@ Base Endpoint: `/api/postmortems`
 - **Method**: `GET`
 - **Path**: `/api/postmortems/{uuid}/report`
 - **Response**: PDF File stream.
+- **Note**: The renderer loads external resources only from an allow-list and never follows redirects. Loopback, private and `file:` URLs load nothing. The Kroki timeline image is off unless configured; see [PDF Reports](../README.md#pdf-reports).
 
 ---
 

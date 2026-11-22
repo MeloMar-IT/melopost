@@ -84,7 +84,7 @@
                 <i data-lucide="database" class="w-5 h-5"></i>
                 <span>Data Sources</span>
             </a>
-            <a href="/templates" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+            <a th:if="${#authorization.expression('hasRole(''ADMIN'')')}" href="/templates" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
                 <i data-lucide="file-code" class="w-5 h-5"></i>
                 <span>Report Templates</span>
             </a>

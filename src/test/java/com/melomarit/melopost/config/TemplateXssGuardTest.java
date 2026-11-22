@@ -42,6 +42,19 @@ class TemplateXssGuardTest {
     }
 
     @Test
+    void reportTemplateHasNoHardcodedKrokiAndOnlyHoleFieldsAreUnescaped() throws IOException {
+        String report = template("reports/postmortem-report.mustache");
+        assertFalse(report.contains("kroki.io"));
+        Matcher m = Pattern.compile("\\{\\{\\{(\\w+)\\}\\}\\}").matcher(report);
+        int count = 0;
+        while (m.find()) {
+            count++;
+            assertTrue(m.group(1).equals("description") || m.group(1).equals("remedialAction"), m.group());
+        }
+        assertTrue(count > 0);
+    }
+
+    @Test
     void databasePageHasNoInlineNameHandlersOrHtmlCells() throws IOException {
         String db = template("admin/database.html");
         assertFalse(db.contains("onclick=\"selectTable("));

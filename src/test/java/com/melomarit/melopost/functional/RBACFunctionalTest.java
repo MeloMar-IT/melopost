@@ -75,6 +75,20 @@ public class RBACFunctionalTest extends com.melomarit.melopost.support.AbstractC
     }
 
     @Test
+    @WithMockUser(roles = "USER")
+    public void userRole_shouldBeForbiddenFromReportTemplates() throws Exception {
+        mockMvc.perform(get("/templates"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    public void adminRole_shouldAccessReportTemplates() throws Exception {
+        mockMvc.perform(get("/templates"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @WithMockUser(roles = "ADMIN")
     public void adminRole_shouldAccessUserManagement() throws Exception {
         mockMvc.perform(get("/users"))

@@ -53,7 +53,7 @@ public class UserViewController {
                 .orElse("redirect:/users");
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public String deleteUser(@PathVariable UUID id) {
         userService.deleteById(id);
         return "redirect:/users";

@@ -186,10 +186,12 @@ For administrators, Melopost includes a built-in database management tool to ins
 
 ![Database Admin](sceenshots/Database%20overview.png)
 
-- **SQL Console**: Run CQL (Cassandra Query Language) queries directly against the database.
 - **Schema Browser**: Browse all tables and User Defined Types (UDTs).
-- **Data Export**: Export query results to CSV for external analysis.
-- **Plain-text display**: Table names, column names, schema details and query results are always shown as plain text. Data stored in the database is never run as HTML or script in your session, so you can inspect records that contain markup safely.
+- **Data Preview**: View the first 50 rows of a selected table.
+- **Data Export**: Export the previewed rows to CSV for external analysis.
+- **Plain-text display**: Table names, column names, schema details and previewed rows are always shown as plain text. Data stored in the database is never run as HTML or script in your session, so you can inspect records that contain markup safely.
+
+The web tool does not run free-form queries. For ad-hoc CQL, use `cqlsh` directly against the database.
 
 ---
 

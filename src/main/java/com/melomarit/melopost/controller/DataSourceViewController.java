@@ -44,7 +44,7 @@ public class DataSourceViewController {
         return "datasources/form";
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public String deleteDataSource(@PathVariable UUID id) {
         dataSourceService.deleteDataSource(id);
         return "redirect:/datasources";

@@ -129,9 +129,9 @@ public class DepartmentAccessFunctionalTest extends AbstractCassandraIntegration
     @Test
     void api_otherDepartment_getPutDelete_forbidden_andRowUnchanged() throws Exception {
         mockMvc.perform(get("/api/postmortems/" + pmB.getUuid()).with(deptA)).andExpect(status().isForbidden());
-        mockMvc.perform(put("/api/postmortems/" + pmB.getUuid()).with(deptA)
+        mockMvc.perform(put("/api/postmortems/" + pmB.getUuid()).with(deptA).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"x\"}")).andExpect(status().isForbidden());
-        mockMvc.perform(delete("/api/postmortems/" + pmB.getUuid()).with(deptA)).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/postmortems/" + pmB.getUuid()).with(deptA).with(csrf())).andExpect(status().isForbidden());
         assertThat(titleOf(pmB.getUuid())).isEqualTo("PM B");
     }
 
@@ -168,7 +168,7 @@ public class DepartmentAccessFunctionalTest extends AbstractCassandraIntegration
 
     @Test
     void api_create_ignoresClientUuid_andLeavesExistingUntouched() throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/postmortems").with(deptA)
+        MvcResult result = mockMvc.perform(post("/api/postmortems").with(deptA).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"uuid\":\"" + pmA.getUuid() + "\",\"title\":\"new one\",\"department\":\"A\"}"))
                 .andExpect(status().isOk()).andReturn();
@@ -178,14 +178,14 @@ public class DepartmentAccessFunctionalTest extends AbstractCassandraIntegration
 
     @Test
     void api_create_inOtherDepartment_forbidden() throws Exception {
-        mockMvc.perform(post("/api/postmortems").with(deptA)
+        mockMvc.perform(post("/api/postmortems").with(deptA).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"t\",\"department\":\"B\"}"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void api_create_withForgedLinkToInvisiblePostmortem_forbidden() throws Exception {
-        mockMvc.perform(post("/api/postmortems").with(deptA)
+        mockMvc.perform(post("/api/postmortems").with(deptA).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"t\",\"department\":\"A\",\"localPostmortemUuids\":[\"" + pmB.getUuid() + "\"]}"))
                 .andExpect(status().isForbidden());
@@ -215,7 +215,7 @@ public class DepartmentAccessFunctionalTest extends AbstractCassandraIntegration
     @Test
     void ownDepartment_getAndPut_allowed() throws Exception {
         mockMvc.perform(get("/api/postmortems/" + pmA.getUuid()).with(deptA)).andExpect(status().isOk());
-        mockMvc.perform(put("/api/postmortems/" + pmA.getUuid()).with(deptA)
+        mockMvc.perform(put("/api/postmortems/" + pmA.getUuid()).with(deptA).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"changed\"}")).andExpect(status().isOk());
         assertThat(titleOf(pmA.getUuid())).isEqualTo("changed");
     }
@@ -223,7 +223,7 @@ public class DepartmentAccessFunctionalTest extends AbstractCassandraIntegration
     @Test
     void admin_canReadOtherDepartment_andUpdatePublished() throws Exception {
         mockMvc.perform(get("/api/postmortems/" + pmB.getUuid()).with(admin)).andExpect(status().isOk());
-        mockMvc.perform(put("/api/postmortems/" + pmAPub.getUuid()).with(admin)
+        mockMvc.perform(put("/api/postmortems/" + pmAPub.getUuid()).with(admin).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"by admin\"}")).andExpect(status().isOk());
         assertThat(titleOf(pmAPub.getUuid())).isEqualTo("by admin");
     }
@@ -237,9 +237,9 @@ public class DepartmentAccessFunctionalTest extends AbstractCassandraIntegration
         mockMvc.perform(get("/api/postmortem-documents/" + doc).with(deptA)).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/postmortem-documents/" + doc + "/download").with(deptA)).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/postmortem-documents/postmortem/" + pm).with(deptA)).andExpect(status().isForbidden());
-        mockMvc.perform(multipart("/api/postmortem-documents/upload/" + pm).file(file()).with(deptA))
+        mockMvc.perform(multipart("/api/postmortem-documents/upload/" + pm).file(file()).with(deptA).with(csrf()))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(delete("/api/postmortem-documents/" + doc).with(deptA)).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/postmortem-documents/" + doc).with(deptA).with(csrf())).andExpect(status().isForbidden());
         assertThat(documentRepository.findById(doc)).isPresent();
         assertThat(docCount(pm)).isEqualTo(1);
         assertThat(new String(documentRepository.findById(doc).orElseThrow().getData())).isEqualTo("secret");
@@ -283,10 +283,10 @@ public class DepartmentAccessFunctionalTest extends AbstractCassandraIntegration
                 .andExpect(status().isOk());
         mockMvc.perform(get("/postmortems/" + pmA.getUuid() + "/documents/" + docA.getUuid() + "/download").with(deptA))
                 .andExpect(status().isOk());
-        mockMvc.perform(multipart("/api/postmortem-documents/upload/" + pmA.getUuid()).file(file()).with(deptA))
+        mockMvc.perform(multipart("/api/postmortem-documents/upload/" + pmA.getUuid()).file(file()).with(deptA).with(csrf()))
                 .andExpect(status().isOk());
         assertThat(docCount(pmA.getUuid())).isEqualTo(2);
-        mockMvc.perform(delete("/api/postmortem-documents/" + docA.getUuid()).with(deptA))
+        mockMvc.perform(delete("/api/postmortem-documents/" + docA.getUuid()).with(deptA).with(csrf()))
                 .andExpect(status().isNoContent());
         assertThat(documentRepository.findById(docA.getUuid())).isEmpty();
     }
@@ -296,12 +296,12 @@ public class DepartmentAccessFunctionalTest extends AbstractCassandraIntegration
     @Test
     void api_publishedOwnDepartment_putDeleteAndDocuments_forbidden_nothingPersisted() throws Exception {
         UUID pm = pmAPub.getUuid();
-        mockMvc.perform(put("/api/postmortems/" + pm).with(deptA)
+        mockMvc.perform(put("/api/postmortems/" + pm).with(deptA).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"x\"}")).andExpect(status().isForbidden());
-        mockMvc.perform(delete("/api/postmortems/" + pm).with(deptA)).andExpect(status().isForbidden());
-        mockMvc.perform(multipart("/api/postmortem-documents/upload/" + pm).file(file()).with(deptA))
+        mockMvc.perform(delete("/api/postmortems/" + pm).with(deptA).with(csrf())).andExpect(status().isForbidden());
+        mockMvc.perform(multipart("/api/postmortem-documents/upload/" + pm).file(file()).with(deptA).with(csrf()))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(delete("/api/postmortem-documents/" + docAPub.getUuid()).with(deptA))
+        mockMvc.perform(delete("/api/postmortem-documents/" + docAPub.getUuid()).with(deptA).with(csrf()))
                 .andExpect(status().isForbidden());
         assertThat(titleOf(pm)).isEqualTo("PM A published");
         assertThat(docCount(pm)).isEqualTo(1);

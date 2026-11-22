@@ -117,19 +117,9 @@ class SecretExposureFunctionalTest extends AbstractCassandraIntegrationTest {
         String table = send(get("/api/admin/database/table/users"));
         assertFalse(table.contains("$2a$"));
         assertTrue(table.contains("***"));
-        for (String t : new String[] {"users", "data_source"}) {
-            String result = send(post("/api/admin/database/query").contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"sql\":\"SELECT * FROM " + t + "\"}"));
-            assertFalse(result.contains("$2a$"));
-            assertFalse(result.contains("enc:v1:"));
-            JsonNode node = objectMapper.readTree(result);
-            int col = -1;
-            for (int i = 0; i < node.get("columns").size(); i++) {
-                if ("password".equals(node.get("columns").get(i).asText())) col = i;
-            }
-            assertTrue(col >= 0);
-            assertEquals("***", node.get("rows").get(0).get(col).asText());
-        }
+        String dsTable = send(get("/api/admin/database/table/data_source"));
+        assertFalse(dsTable.contains("enc:v1:"));
+        assertTrue(dsTable.contains("***"));
     }
 
     @Test

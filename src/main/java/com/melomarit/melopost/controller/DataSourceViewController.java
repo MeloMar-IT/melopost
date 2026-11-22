@@ -3,12 +3,14 @@ package com.melomarit.melopost.controller;
 import com.melomarit.melopost.model.DataSource;
 import com.melomarit.melopost.service.DataSourceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+@PreAuthorize("hasRole('ADMIN')")
 @Controller
 @RequestMapping("/datasources")
 public class DataSourceViewController {
@@ -31,7 +33,7 @@ public class DataSourceViewController {
 
     @PostMapping("/save")
     public String saveDataSource(@ModelAttribute DataSource dataSource) {
-        dataSourceService.saveDataSource(dataSource);
+        dataSourceService.saveDataSource(dataSource, dataSource.getPassword());
         return "redirect:/datasources";
     }
 

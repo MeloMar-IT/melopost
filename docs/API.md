@@ -177,18 +177,22 @@ Note: Stories are currently managed as part of Postmortem Holes.
 
 ---
 
-## Data Sources
+## Data Sources (ADMIN)
 
 Base Endpoint: `/api/datasources`
 
+All data-source endpoints are restricted to `ROLE_ADMIN`; other users get `403 Forbidden`.
+
+The `password` field (the integration password or token) is write-only. It is accepted in request bodies but never appears in a response, so no response contains a `password` field. Tokens are stored encrypted; see [DATABASE.md](DATABASE.md#5-data_source). On update, leave `password` out or empty to keep the stored token; a non-empty value replaces it.
+
 ### Get All Data Sources
 - **Method**: `GET`
-- **Response**: List of `DataSource` objects.
+- **Response**: List of `DataSource` objects, without `password`.
 
 ### Get Data Source by UUID
 - **Method**: `GET`
 - **Path**: `/api/datasources/{uuid}`
-- **Response**: `DataSource` object.
+- **Response**: `DataSource` object, without `password`.
 
 ### Get Template Data Sources
 - **Method**: `GET`
@@ -197,7 +201,7 @@ Base Endpoint: `/api/datasources`
 
 ### Create Data Source
 - **Method**: `POST`
-- **Example JSON Request**:
+- **Example JSON Request** (the response does not repeat `password`):
 ```json
 {
   "name": "Production Jira",
@@ -220,22 +224,24 @@ Base Endpoint: `/api/datasources`
 
 ---
 
-## Users
+## Users (ADMIN)
 
 Base Endpoint: `/api/users`
 
+The `password` field is write-only. It is accepted in request bodies, but responses never contain it or its bcrypt hash. Every supplied password is bcrypt-encoded on save, including a value that looks like a hash (such as one starting with `$2a$`). On update, leave `password` out or empty to keep the stored hash.
+
 ### Get All Users
 - **Method**: `GET`
-- **Response**: List of `User` objects.
+- **Response**: List of `User` objects, without `password`.
 
 ### Get User by UUID
 - **Method**: `GET`
 - **Path**: `/api/users/{uuid}`
-- **Response**: `User` object.
+- **Response**: `User` object, without `password`.
 
 ### Create User
 - **Method**: `POST`
-- **Example JSON Request**:
+- **Example JSON Request** (the response does not repeat `password`):
 ```json
 {
   "username": "jdoe",
@@ -274,6 +280,7 @@ Base Endpoint: `/api/admin/database`
 - **Body**: `{"query": "SELECT * FROM postmortem"}`
 - **Response**: `QueryResultDTO` containing results and metadata.
 - **Note**: The endpoint is CSRF-exempt and runs any CQL it receives with admin rights, so keep it to trusted admin clients. The web UI shows the returned values as plain text.
+- **Password values**: a column named `password` is returned as `***`. A query is rejected with an error if it uses `SELECT JSON` or selects a column whose projection contains `password` (for example through an alias or a function), because those would return the value under another name.
 
 ### Rich Text Fields
 Hole descriptions and remedial actions are stored exactly as submitted. The API returns them unchanged. The web UI cleans them with an allow-list sanitizer before rendering, so scripts, event-handler attributes and `javascript:` links are removed on display. API clients that render these fields as HTML must apply their own sanitizing.

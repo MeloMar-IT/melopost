@@ -14,10 +14,13 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -34,6 +37,9 @@ public class UserManagementFunctionalTest extends com.melomarit.melopost.support
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     public void setup() {
@@ -55,22 +61,23 @@ public class UserManagementFunctionalTest extends com.melomarit.melopost.support
     @WithMockUser(username = "admin_mgr", roles = "ADMIN")
     public void userLifecycle_shouldWorkCorrectly() throws Exception {
         // 1. Create a new user
-        User newUser = new User();
-        newUser.setUsername("testuser");
-        newUser.setPassword("testpass");
-        newUser.setEmail("test@example.com");
-        newUser.getRoles().add("USER");
+        // password is write-only in JSON, so the request body is built by hand
+        String body = "{\"username\":\"testuser\",\"password\":\"testpass\","
+                + "\"email\":\"test@example.com\",\"roles\":[\"USER\"]}";
 
         MvcResult createResult = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(newUser)))
+                        .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.uuid", notNullValue()))
                 .andExpect(jsonPath("$.username", is("testuser")))
+                .andExpect(jsonPath("$.password").doesNotExist())
                 .andReturn();
 
         User createdUser = objectMapper.readValue(createResult.getResponse().getContentAsString(), User.class);
         UUID userId = createdUser.getUuid();
+        String storedHash = userRepository.findById(userId).orElseThrow().getPassword();
+        assertTrue(passwordEncoder.matches("testpass", storedHash));
 
         // 2. Read the user
         mockMvc.perform(get("/api/users/" + userId))
@@ -89,6 +96,7 @@ public class UserManagementFunctionalTest extends com.melomarit.melopost.support
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.firstName", is("Test")))
                 .andExpect(jsonPath("$.roles", hasItems("USER", "MANAGER")));
+        assertEquals(storedHash, userRepository.findById(userId).orElseThrow().getPassword());
 
         // 4. List all users
         mockMvc.perform(get("/api/users"))

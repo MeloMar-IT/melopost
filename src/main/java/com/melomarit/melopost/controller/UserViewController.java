@@ -39,18 +39,7 @@ public class UserViewController {
             user.setAllowedDepartments(new HashSet<>());
         }
         
-        if (user.getUuid() != null) {
-            userService.findById(user.getUuid()).ifPresent(existing -> {
-                user.setPassword(existing.getPassword());
-                if (password != null && !password.isEmpty()) {
-                    user.setPassword(password);
-                }
-            });
-        } else {
-            user.setPassword(password);
-        }
-
-        userService.save(user);
+        userService.save(user, password);
         return "redirect:/users";
     }
 

@@ -30,7 +30,7 @@ public class UserController {
 
     @PostMapping
     public User create(@RequestBody User user) {
-        return userService.save(user);
+        return userService.save(user, user.getPassword());
     }
 
     @PutMapping("/{id}")
@@ -43,11 +43,7 @@ public class UserController {
                     if (user.getLastName() != null) existing.setLastName(user.getLastName());
                     if (user.getRoles() != null) existing.setRoles(user.getRoles());
                     if (user.getActive() != null) existing.setActive(user.getActive());
-                    
-                    if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-                        existing.setPassword(user.getPassword());
-                    }
-                    return ResponseEntity.ok(userService.save(existing));
+                    return ResponseEntity.ok(userService.save(existing, user.getPassword()));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

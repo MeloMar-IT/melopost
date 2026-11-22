@@ -3,6 +3,7 @@ package com.melomarit.melopost.model;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
 import org.springframework.data.cassandra.core.mapping.Table;
 import org.springframework.data.cassandra.core.mapping.Column;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -30,6 +31,7 @@ public class DataSource {
     private String username;
 
     @Column("password")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @Column("description")

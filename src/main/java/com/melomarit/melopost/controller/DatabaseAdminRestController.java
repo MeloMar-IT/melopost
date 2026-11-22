@@ -24,12 +24,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/database")
 @PreAuthorize("hasRole('ADMIN')")
 public class DatabaseAdminRestController {
+
+    private static final Pattern SELECT_JSON = Pattern.compile("(?i)^\\s*SELECT\\s+JSON\\b");
+    private static final Pattern SELECT_PROJECTION = Pattern.compile("(?is)^\\s*SELECT\\s+(.*?)\\s+FROM\\b");
+    private static final Pattern PASSWORD_WORD = Pattern.compile("(?i)\\bpassword\\b");
 
     @Autowired
     private CqlSession session;
@@ -141,9 +147,35 @@ public class DatabaseAdminRestController {
         return items;
     }
 
+    /**
+     * Rejects console queries that could return a password value under another name: an aliased or
+     * function-wrapped password column, or SELECT JSON (which embeds every column in one JSON string).
+     * Column-name masking alone does not catch these. Returns null when the query is allowed.
+     */
+    static String secretProjectionError(String cql) {
+        if (cql == null) {
+            return null;
+        }
+        if (SELECT_JSON.matcher(cql).find()) {
+            return "SELECT JSON is not allowed in the console: it would return password values.";
+        }
+        Matcher projection = SELECT_PROJECTION.matcher(cql);
+        if (projection.find() && PASSWORD_WORD.matcher(projection.group(1)).find()) {
+            return "Selecting a password column is not allowed in the console.";
+        }
+        return null;
+    }
+
     @PostMapping("/query")
     public QueryResultDTO executeQuery(@RequestBody Map<String, String> request) {
         String cql = request.get("sql");
+        String rejected = secretProjectionError(cql);
+        if (rejected != null) {
+            QueryResultDTO denied = new QueryResultDTO();
+            denied.setSql(cql);
+            denied.setError(rejected);
+            return denied;
+        }
         if (cql != null && cql.trim().toUpperCase().startsWith("SELECT") && !cql.toUpperCase().contains("LIMIT")) {
             cql = cql.trim();
             if (cql.endsWith(";")) {
@@ -182,6 +214,10 @@ public class DatabaseAdminRestController {
                 if (count++ >= 2000) break; // Hard safety limit to prevent OOM
                 List<Object> rowData = new ArrayList<>();
                 for (int i = 0; i < columns.size(); i++) {
+                    if ("password".equalsIgnoreCase(columns.get(i))) {
+                        rowData.add("***");
+                        continue;
+                    }
                     try {
                         rowData.add(convertValue(row.getObject(i)));
                     } catch (Exception e) {

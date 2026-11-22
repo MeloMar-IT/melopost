@@ -4,10 +4,12 @@ import com.melomarit.melopost.model.DataSource;
 import com.melomarit.melopost.service.DataSourceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/datasources")
 public class DataSourceController {
@@ -29,7 +31,7 @@ public class DataSourceController {
 
     @PostMapping
     public DataSource create(@RequestBody DataSource dataSource) {
-        return dataSourceService.saveDataSource(dataSource);
+        return dataSourceService.saveDataSource(dataSource, dataSource.getPassword());
     }
 
     @PutMapping("/{id}")
@@ -41,9 +43,8 @@ public class DataSourceController {
                     if (dataSource.getOperation() != null) existing.setOperation(dataSource.getOperation());
                     if (dataSource.getUrl() != null) existing.setUrl(dataSource.getUrl());
                     if (dataSource.getUsername() != null) existing.setUsername(dataSource.getUsername());
-                    if (dataSource.getPassword() != null) existing.setPassword(dataSource.getPassword());
                     if (dataSource.getDescription() != null) existing.setDescription(dataSource.getDescription());
-                    return ResponseEntity.ok(dataSourceService.saveDataSource(existing));
+                    return ResponseEntity.ok(dataSourceService.saveDataSource(existing, dataSource.getPassword()));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

@@ -141,24 +141,9 @@ public class DatabaseAdminRestController {
         return items;
     }
 
-    @PostMapping("/query")
-    public QueryResultDTO executeQuery(@RequestBody Map<String, String> request) {
-        String cql = request.get("sql");
-        if (cql != null && cql.trim().toUpperCase().startsWith("SELECT") && !cql.toUpperCase().contains("LIMIT")) {
-            cql = cql.trim();
-            if (cql.endsWith(";")) {
-                cql = cql.substring(0, cql.length() - 1);
-            }
-            // If it contains ALLOW FILTERING, we should insert LIMIT before it, but Cassandra usually allows LIMIT after ALLOW FILTERING too
-            // Actually, the error shows: ...ALLOW FILTERING [LIMIT]... 
-            // In CQL, LIMIT comes BEFORE ALLOW FILTERING.
-            if (cql.toUpperCase().contains("ALLOW FILTERING")) {
-                int index = cql.toUpperCase().lastIndexOf("ALLOW FILTERING");
-                cql = cql.substring(0, index) + " LIMIT 1000 " + cql.substring(index);
-            } else {
-                cql += " LIMIT 1000";
-            }
-        }
+    private QueryResultDTO previewTable(TableMetadata table) {
+        // CQL is built from schema metadata (quoted identifier), never from request input.
+        String cql = "SELECT * FROM " + table.getName().asCql(true) + " LIMIT 50";
 
         QueryResultDTO result = new QueryResultDTO();
         result.setSql(cql);
@@ -288,7 +273,7 @@ public class DatabaseAdminRestController {
                 .collect(Collectors.toList()));
             
             // Preview data
-            QueryResultDTO data = executeQuery(Map.of("sql", "SELECT * FROM " + tableName + " LIMIT 50"));
+            QueryResultDTO data = previewTable(tableMetadata);
             info.setData(data);
         } else if (keyspaceMetadata.getUserDefinedType(tableName).isPresent()) {
             UserDefinedType udt = keyspaceMetadata.getUserDefinedType(tableName).get();

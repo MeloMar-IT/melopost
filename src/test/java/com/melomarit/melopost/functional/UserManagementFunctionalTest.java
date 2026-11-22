@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -61,7 +62,7 @@ public class UserManagementFunctionalTest extends com.melomarit.melopost.support
         newUser.setEmail("test@example.com");
         newUser.getRoles().add("USER");
 
-        MvcResult createResult = mockMvc.perform(post("/api/users")
+        MvcResult createResult = mockMvc.perform(post("/api/users").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(newUser)))
                 .andExpect(status().isOk())
@@ -83,7 +84,7 @@ public class UserManagementFunctionalTest extends com.melomarit.melopost.support
         createdUser.setLastName("User");
         createdUser.getRoles().add("MANAGER");
 
-        mockMvc.perform(put("/api/users/" + userId)
+        mockMvc.perform(put("/api/users/" + userId).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createdUser)))
                 .andExpect(status().isOk())
@@ -97,7 +98,7 @@ public class UserManagementFunctionalTest extends com.melomarit.melopost.support
                 .andExpect(jsonPath("$[*].username", hasItems("admin_mgr", "testuser")));
 
         // 5. Delete the user
-        mockMvc.perform(delete("/api/users/" + userId))
+        mockMvc.perform(delete("/api/users/" + userId).with(csrf()))
                 .andExpect(status().isNoContent());
 
         // 6. Verify deletion

@@ -44,7 +44,7 @@ public class ReportTemplateViewController {
         return "templates/form";
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public String delete(@PathVariable UUID id) {
         service.deleteById(id);
         return "redirect:/templates";

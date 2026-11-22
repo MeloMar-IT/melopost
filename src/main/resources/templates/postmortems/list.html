@@ -41,8 +41,14 @@
                 btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 animate-spin"></i> Importing...';
                 lucide.createIcons();
 
+                const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+                const headers = {};
+                if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
                 fetch('/api/postmortems/import', {
                     method: 'POST',
+                    headers: headers,
                     body: formData
                 })
                 .then(response => {

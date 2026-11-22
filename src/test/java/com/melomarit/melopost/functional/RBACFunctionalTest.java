@@ -8,6 +8,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -100,5 +101,21 @@ public class RBACFunctionalTest extends com.melomarit.melopost.support.AbstractC
     public void adminRole_shouldAccessApiUsers() throws Exception {
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    public void sessionPostToApiWithoutCsrf_isForbidden() throws Exception {
+        mockMvc.perform(post("/api/users")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"csrf-victim\",\"password\":\"x\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    public void getUserDelete_isNotAllowed() throws Exception {
+        mockMvc.perform(get("/users/delete/" + java.util.UUID.randomUUID()))
+                .andExpect(status().isMethodNotAllowed());
     }
 }

@@ -49,3 +49,17 @@ jobs:
             target/surefire-reports/
             target/failsafe-reports/
           if-no-files-found: ignore
+
+  python-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install fastapi uvicorn pydantic
+      - run: python -m unittest discover -s tests/python -v

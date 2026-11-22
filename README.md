@@ -152,39 +152,45 @@ This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**
 
 ---
 
-## 🤖 RAG (Retrieval Augmented Generation)
+## 🤖 Optional Local LLM Helper
 
-You can create a local vector database for RAG based on the existing postmortem data in Cassandra, local documentation, and exported reports.
+Melopost can start a small local LLM helper (`llm_api.py`) as a child process. It is **off by default**, so the application starts without Python installed.
+
+The former RAG scripts in `python_scripts/` have been removed. They indexed all departments' postmortems as `admin`, which bypassed department access, so they are no longer supported.
 
 ### 1. Requirements
-Ensure you have Python installed and the required libraries:
+Python 3.9 or higher, then the libraries in `requirements.txt`:
 ```bash
-pip install pandas qdrant-client sentence-transformers torch transformers PyPDF2 langchain-text-splitters
+pip install -r requirements.txt
 ```
 
-### 2. Configuration
-The RAG system uses local models stored in the `model/` directory. Ensure the following models are available:
-- **Embedding Model**: `model/Qwen3-Embedding-0.6B`
-- **LLM Model**: `model/Qwen3.5-0.8B`
+### 2. Enable the helper
+1. Generate a token of at least 32 characters and provide it through the environment:
+   ```bash
+   export MELOPOST_LLM_API_TOKEN="$(openssl rand -base64 32)"
+   ```
+2. Start Melopost with `melopost.llm-api.enabled=true`.
 
-### 3. Ingestion
-#### Download and ingest all postmortem reports
-You can also download all postmortem reports as PDF from the application and ingest them directly into the RAG:
+Properties:
+- `melopost.llm-api.enabled` (default `false`): starts the helper when `true`.
+- `melopost.llm-api.port` (default `8000`): port the helper listens on.
+- `melopost.llm-api.python-executable` (default `python3`) and `melopost.llm-api.script-path` (default `llm_api.py`).
+
+### 3. Security
+- The helper listens on `127.0.0.1` only. It cannot be reached from another host.
+- Every endpoint requires `Authorization: Bearer <token>`. Requests without a valid token get `401 Unauthorized`.
+- The token is read only from the `MELOPOST_LLM_API_TOKEN` environment variable. A value in a property file is ignored. If the variable is unset or blank, Melopost generates a random token for each start. Only the application can then use the helper.
+- The token is passed to the helper through its environment, not on the command line.
+- The `/docs`, `/redoc` and `/openapi.json` pages are disabled.
+- Input is limited: prompt up to 8000 characters, `max_new_tokens` from 1 to 512, `temperature` from 0 to 2. Errors return a generic message; details are only logged on the server.
+- The model (`TinyLlama/TinyLlama-1.1B-Chat-v1.0`) is loaded with `trust_remote_code=False`.
+
+### 4. Manual check
+With the helper running, from the repository root:
 ```bash
-python python_scripts/download_all_postmortems.py
+LLM_API_TOKEN="$MELOPOST_LLM_API_TOKEN" python test_llm_api.py
 ```
-This script will fetch all postmortems via the API, generate their PDF reports, and ingest them into the vector database.
-
-**Note:** Ensure the Java application is running or the Cassandra database is accessible via the API (defaults to `http://localhost:8080/api`).
-
-The vector database will be created in the `data/qdrant_db` directory.
-
-### 4. Chatting with RAG
-Once the database is populated, you can interact with it using the chat script:
-```bash
-python python_scripts/chat_with_rag.py
-```
-This script uses the local Qwen model to answer questions based on the retrieved context from your postmortems and documents.
+The Python tests can be run with `python -m unittest discover -s tests/python`.
 
 ---
 

@@ -140,6 +140,53 @@ public class PostmortemDocumentServiceTest {
     }
 
     @Test
+    void uploadDocument_refusesDisallowedExtensionAndStoresNothing() {
+        Postmortem pm = new Postmortem();
+        pm.setUuid(UUID.randomUUID());
+        MockMultipartFile file = new MockMultipartFile("file", "page.html", "text/html", "x".getBytes());
+        UnsupportedDocumentTypeException e = assertThrows(UnsupportedDocumentTypeException.class,
+                () -> service.uploadDocument(pm, file));
+        assertEquals(400, e.getStatusCode().value());
+        verify(repository, never()).save(any());
+        assertTrue(pm.getDocuments() == null || pm.getDocuments().isEmpty());
+    }
+
+    @Test
+    void uploadDocument_refusesAllowedExtensionWithMismatchingDeclaredType() {
+        Postmortem pm = new Postmortem();
+        MockMultipartFile file = new MockMultipartFile("file", "x.png", "text/html", "x".getBytes());
+        assertThrows(UnsupportedDocumentTypeException.class, () -> service.uploadDocument(pm, file));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void uploadDocument_storesCanonicalTypeAndStripsPath() throws IOException {
+        Postmortem pm = new Postmortem();
+        pm.setUuid(UUID.randomUUID());
+        MockMultipartFile file = new MockMultipartFile("file", "C:\\fakepath\\data.csv", "application/vnd.ms-excel", "a,b".getBytes());
+        service.uploadDocument(pm, file);
+        assertEquals("data.csv", pm.getDocuments().get(0).getFileName());
+        assertEquals("text/csv", pm.getDocuments().get(0).getContentType());
+    }
+
+    @Test
+    void processFiles_refusesWholeBatchWhenOneFileIsDisallowed() {
+        Postmortem pm = new Postmortem();
+        MockMultipartFile ok = new MockMultipartFile("f", "ok.txt", "text/plain", "x".getBytes());
+        MockMultipartFile bad = new MockMultipartFile("f", "bad.exe", "application/octet-stream", "x".getBytes());
+        assertThrows(UnsupportedDocumentTypeException.class,
+                () -> service.processFiles(pm, new MockMultipartFile[]{ok, bad}));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void validateUploads_ignoresNullAndEmptyFiles() {
+        assertDoesNotThrow(() -> service.validateUploads(null));
+        assertDoesNotThrow(() -> service.validateUploads(new MockMultipartFile[]{null,
+                new MockMultipartFile("f", "", "text/html", new byte[0])}));
+    }
+
+    @Test
     void deleteById_shouldCallRepository() {
         UUID id = UUID.randomUUID();
         service.deleteById(id);

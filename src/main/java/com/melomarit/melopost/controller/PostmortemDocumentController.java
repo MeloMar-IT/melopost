@@ -5,8 +5,6 @@ import com.melomarit.melopost.model.PostmortemDocument;
 import com.melomarit.melopost.service.PostmortemAccessPolicy.Action;
 import com.melomarit.melopost.service.PostmortemDocumentService;
 import com.melomarit.melopost.service.PostmortemService;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,11 +42,7 @@ public class PostmortemDocumentController {
 
     @GetMapping("/{id}/download")
     public ResponseEntity<byte[]> download(@PathVariable UUID id) {
-        PostmortemDocument doc = service.findAccessible(id, Action.VIEW);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getFileName() + "\"")
-                .contentType(MediaType.parseMediaType(doc.getContentType()))
-                .body(doc.getData());
+        return DocumentDownloadResponse.of(service.findAccessible(id, Action.VIEW));
     }
 
     @PostMapping("/upload/{postmortemId}")

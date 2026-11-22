@@ -47,7 +47,7 @@ Stores metadata and content for attached files.
 | `uuid` | UUID | Primary Key |
 | `postmortem_uuid` | UUID | Reference to parent postmortem |
 | `file_name` | TEXT | Name of the file |
-| `content_type` | TEXT | MIME type |
+| `content_type` | TEXT | Canonical MIME type of an allowed file type (for example `application/pdf`), set from the file extension on upload |
 | `size` | BIGINT | File size in bytes |
 | `data` | BLOB | Binary file content |
 | `upload_date` | TIMESTAMP | When it was uploaded |

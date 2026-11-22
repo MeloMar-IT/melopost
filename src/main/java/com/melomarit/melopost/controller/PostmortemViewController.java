@@ -179,30 +179,41 @@ public class PostmortemViewController {
         boolean isCreate = postmortem.getUuid() == null;
         try {
             if (isCreate) {
+                documentService.validateUploads(files);
                 saved = service.create(postmortem);
             } else {
                 // Updates only: a supplied uuid must exist (404), so a deleted uuid cannot be recreated.
                 service.findAuthorized(postmortem.getUuid(), Action.UPDATE);
+                documentService.validateUploads(files);
                 saved = service.save(postmortem);
             }
+        } catch (UnsupportedDocumentTypeException e) {
+            if (isCreate) {
+                postmortem.setUuid(null);
+            }
+            return formWithError(postmortem, model, e.getReason());
         } catch (DuplicateIncidentRefException e) {
             if (isCreate) {
                 // Nothing was stored: drop the uuid create() assigned, so the corrected resubmission is a create again.
                 postmortem.setUuid(null);
             }
-            model.addAttribute("postmortem", postmortem);
-            model.addAttribute("readDataSources", dataSourceService.getDataSourcesByOperation("Read"));
-            model.addAttribute("writeDataSources", dataSourceService.getDataSourcesByOperation("Create"));
-            model.addAttribute("allPostmortems", service.findAll());
-            model.addAttribute("postmortemStates", Postmortem.POSTMORTEM_STATES);
-            model.addAttribute("error", e.getMessage());
-            return "postmortems/form";
+            return formWithError(postmortem, model, e.getMessage());
         }
         // Files are stored only after the postmortem itself has been authorized and saved.
         if (files != null) {
             documentService.processFiles(saved, files);
         }
         return "redirect:/postmortems";
+    }
+
+    private String formWithError(Postmortem postmortem, Model model, String error) {
+        model.addAttribute("postmortem", postmortem);
+        model.addAttribute("readDataSources", dataSourceService.getDataSourcesByOperation("Read"));
+        model.addAttribute("writeDataSources", dataSourceService.getDataSourcesByOperation("Create"));
+        model.addAttribute("allPostmortems", service.findAll());
+        model.addAttribute("postmortemStates", Postmortem.POSTMORTEM_STATES);
+        model.addAttribute("error", error);
+        return "postmortems/form";
     }
 
     @ExceptionHandler(PostmortemLockedException.class)
@@ -334,7 +345,11 @@ public class PostmortemViewController {
     @PostMapping("/{id}/documents/upload")
     public String uploadDocument(@PathVariable UUID id, @RequestParam("file") MultipartFile file) throws IOException {
         Postmortem pm = service.findAuthorized(id, Action.UPDATE);
-        documentService.uploadDocument(pm, file);
+        try {
+            documentService.uploadDocument(pm, file);
+        } catch (UnsupportedDocumentTypeException e) {
+            return "redirect:/postmortems/details/" + id + "?error=filetype";
+        }
         service.save(pm);
         return "redirect:/postmortems/details/" + id;
     }
@@ -343,10 +358,7 @@ public class PostmortemViewController {
     public ResponseEntity<byte[]> downloadDocument(@PathVariable UUID id, @PathVariable UUID docId) {
         service.findById(id);
         PostmortemDocument doc = documentService.findInPostmortem(id, docId);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getFileName() + "\"")
-                .contentType(MediaType.parseMediaType(doc.getContentType()))
-                .body(doc.getData());
+        return DocumentDownloadResponse.of(doc);
     }
 
     @PostMapping("/{id}/documents/{docId}/delete")

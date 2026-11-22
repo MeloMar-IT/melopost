@@ -44,6 +44,10 @@
             <i data-lucide="alert-circle" class="w-5 h-5 mr-3"></i>
             <p class="text-sm font-medium">This postmortem is published and locked. Only administrators can make changes.</p>
         </div>
+        <div th:if="${param.error != null and param.error[0] == 'filetype'}" class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center shadow-sm">
+            <i data-lucide="alert-circle" class="w-5 h-5 mr-3"></i>
+            <p class="text-sm font-medium">This file type is not allowed. Allowed types: PDF, DOCX, XLSX, PNG, JPEG, TXT, CSV.</p>
+        </div>
 
         <!-- Toast Notification -->
         <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 z-[100]">
@@ -525,7 +529,7 @@
                     <form th:action="@{/postmortems/{id}/documents/upload(id=${postmortem.uuid})}" method="post" enctype="multipart/form-data" class="pt-4 border-t border-gray-50">
                         <label class="block mb-3">
                             <span class="sr-only">Choose file</span>
-                            <input type="file" name="file" class="block w-full text-xs text-gray-500
+                            <input type="file" name="file" accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg,.txt,.csv" class="block w-full text-xs text-gray-500
                                 file:mr-4 file:py-2 file:px-4
                                 file:rounded-full file:border-0
                                 file:text-xs file:font-semibold

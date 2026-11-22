@@ -25,8 +25,68 @@ public class PostmortemDocumentServiceTest {
     @Mock
     private PostmortemDocumentRepository repository;
 
+    @Mock
+    private PostmortemService postmortemService;
+
     @InjectMocks
     private PostmortemDocumentService service;
+
+    @Test
+    void findInPostmortem_otherPostmortemsDocumentIsNotFound() {
+        UUID docId = UUID.randomUUID();
+        PostmortemDocument doc = new PostmortemDocument();
+        doc.setPostmortemUuid(UUID.randomUUID());
+        when(repository.findById(docId)).thenReturn(Optional.of(doc));
+        org.springframework.web.server.ResponseStatusException e = assertThrows(
+                org.springframework.web.server.ResponseStatusException.class,
+                () -> service.findInPostmortem(UUID.randomUUID(), docId));
+        assertEquals(404, e.getStatusCode().value());
+    }
+
+    @Test
+    void findInPostmortem_returnsOwnDocument() {
+        UUID docId = UUID.randomUUID();
+        UUID pmId = UUID.randomUUID();
+        PostmortemDocument doc = new PostmortemDocument();
+        doc.setPostmortemUuid(pmId);
+        when(repository.findById(docId)).thenReturn(Optional.of(doc));
+        assertSame(doc, service.findInPostmortem(pmId, docId));
+    }
+
+    @Test
+    void deleteAccessible_deniedPostmortemKeepsDocument() {
+        UUID docId = UUID.randomUUID();
+        UUID pmId = UUID.randomUUID();
+        PostmortemDocument doc = new PostmortemDocument();
+        doc.setPostmortemUuid(pmId);
+        when(repository.findById(docId)).thenReturn(Optional.of(doc));
+        when(postmortemService.findAuthorized(pmId, PostmortemAccessPolicy.Action.UPDATE))
+                .thenThrow(new PostmortemLockedException(pmId));
+        assertThrows(PostmortemLockedException.class, () -> service.deleteAccessible(docId));
+        verify(repository, never()).deleteById(any());
+    }
+
+    @Test
+    void findAccessible_orphanDocumentIsHiddenFromRestrictedUsers() {
+        UUID docId = UUID.randomUUID();
+        when(repository.findById(docId)).thenReturn(Optional.of(new PostmortemDocument()));
+        when(postmortemService.currentUserIsUnrestricted()).thenReturn(false);
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> service.findAccessible(docId, PostmortemAccessPolicy.Action.VIEW));
+    }
+
+    @Test
+    void findAllVisible_restrictedUserOnlySeesDocumentsOfVisiblePostmortems() {
+        Postmortem visiblePm = new Postmortem();
+        PostmortemDocument mine = new PostmortemDocument();
+        mine.setPostmortemUuid(visiblePm.getUuid());
+        PostmortemDocument other = new PostmortemDocument();
+        other.setPostmortemUuid(UUID.randomUUID());
+        when(repository.findAll()).thenReturn(Arrays.asList(mine, other));
+        when(postmortemService.currentUserIsUnrestricted()).thenReturn(false);
+        when(postmortemService.findAll()).thenReturn(Arrays.asList(visiblePm));
+        assertEquals(List.of(mine), service.findAllVisible());
+    }
 
     @Test
     void findAll_shouldReturnAll() {

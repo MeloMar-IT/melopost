@@ -5,6 +5,7 @@ import com.melomarit.melopost.dto.PostmortemSearchResultDTO;
 import com.melomarit.melopost.dto.StoryDTO;
 import com.melomarit.melopost.model.*;
 import com.melomarit.melopost.service.*;
+import com.melomarit.melopost.service.PostmortemAccessPolicy.Action;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -157,6 +158,7 @@ public class PostmortemViewController {
         pm.addLayer(createLayer("Observability"));
         pm.addLayer(createLayer("Incident Handling"));
         pm.addLayer(createLayer("Human"));
+        pm.setUuid(null); // new postmortem: the server assigns the uuid on save
         model.addAttribute("postmortem", pm);
         model.addAttribute("readDataSources", dataSourceService.getDataSourcesByOperation("Read"));
         model.addAttribute("writeDataSources", dataSourceService.getDataSourcesByOperation("Create"));
@@ -173,27 +175,21 @@ public class PostmortemViewController {
 
     @PostMapping("/save")
     public String save(@ModelAttribute Postmortem postmortem, @RequestParam(value = "files", required = false) MultipartFile[] files, Model model) throws IOException {
-        if (postmortem.getUuid() != null) {
-            try {
-                Postmortem existing = service.findById(postmortem.getUuid());
-                if (existing != null && "Published".equals(existing.getStatus())) {
-                    // If the postmortem is already published, check if the current user is an admin
-                    User currentUser = service.getCurrentUser();
-                    if (!service.isUserAdmin(currentUser)) {
-                        return "redirect:/postmortems/details/" + postmortem.getUuid() + "?error=locked";
-                    }
-                }
-            } catch (RuntimeException e) {
-                // If not found, it might be a manual UUID assignment (unlikely but possible)
-            }
-        }
-        
-        if (files != null) {
-            documentService.processFiles(postmortem, files);
-        }
+        Postmortem saved;
+        boolean isCreate = postmortem.getUuid() == null;
         try {
-            service.save(postmortem);
-        } catch (RuntimeException e) {
+            if (isCreate) {
+                saved = service.create(postmortem);
+            } else {
+                // Updates only: a supplied uuid must exist (404), so a deleted uuid cannot be recreated.
+                service.findAuthorized(postmortem.getUuid(), Action.UPDATE);
+                saved = service.save(postmortem);
+            }
+        } catch (DuplicateIncidentRefException e) {
+            if (isCreate) {
+                // Nothing was stored: drop the uuid create() assigned, so the corrected resubmission is a create again.
+                postmortem.setUuid(null);
+            }
             model.addAttribute("postmortem", postmortem);
             model.addAttribute("readDataSources", dataSourceService.getDataSourcesByOperation("Read"));
             model.addAttribute("writeDataSources", dataSourceService.getDataSourcesByOperation("Create"));
@@ -202,12 +198,21 @@ public class PostmortemViewController {
             model.addAttribute("error", e.getMessage());
             return "postmortems/form";
         }
+        // Files are stored only after the postmortem itself has been authorized and saved.
+        if (files != null) {
+            documentService.processFiles(saved, files);
+        }
         return "redirect:/postmortems";
+    }
+
+    @ExceptionHandler(PostmortemLockedException.class)
+    public String handleLocked(PostmortemLockedException e) {
+        return "redirect:/postmortems/details/" + e.getPostmortemId() + "?error=locked";
     }
 
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable UUID id, Model model) {
-        Postmortem pm = service.findById(id);
+        Postmortem pm = service.findAuthorized(id, Action.UPDATE);
         pm.setDocuments(documentService.findByPostmortemUuid(id));
         model.addAttribute("postmortem", pm);
         model.addAttribute("readDataSources", dataSourceService.getDataSourcesByOperation("Read"));
@@ -224,17 +229,7 @@ public class PostmortemViewController {
         
         // Populate local postmortem objects
         if (pm.getLocalPostmortemUuids() != null && !pm.getLocalPostmortemUuids().isEmpty()) {
-            List<Postmortem> localPms = pm.getLocalPostmortemUuids().stream()
-                    .map(lUuid -> {
-                        try {
-                            return service.findById(lUuid);
-                        } catch (Exception e) {
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            pm.setLocalPostmortems(localPms);
+            pm.setLocalPostmortems(service.findVisibleByIds(pm.getLocalPostmortemUuids()));
         }
 
         model.addAttribute("postmortem", pm);
@@ -255,14 +250,12 @@ public class PostmortemViewController {
 
     @PostMapping("/{id}/link")
     public String linkPostmortem(@PathVariable UUID id, @RequestParam UUID linkedId) {
-        Postmortem pm = service.findById(id);
-        if ("Published".equals(pm.getStatus()) && !service.isUserAdmin(service.getCurrentUser())) {
-            return "redirect:/postmortems/details/" + id + "?error=locked";
-        }
+        Postmortem pm = service.findAuthorized(id, Action.UPDATE);
         if (pm.getLocalPostmortemUuids() == null) {
             pm.setLocalPostmortemUuids(new ArrayList<>());
         }
         if (!id.equals(linkedId) && !pm.getLocalPostmortemUuids().contains(linkedId)) {
+            service.findById(linkedId);
             pm.getLocalPostmortemUuids().add(linkedId);
             service.save(pm);
         }
@@ -271,10 +264,7 @@ public class PostmortemViewController {
 
     @PostMapping("/{id}/unlink")
     public String unlinkPostmortem(@PathVariable UUID id, @RequestParam UUID linkedId) {
-        Postmortem pm = service.findById(id);
-        if ("Published".equals(pm.getStatus()) && !service.isUserAdmin(service.getCurrentUser())) {
-            return "redirect:/postmortems/details/" + id + "?error=locked";
-        }
+        Postmortem pm = service.findAuthorized(id, Action.UPDATE);
         if (pm.getLocalPostmortemUuids() != null) {
             pm.getLocalPostmortemUuids().remove(linkedId);
             service.save(pm);
@@ -284,10 +274,7 @@ public class PostmortemViewController {
 
     @PostMapping("/{id}/tags/add")
     public String addTag(@PathVariable UUID id, @RequestParam String tag) {
-        Postmortem pm = service.findById(id);
-        if ("Published".equals(pm.getStatus()) && !service.isUserAdmin(service.getCurrentUser())) {
-            return "redirect:/postmortems/details/" + id + "?error=locked";
-        }
+        Postmortem pm = service.findAuthorized(id, Action.UPDATE);
         if (tag != null && !tag.trim().isEmpty()) {
             String trimmedTag = tag.trim();
             if (!pm.getTags().contains(trimmedTag)) {
@@ -300,10 +287,7 @@ public class PostmortemViewController {
 
     @PostMapping("/{id}/tags/remove")
     public String removeTag(@PathVariable UUID id, @RequestParam String tag) {
-        Postmortem pm = service.findById(id);
-        if ("Published".equals(pm.getStatus()) && !service.isUserAdmin(service.getCurrentUser())) {
-            return "redirect:/postmortems/details/" + id + "?error=locked";
-        }
+        Postmortem pm = service.findAuthorized(id, Action.UPDATE);
         pm.getTags().remove(tag);
         service.save(pm);
         return "redirect:/postmortems/details/" + id;
@@ -314,10 +298,7 @@ public class PostmortemViewController {
                              @RequestParam String cheeseLayer, 
                              @RequestParam String question, 
                              @RequestParam(required = false) String answer) {
-        Postmortem pm = service.findById(id);
-        if ("Published".equals(pm.getStatus()) && !service.isUserAdmin(service.getCurrentUser())) {
-            return "redirect:/postmortems/details/" + id + "?error=locked";
-        }
+        Postmortem pm = service.findAuthorized(id, Action.UPDATE);
         PostmortemQuestionUDT q = new PostmortemQuestionUDT();
         q.setCheeseLayer(cheeseLayer);
         q.setQuestion(question);
@@ -329,10 +310,7 @@ public class PostmortemViewController {
 
     @PostMapping("/{id}/questions/{qUuid}/remove")
     public String removeQuestion(@PathVariable UUID id, @PathVariable UUID qUuid) {
-        Postmortem pm = service.findById(id);
-        if ("Published".equals(pm.getStatus()) && !service.isUserAdmin(service.getCurrentUser())) {
-            return "redirect:/postmortems/details/" + id + "?error=locked";
-        }
+        Postmortem pm = service.findAuthorized(id, Action.UPDATE);
         pm.getQuestions().removeIf(q -> q.getUuid().equals(qUuid));
         service.save(pm);
         return "redirect:/postmortems/details/" + id;
@@ -340,8 +318,8 @@ public class PostmortemViewController {
 
     @GetMapping("/{id}/report")
     public ResponseEntity<byte[]> downloadReport(@PathVariable UUID id) {
+        Postmortem postmortem = service.findById(id);
         try {
-            Postmortem postmortem = service.findById(id);
             byte[] pdfBytes = reportService.generatePostmortemPdf(postmortem);
 
             return ResponseEntity.ok()
@@ -355,10 +333,7 @@ public class PostmortemViewController {
 
     @PostMapping("/{id}/documents/upload")
     public String uploadDocument(@PathVariable UUID id, @RequestParam("file") MultipartFile file) throws IOException {
-        Postmortem pm = service.findById(id);
-        if ("Published".equals(pm.getStatus()) && !service.isUserAdmin(service.getCurrentUser())) {
-            return "redirect:/postmortems/details/" + id + "?error=locked";
-        }
+        Postmortem pm = service.findAuthorized(id, Action.UPDATE);
         documentService.uploadDocument(pm, file);
         service.save(pm);
         return "redirect:/postmortems/details/" + id;
@@ -366,20 +341,18 @@ public class PostmortemViewController {
 
     @GetMapping("/{id}/documents/{docId}/download")
     public ResponseEntity<byte[]> downloadDocument(@PathVariable UUID id, @PathVariable UUID docId) {
-        return documentService.findById(docId)
-                .map(doc -> ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getFileName() + "\"")
-                        .contentType(MediaType.parseMediaType(doc.getContentType()))
-                        .body(doc.getData()))
-                .orElse(ResponseEntity.status(404).body(null));
+        service.findById(id);
+        PostmortemDocument doc = documentService.findInPostmortem(id, docId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getFileName() + "\"")
+                .contentType(MediaType.parseMediaType(doc.getContentType()))
+                .body(doc.getData());
     }
 
     @PostMapping("/{id}/documents/{docId}/delete")
     public String deleteDocument(@PathVariable UUID id, @PathVariable UUID docId) {
-        Postmortem pm = service.findById(id);
-        if ("Published".equals(pm.getStatus()) && !service.isUserAdmin(service.getCurrentUser())) {
-            return "redirect:/postmortems/details/" + id + "?error=locked";
-        }
+        Postmortem pm = service.findAuthorized(id, Action.UPDATE);
+        documentService.findInPostmortem(id, docId);
         documentService.deleteById(docId);
         return "redirect:/postmortems/details/" + id;
     }
@@ -392,10 +365,7 @@ public class PostmortemViewController {
 
     @PostMapping("/{id}/note")
     public String saveNote(@PathVariable UUID id, @RequestParam String note) {
-        Postmortem pm = service.findById(id);
-        if ("Published".equals(pm.getStatus()) && !service.isUserAdmin(service.getCurrentUser())) {
-            return "redirect:/postmortems/details/" + id + "?error=locked";
-        }
+        Postmortem pm = service.findAuthorized(id, Action.UPDATE);
         if (note != null && note.length() > 1000000) {
             note = note.substring(0, 1000000);
         }
@@ -406,10 +376,7 @@ public class PostmortemViewController {
 
     @PostMapping("/{id}/incident-notes/import")
     public String importIncidentNote(@PathVariable UUID id, @RequestParam UUID noteId) {
-        Postmortem pm = service.findById(id);
-        if ("Published".equals(pm.getStatus()) && !service.isUserAdmin(service.getCurrentUser())) {
-            return "redirect:/postmortems/details/" + id + "?error=locked";
-        }
+        Postmortem pm = service.findAuthorized(id, Action.UPDATE);
         IncidentNote note = incidentNoteService.findById(noteId);
         
         String currentNote = pm.getNote() != null ? pm.getNote() : "";

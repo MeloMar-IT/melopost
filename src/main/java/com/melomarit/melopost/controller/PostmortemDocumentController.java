@@ -2,6 +2,7 @@ package com.melomarit.melopost.controller;
 
 import com.melomarit.melopost.model.Postmortem;
 import com.melomarit.melopost.model.PostmortemDocument;
+import com.melomarit.melopost.service.PostmortemAccessPolicy.Action;
 import com.melomarit.melopost.service.PostmortemDocumentService;
 import com.melomarit.melopost.service.PostmortemService;
 import org.springframework.http.HttpHeaders;
@@ -27,34 +28,32 @@ public class PostmortemDocumentController {
 
     @GetMapping
     public List<PostmortemDocument> getAll() {
-        return service.findAll();
+        return service.findAllVisible();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<PostmortemDocument> getById(@PathVariable UUID id) {
-        return service.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(service.findAccessible(id, Action.VIEW));
     }
 
     @GetMapping("/postmortem/{id}")
     public List<PostmortemDocument> getByPostmortem(@PathVariable UUID id) {
+        postmortemService.findById(id);
         return service.findByPostmortemUuid(id);
     }
 
     @GetMapping("/{id}/download")
     public ResponseEntity<byte[]> download(@PathVariable UUID id) {
-        return service.findById(id)
-                .map(doc -> ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getFileName() + "\"")
-                        .contentType(MediaType.parseMediaType(doc.getContentType()))
-                        .body(doc.getData()))
-                .orElse(ResponseEntity.notFound().build());
+        PostmortemDocument doc = service.findAccessible(id, Action.VIEW);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getFileName() + "\"")
+                .contentType(MediaType.parseMediaType(doc.getContentType()))
+                .body(doc.getData());
     }
 
     @PostMapping("/upload/{postmortemId}")
     public ResponseEntity<PostmortemDocument> upload(@PathVariable UUID postmortemId, @RequestParam("file") MultipartFile file) throws IOException {
-        Postmortem pm = postmortemService.findById(postmortemId);
+        Postmortem pm = postmortemService.findAuthorized(postmortemId, Action.UPDATE);
         service.uploadDocument(pm, file);
         postmortemService.save(pm);
         
@@ -68,7 +67,7 @@ public class PostmortemDocumentController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        service.deleteById(id);
+        service.deleteAccessible(id);
         return ResponseEntity.noContent().build();
     }
 }

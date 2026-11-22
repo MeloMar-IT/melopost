@@ -5,12 +5,18 @@ import com.melomarit.melopost.dto.StoryDTO;
 import com.melomarit.melopost.model.Postmortem;
 import com.melomarit.melopost.model.StoryUDT;
 import com.melomarit.melopost.service.*;
+import com.melomarit.melopost.service.PostmortemAccessPolicy.Action;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -70,7 +76,7 @@ public class PostmortemViewControllerTest {
         Postmortem pm2 = new Postmortem();
         pm2.setUuid(id2);
 
-        when(postmortemService.findById(id1)).thenReturn(pm1);
+        when(postmortemService.findAuthorized(id1, Action.UPDATE)).thenReturn(pm1);
         when(postmortemService.findById(id2)).thenReturn(pm2);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/" + id1 + "/link")
@@ -91,7 +97,7 @@ public class PostmortemViewControllerTest {
         pm2.setUuid(id2);
         pm1.getLocalPostmortemUuids().add(id2);
 
-        when(postmortemService.findById(id1)).thenReturn(pm1);
+        when(postmortemService.findAuthorized(id1, Action.UPDATE)).thenReturn(pm1);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/" + id1 + "/unlink")
                 .param("linkedId", id2.toString())
@@ -122,8 +128,8 @@ public class PostmortemViewControllerTest {
         UUID id = UUID.randomUUID();
         Postmortem pm = new Postmortem();
         pm.setUuid(id);
-        
-        when(postmortemService.findById(any(UUID.class))).thenReturn(pm);
+
+        when(postmortemService.findAuthorized(any(UUID.class), eq(Action.UPDATE))).thenReturn(pm);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/" + id + "/note")
                 .param("note", "New note content")
@@ -140,8 +146,8 @@ public class PostmortemViewControllerTest {
         UUID id = UUID.randomUUID();
         Postmortem pm = new Postmortem();
         pm.setUuid(id);
-        
-        when(postmortemService.findById(any(UUID.class))).thenReturn(pm);
+
+        when(postmortemService.findAuthorized(any(UUID.class), eq(Action.UPDATE))).thenReturn(pm);
 
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 1000010; i++) {
@@ -164,9 +170,9 @@ public class PostmortemViewControllerTest {
         UUID id = UUID.randomUUID();
         Postmortem pm = new Postmortem();
         pm.setUuid(id);
-        
-        when(postmortemService.findById(any(UUID.class))).thenReturn(pm);
-        
+
+        when(postmortemService.findAuthorized(any(UUID.class), eq(Action.UPDATE))).thenReturn(pm);
+
         MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "test data".getBytes());
 
         mockMvc.perform(multipart("/postmortems/" + id + "/documents/upload")
@@ -186,12 +192,154 @@ public class PostmortemViewControllerTest {
         pm.setUuid(id);
         pm.setStatus("Published");
         
-        when(postmortemService.findById(id)).thenReturn(pm);
-        when(postmortemService.isUserAdmin(any())).thenReturn(false);
+        when(postmortemService.findAuthorized(id, Action.UPDATE)).thenThrow(new PostmortemLockedException(id));
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/save")
                 .flashAttr("postmortem", pm)
                 .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/postmortems/details/" + id + "?error=locked"));
+        verify(postmortemService, never()).save(any(Postmortem.class));
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {"USER"})
+    public void testSaveOtherDepartmentIsForbiddenAndStoresNoFiles() throws Exception {
+        UUID id = UUID.randomUUID();
+        Postmortem pm = new Postmortem();
+        pm.setUuid(id);
+        when(postmortemService.findAuthorized(id, Action.UPDATE)).thenThrow(new PostmortemAccessDeniedException("denied"));
+
+        mockMvc.perform(multipart("/postmortems/save")
+                .file(new MockMultipartFile("files", "a.txt", "text/plain", "x".getBytes()))
+                .flashAttr("postmortem", pm)
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isForbidden());
+        verify(postmortemService, never()).save(any(Postmortem.class));
+        verify(documentService, never()).processFiles(any(), any());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {"USER"})
+    public void testSaveWithUnknownUuidIsNotFoundAndNotRecreated() throws Exception {
+        UUID id = UUID.randomUUID();
+        Postmortem pm = new Postmortem();
+        pm.setUuid(id);
+        when(postmortemService.findAuthorized(id, Action.UPDATE))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/save")
+                .flashAttr("postmortem", pm)
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isNotFound());
+        verify(postmortemService, never()).save(any(Postmortem.class));
+        verify(postmortemService, never()).create(any(Postmortem.class));
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {"USER"})
+    public void testDuplicateCreateThenCorrectedRetrySucceeds() throws Exception {
+        // First attempt: a new postmortem (no uuid) with a duplicate incident ref.
+        Postmortem first = new Postmortem();
+        first.setUuid(null); // the new-postmortem form posts an empty uuid
+        first.setIncidentRef("INC-1");
+        UUID generated = UUID.randomUUID();
+        when(postmortemService.create(any(Postmortem.class)))
+                .thenAnswer(inv -> {
+                    Postmortem p = inv.getArgument(0);
+                    p.setUuid(generated); // create() assigns the uuid before the save is rejected
+                    throw new DuplicateIncidentRefException("INC-1");
+                })
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        MvcResult rejected = mockMvc.perform(post("/postmortems/save")
+                        .flashAttr("postmortem", first)
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("postmortems/form"))
+                .andReturn();
+        Postmortem redisplayed = (Postmortem) rejected.getModelAndView().getModel().get("postmortem");
+        assertNull(redisplayed.getUuid(), "the form must not carry a uuid for a create that was not stored");
+
+        // Corrected resubmission: the form posts the (now empty) uuid, so it is still a create.
+        Postmortem corrected = new Postmortem();
+        corrected.setUuid(null);
+        corrected.setIncidentRef("INC-2");
+        mockMvc.perform(post("/postmortems/save")
+                        .flashAttr("postmortem", corrected)
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/postmortems"));
+        verify(postmortemService, times(2)).create(any(Postmortem.class));
+        verify(postmortemService, never()).findAuthorized(any(), any());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {"USER"})
+    public void testSaveWithoutUuidCreatesNewPostmortem() throws Exception {
+        Postmortem pm = new Postmortem();
+        pm.setUuid(null);
+        when(postmortemService.create(any(Postmortem.class))).thenReturn(pm);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/save")
+                .flashAttr("postmortem", pm)
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/postmortems"));
+        verify(postmortemService).create(any(Postmortem.class));
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {"USER"})
+    public void testDetailsOtherDepartmentIsForbidden() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(postmortemService.findById(id)).thenThrow(new PostmortemAccessDeniedException("denied"));
+        mockMvc.perform(get("/postmortems/details/" + id)).andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {"USER"})
+    public void testReportOtherDepartmentIsForbiddenNotServerError() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(postmortemService.findById(id)).thenThrow(new PostmortemAccessDeniedException("denied"));
+        mockMvc.perform(get("/postmortems/" + id + "/report")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {"USER"})
+    public void testNoteOnPublishedRedirectsLockedAndSavesNothing() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(postmortemService.findAuthorized(id, Action.UPDATE)).thenThrow(new PostmortemLockedException(id));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/" + id + "/note")
+                .param("note", "x")
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/postmortems/details/" + id + "?error=locked"));
+        verify(postmortemService, never()).save(any(Postmortem.class));
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {"USER"})
+    public void testDocumentOfOtherPostmortemIsNotFound() throws Exception {
+        UUID id = UUID.randomUUID();
+        UUID docId = UUID.randomUUID();
+        when(documentService.findInPostmortem(id, docId))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND));
+
+        mockMvc.perform(get("/postmortems/" + id + "/documents/" + docId + "/download")).andExpect(status().isNotFound());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/" + id + "/documents/" + docId + "/delete")
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isNotFound());
+        verify(documentService, never()).deleteById(any());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {"USER"})
+    public void testEditPublishedRedirectsLocked() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(postmortemService.findAuthorized(id, Action.UPDATE)).thenThrow(new PostmortemLockedException(id));
+        mockMvc.perform(get("/postmortems/edit/" + id))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/postmortems/details/" + id + "?error=locked"));
     }
@@ -242,8 +390,7 @@ public class PostmortemViewControllerTest {
         pm.setUuid(id);
         pm.setStatus("Published");
         
-        when(postmortemService.findById(id)).thenReturn(pm);
-        when(postmortemService.isUserAdmin(any())).thenReturn(true);
+        when(postmortemService.findAuthorized(id, Action.UPDATE)).thenReturn(pm);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/save")
                 .flashAttr("postmortem", pm)

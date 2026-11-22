@@ -2,6 +2,9 @@ package com.melomarit.melopost.controller;
 
 import com.melomarit.melopost.model.Postmortem;
 import com.melomarit.melopost.model.PostmortemDocument;
+import com.melomarit.melopost.service.PostmortemAccessDeniedException;
+import com.melomarit.melopost.service.PostmortemAccessPolicy.Action;
+import com.melomarit.melopost.service.PostmortemLockedException;
 import com.melomarit.melopost.service.PostmortemDocumentService;
 import com.melomarit.melopost.service.PostmortemService;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,25 +54,48 @@ public class PostmortemDocumentControllerTest {
 
     @Test
     void getAll_shouldReturnList() {
-        when(service.findAll()).thenReturn(Arrays.asList(doc));
+        when(service.findAllVisible()).thenReturn(Arrays.asList(doc));
         List<PostmortemDocument> result = controller.getAll();
         assertEquals(1, result.size());
     }
 
     @Test
     void getById_shouldReturnDocument() {
-        when(service.findById(docId)).thenReturn(Optional.of(doc));
+        when(service.findAccessible(docId, Action.VIEW)).thenReturn(doc);
         ResponseEntity<PostmortemDocument> result = controller.getById(docId);
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(doc, result.getBody());
     }
 
     @Test
+    void getById_accessDeniedIsNotSwallowed() {
+        when(service.findAccessible(docId, Action.VIEW)).thenThrow(new PostmortemAccessDeniedException("denied"));
+        assertThrows(PostmortemAccessDeniedException.class, () -> controller.getById(docId));
+    }
+
+    @Test
+    void getByPostmortem_checksOwningPostmortem() {
+        UUID pmId = UUID.randomUUID();
+        when(postmortemService.findById(pmId)).thenThrow(new PostmortemAccessDeniedException("denied"));
+        assertThrows(PostmortemAccessDeniedException.class, () -> controller.getByPostmortem(pmId));
+        verify(service, never()).findByPostmortemUuid(any());
+    }
+
+    @Test
     void download_shouldReturnData() {
-        when(service.findById(docId)).thenReturn(Optional.of(doc));
+        when(service.findAccessible(docId, Action.VIEW)).thenReturn(doc);
         ResponseEntity<byte[]> result = controller.download(docId);
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertArrayEquals(doc.getData(), result.getBody());
+    }
+
+    @Test
+    void upload_lockedPostmortemIsRejectedBeforeStoringAnything() throws IOException {
+        UUID pmId = UUID.randomUUID();
+        MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "content".getBytes());
+        when(postmortemService.findAuthorized(pmId, Action.UPDATE)).thenThrow(new PostmortemLockedException(pmId));
+        assertThrows(PostmortemLockedException.class, () -> controller.upload(pmId, file));
+        verify(service, never()).uploadDocument(any(), any());
     }
 
     @Test
@@ -81,8 +107,8 @@ public class PostmortemDocumentControllerTest {
         pm.getDocuments().add(doc);
         
         MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "content".getBytes());
-        when(postmortemService.findById(pmId)).thenReturn(pm);
-        
+        when(postmortemService.findAuthorized(pmId, Action.UPDATE)).thenReturn(pm);
+
         ResponseEntity<PostmortemDocument> result = controller.upload(pmId, file);
         
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -94,6 +120,6 @@ public class PostmortemDocumentControllerTest {
     void delete_shouldCallService() {
         ResponseEntity<Void> result = controller.delete(docId);
         assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
-        verify(service).deleteById(docId);
+        verify(service).deleteAccessible(docId);
     }
 }

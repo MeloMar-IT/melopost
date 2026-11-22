@@ -103,6 +103,7 @@ Postmortems belong to the department they are filed under. What you can see and 
 - **Your departments**: You only see postmortems, documents, and reports of the departments assigned to your account. Postmortems of other departments are left out of lists and searches. Opening one directly shows a 403 access-denied page.
 - **Moving a postmortem**: To change a postmortem's department, you must also have access to the new department.
 - **Linking postmortems**: You can only link postmortems you are allowed to see.
+- **Saving an edit of a deleted postmortem**: If a postmortem was deleted while you were editing it, saving shows a "not found" (404) page and nothing is stored. The postmortem is not created again. To keep the content, copy it and create a new postmortem.
 - **Published postmortems are locked**: Once a postmortem is set to **Published**, only administrators can change or delete it, including its documents. Other users see a notice that the postmortem is locked when they try to save, and the change is not stored.
 - **Administrators** are not limited by department or by the lock.
 

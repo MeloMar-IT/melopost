@@ -338,6 +338,7 @@ public class PostmortemViewControllerTest {
         mockMvc.perform(multipart("/postmortems/save")
                 .file(new MockMultipartFile("files", "a.exe", "application/octet-stream", "x".getBytes()))
                 .flashAttr("postmortem", pm)
+                .param("uuid", id.toString())
                 .with(csrf()))
                 .andExpect(view().name("postmortems/form"))
                 .andExpect(model().attributeExists("error"));
@@ -358,6 +359,7 @@ public class PostmortemViewControllerTest {
         mockMvc.perform(multipart("/postmortems/save")
                 .file(new MockMultipartFile("files", "a.exe", "application/octet-stream", "x".getBytes()))
                 .flashAttr("postmortem", pm)
+                .param("uuid", id.toString())
                 .with(csrf()))
                 .andExpect(status().isForbidden());
         verify(documentService, never()).validateUploads(any());
@@ -375,6 +377,7 @@ public class PostmortemViewControllerTest {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/save")
                 .flashAttr("postmortem", pm)
+                .param("uuid", id.toString())
                 .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/postmortems/details/" + id + "?error=locked"));
@@ -392,6 +395,7 @@ public class PostmortemViewControllerTest {
         mockMvc.perform(multipart("/postmortems/save")
                 .file(new MockMultipartFile("files", "a.txt", "text/plain", "x".getBytes()))
                 .flashAttr("postmortem", pm)
+                .param("uuid", id.toString())
                 .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isForbidden());
         verify(postmortemService, never()).save(any(Postmortem.class));
@@ -409,6 +413,7 @@ public class PostmortemViewControllerTest {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/save")
                 .flashAttr("postmortem", pm)
+                .param("uuid", id.toString())
                 .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isNotFound());
         verify(postmortemService, never()).save(any(Postmortem.class));
@@ -470,7 +475,56 @@ public class PostmortemViewControllerTest {
 
     @Test
     @WithMockUser(username = "user", roles = {"USER"})
-    public void testDetailsOtherDepartmentIsForbidden() throws Exception {
+    public void testSaveWithoutUuidParamAndNoFlashCreates() throws Exception {
+        when(postmortemService.create(any(Postmortem.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        mockMvc.perform(post("/postmortems/save")
+                .param("title", "t")
+                .param("department", "A")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/postmortems"));
+        verify(postmortemService).create(any(Postmortem.class));
+        verify(postmortemService, never()).findAuthorized(any(), any());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {"USER"})
+    public void testSaveWithBlankUuidParamCreates() throws Exception {
+        when(postmortemService.create(any(Postmortem.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        mockMvc.perform(post("/postmortems/save")
+                .param("uuid", "")
+                .param("title", "t")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/postmortems"));
+        verify(postmortemService).create(any(Postmortem.class));
+        verify(postmortemService, never()).findAuthorized(any(), any());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {"USER"})
+    public void testSaveWithUuidParamIsUpdate() throws Exception {
+        UUID id = UUID.randomUUID();
+        Postmortem existing = new Postmortem();
+        existing.setUuid(id);
+        when(postmortemService.findAuthorized(id, Action.UPDATE)).thenReturn(existing);
+
+        mockMvc.perform(post("/postmortems/save")
+                .param("uuid", id.toString())
+                .param("title", "t")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/postmortems"));
+        verify(postmortemService).findAuthorized(id, Action.UPDATE);
+        verify(postmortemService).save(any(Postmortem.class));
+        verify(postmortemService, never()).create(any(Postmortem.class));
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = {"USER"})
+    public void testDetailsOtherDepartmentIsForbidden()throws Exception {
         UUID id = UUID.randomUUID();
         when(postmortemService.findById(id)).thenThrow(new PostmortemAccessDeniedException("denied"));
         mockMvc.perform(get("/postmortems/details/" + id)).andExpect(status().isForbidden());
@@ -573,6 +627,7 @@ public class PostmortemViewControllerTest {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/postmortems/save")
                 .flashAttr("postmortem", pm)
+                .param("uuid", id.toString())
                 .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/postmortems"));

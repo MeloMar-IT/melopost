@@ -38,6 +38,9 @@ public class PostmortemNullSafetyTest {
     @MockitoBean
     private DataSourceService dataSourceService;
 
+    @MockitoBean
+    private com.melomarit.melopost.service.IncidentNoteService incidentNoteService;
+
     @Test
     @WithMockUser
     public void testViewDetailsWithNullCollections() throws Exception {

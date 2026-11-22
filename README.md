@@ -64,6 +64,15 @@ For setup requirements and dependencies, see the [**Prerequisites Guide**](docs/
    - Web Interface: `http://localhost:8080`
    - Default Credentials: `admin` / `admin`
 
+### Running the tests
+The test suite has two tiers:
+- **`./mvnw test`** runs the unit and web-slice tests (`*Test`). It needs neither Cassandra nor Docker.
+- **`./mvnw verify`** also runs the integration tests (`*IT`) and the `*FunctionalTest` classes against a `cassandra:4.1` container started by Testcontainers. Docker must be running. Without Docker, those classes are skipped.
+
+`./mvnw clean install` runs the same phases as `verify`, so it also needs Docker for the Cassandra tests.
+
+CI (`.github/workflows/ci.yml`) runs `./mvnw -B verify` on every push and pull request. It requires Docker on the runner, and it fails if the Cassandra test classes report any skipped test. The surefire and failsafe reports are uploaded as the `test-reports` artifact.
+
 ### Running with Different Environments (DTAP)
 Melopost supports different configurations for Development, Testing, Acceptance, and Production environments using Spring Profiles.
 

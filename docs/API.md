@@ -273,3 +273,7 @@ Base Endpoint: `/api/admin/database`
 - **Path**: `/api/admin/database/query`
 - **Body**: `{"query": "SELECT * FROM postmortem"}`
 - **Response**: `QueryResultDTO` containing results and metadata.
+- **Note**: The endpoint is CSRF-exempt and runs any CQL it receives with admin rights, so keep it to trusted admin clients. The web UI shows the returned values as plain text.
+
+### Rich Text Fields
+Hole descriptions and remedial actions are stored exactly as submitted. The API returns them unchanged. The web UI cleans them with an allow-list sanitizer before rendering, so scripts, event-handler attributes and `javascript:` links are removed on display. API clients that render these fields as HTML must apply their own sanitizing.

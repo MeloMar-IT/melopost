@@ -215,9 +215,35 @@
         const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
         const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             console.log('Database Admin Page Initialized');
             loadTables(true);
+
+            // One delegated listener for the table list (no inline handlers with names)
+            const tablesList = document.getElementById('tables-list');
+            if (tablesList) {
+                tablesList.addEventListener('click', (e) => {
+                    const item = e.target.closest('.table-list-item');
+                    if (!item || !tablesList.contains(item)) return;
+                    const name = item.dataset.tableName;
+                    if (e.target.closest('[data-action="table-info"]')) {
+                        e.stopPropagation();
+                        showTableInfo(name);
+                    } else {
+                        selectTable(name, item.dataset.tableType);
+                    }
+                });
+            }
             
             // Handle Ctrl+Enter to run query
             const editor = document.getElementById('sql-editor');
@@ -243,7 +269,7 @@
                 console.error('Error loading tables:', error);
                 const list = document.getElementById('tables-list');
                 if (list) {
-                    list.innerHTML = `<div class="p-4 text-center text-red-500 italic text-sm">Error loading tables: ${error.message}</div>`;
+                    list.innerHTML = `<div class="p-4 text-center text-red-500 italic text-sm">Error loading tables: ${escapeHtml(error.message)}</div>`;
                 }
             }
         }
@@ -257,22 +283,24 @@
                 return;
             }
 
+            // Names are carried in data attributes (HTML-escaped) and handled by one
+            // delegated listener, never interpolated into inline JS handlers.
             list.innerHTML = currentTables.map(table => `
-                <div class="table-list-item border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer group p-3" onclick="selectTable('${table.name}', '${table.type}')">
+                <div class="table-list-item border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer group p-3" data-table-name="${escapeHtml(table.name)}" data-table-type="${escapeHtml(table.type)}">
                     <div class="flex justify-between items-start">
                         <div class="flex items-center">
                             <i data-lucide="${table.type === 'TYPE' ? 'box' : 'table'}" class="w-4 h-4 mr-2 ${table.type === 'TYPE' ? 'text-purple-400 group-hover:text-purple-500' : 'text-gray-400 group-hover:text-blue-500'}"></i>
-                            <span class="text-sm font-medium text-gray-700 ${table.type === 'TYPE' ? 'group-hover:text-purple-700' : 'group-hover:text-blue-700'}">${table.name}</span>
+                            <span class="text-sm font-medium text-gray-700 ${table.type === 'TYPE' ? 'group-hover:text-purple-700' : 'group-hover:text-blue-700'}">${escapeHtml(table.name)}</span>
                         </div>
                         <div class="flex flex-col items-end">
-                            <span class="text-[8px] font-bold uppercase ${table.type === 'TYPE' ? 'text-purple-500' : 'text-blue-500'}">${table.type}</span>
-                            <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded mt-0.5">${table.rowCount !== null ? table.rowCount : '?'}</span>
+                            <span class="text-[8px] font-bold uppercase ${table.type === 'TYPE' ? 'text-purple-500' : 'text-blue-500'}">${escapeHtml(table.type)}</span>
+                            <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded mt-0.5">${escapeHtml(table.rowCount !== null ? table.rowCount : '?')}</span>
                         </div>
                     </div>
                     <div class="mt-1 flex justify-between items-center">
-                         <span class="text-[10px] text-gray-400 truncate max-w-[150px]">${table.columns.join(', ')}</span>
+                         <span class="text-[10px] text-gray-400 truncate max-w-[150px]">${escapeHtml((table.columns || []).join(', '))}</span>
                          <div class="table-actions flex space-x-1">
-                             <button onclick="event.stopPropagation(); showTableInfo('${table.name}')" class="p-1 text-gray-400 hover:text-blue-600" title="Table Info">
+                             <button type="button" data-action="table-info" class="p-1 text-gray-400 hover:text-blue-600" title="Table Info">
                                  <i data-lucide="info" class="w-3.5 h-3.5"></i>
                              </button>
                          </div>
@@ -320,10 +348,10 @@
                 nameSpan.textContent = data.name;
                 body.innerHTML = data.schema.map(col => `
                     <tr class="hover:bg-blue-50/30">
-                        <td class="px-4 py-1.5 text-xs font-medium text-gray-900">${col.COLUMN_NAME}</td>
-                        <td class="px-4 py-1.5 text-xs text-gray-500 font-mono">${col.DATA_TYPE || col.TYPE_NAME}</td>
-                        <td class="px-4 py-1.5 text-xs text-gray-500">${col.IS_NULLABLE || '-'}</td>
-                        <td class="px-4 py-1.5 text-xs text-gray-500 font-mono text-[10px]">${col.COLUMN_DEFAULT || ''}</td>
+                        <td class="px-4 py-1.5 text-xs font-medium text-gray-900">${escapeHtml(col.COLUMN_NAME)}</td>
+                        <td class="px-4 py-1.5 text-xs text-gray-500 font-mono">${escapeHtml(col.DATA_TYPE || col.TYPE_NAME)}</td>
+                        <td class="px-4 py-1.5 text-xs text-gray-500">${escapeHtml(col.IS_NULLABLE || '-')}</td>
+                        <td class="px-4 py-1.5 text-xs text-gray-500 font-mono text-[10px]">${escapeHtml(col.COLUMN_DEFAULT || '')}</td>
                         <td class="px-4 py-1.5 text-xs text-center">
                             ${(data.primaryKeys || []).includes(col.COLUMN_NAME) ? '<span class="text-yellow-500" title="Primary Key">🔑</span>' : ''}
                         </td>
@@ -454,15 +482,38 @@
             const head = document.getElementById('table-head');
             const body = document.getElementById('table-body');
 
-            head.innerHTML = `<tr>${columns.map(col => `
-                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200 bg-gray-50">${col}</th>
-            `).join('')}</tr>`;
+            // DOM APIs + textContent only: query results are untrusted data.
+            const headRow = document.createElement('tr');
+            columns.forEach(col => {
+                const th = document.createElement('th');
+                th.className = 'px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200 bg-gray-50';
+                th.textContent = col === null || col === undefined ? '' : String(col);
+                headRow.appendChild(th);
+            });
+            head.replaceChildren(headRow);
 
-            body.innerHTML = rows.map(row => `
-                <tr class="hover:bg-gray-50 transition-colors">
-                    ${row.map(cell => `<td class="px-4 py-2 text-sm text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden max-w-xs truncate" title="${cell}">${cell === null ? '<span class="text-gray-300 italic">null</span>' : cell}</td>`).join('')}
-                </tr>
-            `).join('');
+            const bodyRows = rows.map(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition-colors';
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.className = 'px-4 py-2 text-sm text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden max-w-xs truncate';
+                    if (cell === null || cell === undefined) {
+                        td.title = 'null';
+                        const span = document.createElement('span');
+                        span.className = 'text-gray-300 italic';
+                        span.textContent = 'null';
+                        td.appendChild(span);
+                    } else {
+                        const text = String(cell);
+                        td.title = text;
+                        td.textContent = text;
+                    }
+                    tr.appendChild(td);
+                });
+                return tr;
+            });
+            body.replaceChildren(...bodyRows);
         }
 
         function displayError(msg) {
@@ -505,16 +556,16 @@
                 const data = await response.json();
                 
                 const titleEl = document.getElementById('modal-table-name');
-                if (titleEl) titleEl.innerHTML = `<i data-lucide="table" class="w-5 h-5 mr-2 text-blue-600"></i> Table: ${data.name}`;
-                
+                if (titleEl) titleEl.innerHTML = `<i data-lucide="table" class="w-5 h-5 mr-2 text-blue-600"></i> Table: ${escapeHtml(data.name)}`;
+
                 const schemaBody = document.getElementById('modal-schema-body');
                 if (schemaBody) {
                     schemaBody.innerHTML = data.schema.map(col => `
                         <tr>
-                            <td class="px-4 py-2 text-sm font-medium text-gray-900">${col.COLUMN_NAME}</td>
-                            <td class="px-4 py-2 text-sm text-gray-500 font-mono text-xs">${col.DATA_TYPE || col.TYPE_NAME}</td>
-                            <td class="px-4 py-2 text-sm text-gray-500">${col.IS_NULLABLE || '-'}</td>
-                            <td class="px-4 py-2 text-sm text-gray-500 font-mono text-xs">${col.COLUMN_DEFAULT || ''}</td>
+                            <td class="px-4 py-2 text-sm font-medium text-gray-900">${escapeHtml(col.COLUMN_NAME)}</td>
+                            <td class="px-4 py-2 text-sm text-gray-500 font-mono text-xs">${escapeHtml(col.DATA_TYPE || col.TYPE_NAME)}</td>
+                            <td class="px-4 py-2 text-sm text-gray-500">${escapeHtml(col.IS_NULLABLE || '-')}</td>
+                            <td class="px-4 py-2 text-sm text-gray-500 font-mono text-xs">${escapeHtml(col.COLUMN_DEFAULT || '')}</td>
                             <td class="px-4 py-2 text-sm text-center">
                                 ${(data.primaryKeys || []).includes(col.COLUMN_NAME) ? '<span class="text-yellow-500" title="Primary Key">🔑</span>' : ''}
                             </td>

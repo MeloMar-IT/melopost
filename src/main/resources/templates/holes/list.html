@@ -63,8 +63,8 @@
                     <tbody class="divide-y divide-gray-50">
                         <tr th:each="hole : ${holes}" class="hover:bg-blue-50/30 transition-colors group">
                             <td class="px-6 py-4">
-                                            <div class="text-sm font-medium text-gray-900 mb-1 prose prose-sm max-w-none" th:utext="${hole.description}">Hole description</div>
-                                            <div class="text-xs text-gray-500 italic prose prose-sm max-w-none" th:if="${hole.remedialAction}" th:utext="'Action: ' + ${hole.remedialAction}"></div>
+                                            <div class="text-sm font-medium text-gray-900 mb-1 prose prose-sm max-w-none" th:utext="${richText.sanitize(hole.description)}">Hole description</div>
+                                            <div class="text-xs text-gray-500 italic prose prose-sm max-w-none" th:if="${hole.remedialAction}" th:utext="'Action: ' + ${richText.sanitize(hole.remedialAction)}"></div>
                             </td>
                             <td class="px-6 py-4">
                                 <span class="text-sm text-gray-600" th:text="${hole.teamName ?: 'N/A'}">Team Name</span>

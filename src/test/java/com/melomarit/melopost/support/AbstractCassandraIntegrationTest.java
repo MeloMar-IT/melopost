@@ -28,6 +28,16 @@ public abstract class AbstractCassandraIntegrationTest {
         }
     }
 
+    protected static String cassandraHost() {
+        startIfNeeded();
+        return CASSANDRA.getHost();
+    }
+
+    protected static int cassandraPort() {
+        startIfNeeded();
+        return CASSANDRA.getMappedPort(9042);
+    }
+
     @DynamicPropertySource
     static void cassandraProperties(DynamicPropertyRegistry registry) {
         startIfNeeded();

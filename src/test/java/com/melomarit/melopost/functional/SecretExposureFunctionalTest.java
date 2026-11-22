@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -46,7 +47,7 @@ class SecretExposureFunctionalTest extends AbstractCassandraIntegrationTest {
     }
 
     private String send(org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder req) throws Exception {
-        return mockMvc.perform(req).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        return mockMvc.perform(req.with(csrf())).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
     }
 
     private void assertNoSecret(String json, String... forbidden) {

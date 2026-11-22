@@ -174,9 +174,12 @@ public class PostmortemViewController {
     }
 
     @PostMapping("/save")
-    public String save(@ModelAttribute Postmortem postmortem, @RequestParam(value = "files", required = false) MultipartFile[] files, Model model) throws IOException {
+    public String save(@ModelAttribute Postmortem postmortem, @RequestParam(value = "uuid", required = false) String uuidParam, @RequestParam(value = "files", required = false) MultipartFile[] files, Model model) throws IOException {
         Postmortem saved;
-        boolean isCreate = postmortem.getUuid() == null;
+        // An update happens only when the request carries a uuid; that uuid must exist (404),
+        // so a deleted uuid cannot be recreated. Postmortem has a random default uuid, so the
+        // bound model cannot tell create from update.
+        boolean isCreate = !org.springframework.util.StringUtils.hasText(uuidParam);
         try {
             if (isCreate) {
                 documentService.validateUploads(files);

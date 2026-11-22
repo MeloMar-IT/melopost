@@ -190,7 +190,7 @@ class CsrfProtectionTest {
 
     @Test
     void deleteTemplate_getDoesNotDelete() throws Exception {
-        mockMvc.perform(get("/templates/delete/" + UUID.randomUUID()).with(user("u").roles("USER")))
+        mockMvc.perform(get("/templates/delete/" + UUID.randomUUID()).with(user("u").roles("ADMIN")))
                 .andExpect(status().isMethodNotAllowed());
         verify(reportTemplateService, never()).deleteById(any());
     }
@@ -198,7 +198,7 @@ class CsrfProtectionTest {
     @Test
     void deleteTemplate_postWithToken_deletes() throws Exception {
         UUID id = UUID.randomUUID();
-        mockMvc.perform(post("/templates/delete/" + id).with(user("u").roles("USER")).with(csrf()))
+        mockMvc.perform(post("/templates/delete/" + id).with(user("u").roles("ADMIN")).with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/templates"));
         verify(reportTemplateService).deleteById(id);

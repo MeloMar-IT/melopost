@@ -38,6 +38,7 @@ public class SecurityConfig {
                 .requestMatchers("/login", "/error", "/css/**", "/js/**", "/images/**", "/webjars/**", "/docs/**", "/help").permitAll()
                 .requestMatchers("/h2-console/**").hasRole("ADMIN")
                 .requestMatchers("/users/**").hasRole("ADMIN")
+                .requestMatchers("/templates", "/templates/**").hasRole("ADMIN")
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/datasources/**", "/datasources/**").hasRole("ADMIN")
                 .requestMatchers("/api/**").authenticated()

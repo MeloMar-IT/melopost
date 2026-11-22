@@ -20,6 +20,14 @@ Every postmortem, and every document attached to one, is owned by its **departme
 | `404 Not Found` | The postmortem or document does not exist, or the document is not part of the given postmortem. |
 | `409 Conflict` | Another postmortem already uses the same `incidentRef`. |
 
+### CSRF Protection
+
+Every state-changing request (`POST`, `PUT`, `DELETE`) must carry a valid CSRF token, whether the caller is logged in through the browser session or sends HTTP Basic credentials. Requests without a valid token return `403 Forbidden` and change nothing. `GET` requests never change data.
+
+- **Browser UI**: the pages include the token in `<meta name="_csrf">` and the header name in `<meta name="_csrf_header">`. Forms and `fetch` calls in the UI send it automatically.
+- **Scripts and other clients**: load a page of the web UI in the same session, read the token from the `_csrf` meta tag and the header name from `_csrf_header` (`X-CSRF-TOKEN` by default), and send that header with each write.
+- **Web UI delete actions** (users, incident notes, templates, data sources) are `POST` forms. A `GET` to a `/delete/{id}` URL returns `405 Method Not Allowed` and deletes nothing.
+
 ## Table of Contents
 1. [Postmortems](#postmortems)
 2. [Postmortem Documents](#postmortem-documents)
@@ -268,8 +276,9 @@ Base Endpoint: `/api/admin/database`
 - **Query Parameter**: `includeCounts` (boolean, default: true)
 - **Response**: List of `DatabaseTableDTO` containing names, types (TABLE/TYPE), row counts, and column names.
 
-### Execute Raw Query
-- **Method**: `POST`
-- **Path**: `/api/admin/database/query`
-- **Body**: `{"query": "SELECT * FROM postmortem"}`
-- **Response**: `QueryResultDTO` containing results and metadata.
+### Get Table or Type Details
+- **Method**: `GET`
+- **Path**: `/api/admin/database/table/{name}`
+- **Response**: `TableInfoDTO` with the table's columns and a preview of its first 50 rows. The preview is built from the schema, so no query text is accepted from the caller.
+
+> The raw CQL query endpoint (`POST /api/admin/database/query`) has been removed. Use `cqlsh` for ad-hoc queries.

@@ -73,7 +73,7 @@ public class IncidentNoteViewController {
         return "incident-notes/select-postmortem";
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public String delete(@PathVariable UUID id) {
         service.deleteById(id);
         return "redirect:/incident-notes";

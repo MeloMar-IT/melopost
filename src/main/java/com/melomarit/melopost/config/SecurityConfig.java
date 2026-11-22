@@ -18,6 +18,18 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    /**
+     * Defence in depth. The pages rely on inline scripts/handlers and CDN builds
+     * (Tailwind, Alpine), so 'unsafe-inline'/'unsafe-eval' stay; output sanitizing is the primary fix.
+     */
+    static final String CONTENT_SECURITY_POLICY = "default-src 'self'; "
+            + "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; "
+            + "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
+            + "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+            + "img-src 'self' data: blob: https://ui-avatars.com; "
+            + "connect-src 'self' https://cdn.jsdelivr.net https://unpkg.com; "
+            + "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -31,7 +43,9 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .httpBasic(Customizer.withDefaults())
-            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin())
+                .contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY)))
             .exceptionHandling(ex -> ex
                 .defaultAuthenticationEntryPointFor(
                     (request, response, authException) -> response.sendError(401, "Unauthorized"),

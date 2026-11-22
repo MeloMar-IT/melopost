@@ -122,6 +122,9 @@ Every postmortem automatically includes layers such as **Define, Design, Build, 
 ### Identifying Holes
 For each layer, you identify "Holes" – specific weaknesses that allowed the incident to progress.
 
+- **Hole descriptions and remedial actions** may contain basic formatting (paragraphs, lists, bold, links). Before they are shown, Melopost removes everything outside a fixed list of safe tags and attributes, including scripts, event-handler attributes and `javascript:` links. The stored text is not changed; only the displayed view is cleaned.
+- Text you enter in incident notes is shown as Markdown without raw HTML, so HTML tags you type are displayed as text rather than rendered.
+
 ### Hole Overview
 The **Hole Overview** provides a centralized view of all identified weaknesses across all postmortems. This is crucial for identifying recurring systemic issues that may affect multiple services or departments.
 
@@ -184,6 +187,7 @@ For administrators, Melopost includes a built-in database management tool to ins
 - **SQL Console**: Run CQL (Cassandra Query Language) queries directly against the database.
 - **Schema Browser**: Browse all tables and User Defined Types (UDTs).
 - **Data Export**: Export query results to CSV for external analysis.
+- **Plain-text display**: Table names, column names, schema details and query results are always shown as plain text. Data stored in the database is never run as HTML or script in your session, so you can inspect records that contain markup safely.
 
 ---
 

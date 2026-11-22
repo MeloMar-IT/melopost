@@ -42,6 +42,19 @@ public class RBACFunctionalTest extends com.melomarit.melopost.support.AbstractC
 
     @Test
     @WithMockUser(roles = "USER")
+    public void responsesCarryContentSecurityPolicy() throws Exception {
+        mockMvc.perform(get("/postmortems"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Security-Policy",
+                        org.hamcrest.Matchers.allOf(
+                                org.hamcrest.Matchers.containsString("object-src 'none'"),
+                                org.hamcrest.Matchers.containsString("base-uri 'self'"),
+                                org.hamcrest.Matchers.containsString("form-action 'self'"),
+                                org.hamcrest.Matchers.containsString("frame-ancestors 'self'"))));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
     public void userRole_shouldAccessApiPostmortems() throws Exception {
         mockMvc.perform(get("/api/postmortems"))
                 .andExpect(status().isOk());

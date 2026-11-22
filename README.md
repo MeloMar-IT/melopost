@@ -27,7 +27,7 @@ For setup requirements and dependencies, see the [**Prerequisites Guide**](docs/
 ## 🛠️ Tech Stack
 
 - **Framework**: Spring Boot 3.4.4
-- **Security**: Spring Security (Role-based access control)
+- **Security**: Spring Security (Role-based access control), a Content-Security-Policy header, and an allow-list HTML sanitizer for rich text (hole descriptions and remedial actions) applied when pages are rendered
 - **Database**: Cassandra 4.0+
 - **Persistence**: Spring Data Cassandra
 - **Templating**: Thymeleaf (Web UI) and Mustache (Reports)

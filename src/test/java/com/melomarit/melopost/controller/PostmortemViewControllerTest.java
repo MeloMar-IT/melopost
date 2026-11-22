@@ -66,6 +66,89 @@ public class PostmortemViewControllerTest {
                 .andExpect(model().attributeExists("allPostmortems"));
     }
 
+    private static final String PAYLOAD = "<script>alert('xss-marker-1')</script>"
+            + "<img src=x onerror=\"alert('xss-marker-2')\">"
+            + "<a href=\"javascript:alert('xss-marker-3')\">click</a>";
+
+    private static com.melomarit.melopost.model.HoleUDT hole(String description, String action) {
+        com.melomarit.melopost.model.HoleUDT h = new com.melomarit.melopost.model.HoleUDT();
+        h.setDescription(description);
+        h.setRemedialAction(action);
+        return h;
+    }
+
+    private static com.melomarit.melopost.model.CheeseLayerUDT layer(String name, com.melomarit.melopost.model.HoleUDT h) {
+        com.melomarit.melopost.model.CheeseLayerUDT l = new com.melomarit.melopost.model.CheeseLayerUDT();
+        l.setName(name);
+        l.getHoles().add(h);
+        return l;
+    }
+
+    private static void assertNoPayload(String html) {
+        org.junit.jupiter.api.Assertions.assertFalse(html.contains("xss-marker-1"));
+        org.junit.jupiter.api.Assertions.assertFalse(html.contains("xss-marker-2"));
+        org.junit.jupiter.api.Assertions.assertFalse(html.contains("xss-marker-3"));
+        org.junit.jupiter.api.Assertions.assertFalse(html.contains("javascript:alert"));
+        org.junit.jupiter.api.Assertions.assertFalse(html.contains("onerror=\"alert"));
+    }
+
+    @Test
+    @WithMockUser
+    public void testDetailsViewSanitizesRichText() throws Exception {
+        UUID id = UUID.randomUUID();
+        UUID linkedId = UUID.randomUUID();
+        Postmortem pm = new Postmortem();
+        pm.setUuid(id);
+        pm.setTitle("Test Postmortem");
+        pm.addLayer(layer("Define", hole("own-desc-ok " + PAYLOAD + "<strong>keep-bold</strong>"
+                + "<a href=\"https://example.com\">ext</a>", "own-action-ok " + PAYLOAD)));
+        pm.addLayer(layer("Custom Layer", hole("custom-desc-ok " + PAYLOAD, "custom-action-ok " + PAYLOAD)));
+        pm.addLayer(layer("Build", hole(null, null)));
+        pm.getLocalPostmortemUuids().add(linkedId);
+
+        Postmortem linked = new Postmortem();
+        linked.setUuid(linkedId);
+        linked.setTitle("Linked");
+        linked.addLayer(layer("Define", hole("linked-desc-ok " + PAYLOAD, "linked-action-ok " + PAYLOAD)));
+
+        when(postmortemService.findById(any(UUID.class))).thenReturn(pm);
+        when(postmortemService.findVisibleByIds(any())).thenReturn(java.util.List.of(linked));
+
+        String html = mockMvc.perform(get("/postmortems/details/" + id))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        for (String marker : new String[]{"own-desc-ok", "own-action-ok", "linked-desc-ok",
+                "linked-action-ok", "custom-desc-ok", "custom-action-ok", "<strong>keep-bold</strong>"}) {
+            org.junit.jupiter.api.Assertions.assertTrue(html.contains(marker), "missing " + marker);
+        }
+        org.junit.jupiter.api.Assertions.assertTrue(
+                html.contains("<a href=\"https://example.com\" rel=\"noopener noreferrer\">ext</a>"));
+        assertNoPayload(html);
+    }
+
+    @Test
+    @WithMockUser
+    public void testHolesListSanitizesRichText() throws Exception {
+        HoleDTO dto = new HoleDTO();
+        dto.setUuid(UUID.randomUUID());
+        dto.setDescription("holes-desc-ok " + PAYLOAD);
+        dto.setRemedialAction("holes-action-ok " + PAYLOAD);
+        dto.setTags(java.util.List.of());
+        dto.setPostmortemId(UUID.randomUUID());
+        dto.setPostmortemTitle("PM");
+        dto.setLayerName("Define");
+        when(postmortemService.findAllHoles(any(), any(), any())).thenReturn(java.util.List.of(dto));
+
+        String html = mockMvc.perform(get("/postmortems/holes"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        org.junit.jupiter.api.Assertions.assertTrue(html.contains("holes-desc-ok"));
+        org.junit.jupiter.api.Assertions.assertTrue(html.contains("holes-action-ok"));
+        assertNoPayload(html);
+    }
+
     @Test
     @WithMockUser
     public void testLinkPostmortem() throws Exception {

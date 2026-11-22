@@ -40,7 +40,7 @@ Navigate to your Melopost instance (e.g., `http://localhost:8080`).
 
 ![Login Screen](sceenshots/login%20screen.png)
 
-- **Default Credentials**: `admin` / `admin` (Please change these upon first login).
+- **Administrator**: user `admin`. The password is set by the operator at the first start (environment variable `MELOPOST_ADMIN_INITIAL_PASSWORD`). Ask your operator if you do not have it. Change it upon first login.
 - Enter your credentials to access the central dashboard.
 
 ---

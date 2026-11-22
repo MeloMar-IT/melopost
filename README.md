@@ -62,7 +62,7 @@ For setup requirements and dependencies, see the [**Prerequisites Guide**](docs/
    ```
 5. **Access the application**:
    - Web Interface: `http://localhost:8080`
-   - Default Credentials: `admin` / `admin`
+   - Login: user `admin`, password from the `MELOPOST_ADMIN_INITIAL_PASSWORD` environment variable (see [Startup Behaviour](#startup-behaviour)). If that variable is not set, no admin is created and you need to set it before the first start.
 
 ### Running the tests
 The test suite has two tiers:
@@ -98,6 +98,20 @@ Note: For **Acceptance** and **Production**, you should provide Cassandra connec
 - `SPRING_CASSANDRA_LOCAL_DATACENTER`
 - `SPRING_CASSANDRA_PORT` (optional, defaults to 9042)
 - `SPRING_CASSANDRA_KEYSPACE_NAME`
+- `MELOPOST_ADMIN_INITIAL_PASSWORD` (only needed on the first start, when no user exists yet)
+
+### Startup Behaviour
+On every start, Melopost keeps existing data. It never deletes postmortems, data sources, incident notes or users.
+
+- **Report templates**: the built-in templates are created or updated in every profile.
+- **First admin**: if the `users` table is empty and `MELOPOST_ADMIN_INITIAL_PASSWORD` is set, an `admin` user is created with that password (roles `ADMIN` and `USER`). The password must be at least 12 characters. If it is missing, too short, or users already exist, no admin is created and a message is logged. The password is never logged.
+- **Sample data**: demo users (`admin`/`admin123`, `user1`, `user2`) and sample postmortems are created only with `melopost.seed.enabled=true` under the `dev` or `test` profile. The seeder never runs under `prod` or `acc`, and it does nothing if postmortems already exist. Its demo passwords are well known: never enable it on a shared instance.
+
+Example for a first start in development with sample data:
+```bash
+MELOPOST_ADMIN_INITIAL_PASSWORD='choose-a-long-password' \
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.arguments=--melopost.seed.enabled=true
+```
 
 ### Database Management
 Melopost uses Cassandra for all its data. You can interact with it using `cqlsh`.

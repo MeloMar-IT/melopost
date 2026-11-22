@@ -58,8 +58,8 @@ In this model, an organization's defenses against failure are likened to a serie
 
 ### Login
 Access Melopost via your web browser (default: `http://localhost:8080`). 
-- **Default Administrator**: `admin` / `admin`
-- Ensure you change your password after the first login in the User Management section if you have admin rights.
+- **Administrator**: user `admin`. The password is set by the operator at the first start (environment variable `MELOPOST_ADMIN_INITIAL_PASSWORD`). Ask your operator if you do not have it.
+- Change your password after the first login in the User Management section if you have admin rights.
 
 ### Dashboard Overview
 The home page provides a high-level view:

@@ -45,6 +45,7 @@ class ReportTemplateViewControllerTest {
         mockMvc.perform(get("/templates/new")).andExpect(status().isForbidden());
         mockMvc.perform(get("/templates/edit/" + UUID.randomUUID())).andExpect(status().isForbidden());
         mockMvc.perform(get("/templates/delete/" + UUID.randomUUID())).andExpect(status().isForbidden());
+        mockMvc.perform(post("/templates/delete/" + UUID.randomUUID()).with(csrf())).andExpect(status().isForbidden());
         verifyNoInteractions(templateService);
         verify(templateService, never()).save(any());
     }

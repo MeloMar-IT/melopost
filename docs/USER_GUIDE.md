@@ -176,6 +176,8 @@ Control access to the platform and assign roles.
 ### Data Sources
 Configure integrations with external ticket systems.
 
+Only administrators can see or change data sources. The stored password or token is never shown again: when you edit a data source, the field is empty. Leave it empty to keep the stored token, or type a new one to replace it.
+
 ![Data Sources List](sceenshots/Overview%20of%20all%20the%20Exaternal%20intergrations.png)
 ![Edit Data Source](sceenshots/Create%20:%20edit%20datasource.png)
 

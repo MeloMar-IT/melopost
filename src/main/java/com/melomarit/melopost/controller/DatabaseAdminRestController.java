@@ -167,6 +167,10 @@ public class DatabaseAdminRestController {
                 if (count++ >= 2000) break; // Hard safety limit to prevent OOM
                 List<Object> rowData = new ArrayList<>();
                 for (int i = 0; i < columns.size(); i++) {
+                    if ("password".equalsIgnoreCase(columns.get(i))) {
+                        rowData.add("***");
+                        continue;
+                    }
                     try {
                         rowData.add(convertValue(row.getObject(i)));
                     } catch (Exception e) {

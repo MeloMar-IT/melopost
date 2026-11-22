@@ -99,11 +99,13 @@ Note: For **Acceptance** and **Production**, you should provide Cassandra connec
 - `SPRING_CASSANDRA_PORT` (optional, defaults to 9042)
 - `SPRING_CASSANDRA_KEYSPACE_NAME`
 - `MELOPOST_ADMIN_INITIAL_PASSWORD` (only needed on the first start, when no user exists yet)
+- `MELOPOST_DATASOURCE_KEY` (required: Base64 of a 32-byte AES key, e.g. `openssl rand -base64 32`; Melopost refuses to start without it)
 
 ### Startup Behaviour
 On every start, Melopost keeps existing data. It never deletes postmortems, data sources, incident notes or users.
 
 - **Report templates**: the built-in templates are created or updated in every profile.
+- **Data-source tokens**: passwords and tokens of data sources are encrypted with `MELOPOST_DATASOURCE_KEY` (AES-256-GCM). On start, any token still stored in plain text is encrypted in place. The key is required in the `prod` and `acc` profiles; in other profiles it is optional, and without it tokens stay in plain text and a warning is logged. Keep the key safe: if it is lost or changed, stored tokens can no longer be decrypted and must be entered again.
 - **First admin**: if the `users` table is empty and `MELOPOST_ADMIN_INITIAL_PASSWORD` is set, an `admin` user is created with that password (roles `ADMIN` and `USER`). The password must be at least 12 characters. If it is missing, too short, or users already exist, no admin is created and a message is logged. The password is never logged.
 - **Sample data**: demo users (`admin`/`admin123`, `user1`, `user2`) and sample postmortems are created only with `melopost.seed.enabled=true` under the `dev` or `test` profile. The seeder never runs under `prod` or `acc`, and it does nothing if postmortems already exist. Its demo passwords are well known: never enable it on a shared instance.
 

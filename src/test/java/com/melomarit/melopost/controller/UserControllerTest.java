@@ -63,23 +63,38 @@ public class UserControllerTest {
 
     @Test
     void create_shouldSaveUser() {
-        when(userService.save(any(User.class))).thenReturn(user);
-        User result = userController.create(new User());
+        when(userService.save(any(User.class), any())).thenReturn(user);
+        User input = new User();
+        input.setPassword("pw");
+        User result = userController.create(input);
         assertNotNull(result);
-        verify(userService).save(any(User.class));
+        verify(userService).save(input, "pw");
     }
 
     @Test
     void update_shouldUpdateExisting() {
         when(userService.findById(userId)).thenReturn(Optional.of(user));
-        when(userService.save(any(User.class))).thenReturn(user);
-        
+        when(userService.save(any(User.class), any())).thenReturn(user);
+
         User updateData = new User();
         updateData.setUsername("newname");
-        
+
         ResponseEntity<User> result = userController.update(userId, updateData);
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals("newname", user.getUsername());
+        verify(userService).save(user, null);
+    }
+
+    @Test
+    void update_shouldPassRequestPassword() {
+        when(userService.findById(userId)).thenReturn(Optional.of(user));
+        when(userService.save(any(User.class), any())).thenReturn(user);
+        User updateData = new User();
+        updateData.setPassword("newpw");
+
+        userController.update(userId, updateData);
+
+        verify(userService).save(user, "newpw");
     }
 
     @Test

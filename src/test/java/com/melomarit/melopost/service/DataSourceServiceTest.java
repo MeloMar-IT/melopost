@@ -6,6 +6,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
+import org.springframework.data.cassandra.core.CassandraOperations;
+import org.springframework.data.cassandra.core.cql.CqlOperations;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
@@ -21,6 +25,15 @@ public class DataSourceServiceTest {
 
     @Mock
     private DataSourceRepository dataSourceRepository;
+
+    @Mock
+    private CassandraOperations cassandraOperations;
+
+    @Mock
+    private CqlOperations cqlOperations;
+
+    @Spy
+    private SecretCipher secretCipher = new SecretCipher("MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=", false);
 
     @InjectMocks
     private DataSourceService dataSourceService;
@@ -45,13 +58,96 @@ public class DataSourceServiceTest {
     }
 
     @Test
-    void saveDataSource_shouldSave() {
+    void saveDataSource_shouldStoreNewPasswordEncrypted() {
         DataSource ds = new DataSource();
         when(dataSourceRepository.save(ds)).thenReturn(ds);
-        
-        DataSource result = dataSourceService.saveDataSource(ds);
-        assertNotNull(result);
-        verify(dataSourceRepository).save(ds);
+
+        DataSource result = dataSourceService.saveDataSource(ds, "secret-123");
+
+        assertTrue(result.getPassword().startsWith(SecretCipher.PREFIX));
+        assertFalse(result.getPassword().contains("secret-123"));
+        assertEquals("secret-123", dataSourceService.decryptPassword(result));
+    }
+
+    @Test
+    void saveDataSource_shouldEncryptAgain_whenNewPasswordLooksEncrypted() {
+        DataSource ds = new DataSource();
+        when(dataSourceRepository.save(ds)).thenReturn(ds);
+
+        DataSource result = dataSourceService.saveDataSource(ds, "enc:v1:abc");
+
+        assertNotEquals("enc:v1:abc", result.getPassword());
+        assertEquals("enc:v1:abc", dataSourceService.decryptPassword(result));
+    }
+
+    @Test
+    void saveDataSource_shouldKeepStoredCiphertext_whenNewPasswordBlank() {
+        DataSource ds = new DataSource();
+        ds.setPassword("ignored");
+        DataSource existing = new DataSource();
+        existing.setUuid(ds.getUuid());
+        existing.setPassword("enc:v1:stored");
+        when(dataSourceRepository.findById(ds.getUuid())).thenReturn(Optional.of(existing));
+        when(dataSourceRepository.save(ds)).thenReturn(ds);
+
+        assertEquals("enc:v1:stored", dataSourceService.saveDataSource(ds, "").getPassword());
+    }
+
+    @Test
+    void saveDataSource_shouldStoreNull_whenNewRowHasNoPassword() {
+        DataSource ds = new DataSource();
+        ds.setPassword("ignored");
+        when(dataSourceRepository.findById(ds.getUuid())).thenReturn(Optional.empty());
+        when(dataSourceRepository.save(ds)).thenReturn(ds);
+
+        assertNull(dataSourceService.saveDataSource(ds, null).getPassword());
+    }
+
+    private DataSource withPassword(String password) {
+        DataSource ds = new DataSource();
+        ds.setPassword(password);
+        return ds;
+    }
+
+    @Test
+    void encryptPlaintextPasswords_shouldEncryptOnlyPlainRows() {
+        DataSource plain = withPassword("plain-token");
+        DataSource already = withPassword(secretCipher.encrypt("x"));
+        DataSource empty = withPassword(null);
+        when(dataSourceRepository.findAll()).thenReturn(List.of(plain, already, empty));
+        when(cassandraOperations.getCqlOperations()).thenReturn(cqlOperations);
+        when(cqlOperations.execute(anyString(), any(Object[].class))).thenReturn(true);
+
+        assertEquals(1, dataSourceService.encryptPlaintextPasswords());
+
+        verify(cqlOperations, times(1)).execute(anyString(), any(Object[].class));
+        verify(dataSourceRepository, never()).save(any());
+    }
+
+    @Test
+    void encryptPlaintextPasswords_shouldNotCountRowsWhoseUpdateWasNotApplied() {
+        when(dataSourceRepository.findAll()).thenReturn(List.of(withPassword("plain-token")));
+        when(cassandraOperations.getCqlOperations()).thenReturn(cqlOperations);
+        when(cqlOperations.execute(anyString(), any(Object[].class))).thenReturn(false);
+
+        assertEquals(0, dataSourceService.encryptPlaintextPasswords());
+    }
+
+    @Test
+    void encryptPlaintextPasswords_shouldLeaveUndecryptablePrefixedRowsAlone() {
+        when(dataSourceRepository.findAll()).thenReturn(List.of(withPassword("enc:v1:garbage")));
+
+        assertEquals(0, dataSourceService.encryptPlaintextPasswords());
+        verifyNoInteractions(cassandraOperations);
+    }
+
+    @Test
+    void encryptPlaintextPasswords_shouldDoNothing_whenCipherDisabled() {
+        ReflectionTestUtils.setField(dataSourceService, "secretCipher", new SecretCipher("", false));
+
+        assertEquals(0, dataSourceService.encryptPlaintextPasswords());
+        verifyNoInteractions(dataSourceRepository);
+        verifyNoInteractions(cassandraOperations);
     }
 
     @Test

@@ -206,7 +206,7 @@ class CsrfProtectionTest {
 
     @Test
     void deleteDataSource_getDoesNotDelete() throws Exception {
-        mockMvc.perform(get("/datasources/delete/" + UUID.randomUUID()).with(user("u").roles("USER")))
+        mockMvc.perform(get("/datasources/delete/" + UUID.randomUUID()).with(user("u").roles("ADMIN")))
                 .andExpect(status().isMethodNotAllowed());
         verify(dataSourceService, never()).deleteDataSource(any());
     }
@@ -214,7 +214,7 @@ class CsrfProtectionTest {
     @Test
     void deleteDataSource_postWithToken_deletes() throws Exception {
         UUID id = UUID.randomUUID();
-        mockMvc.perform(post("/datasources/delete/" + id).with(user("u").roles("USER")).with(csrf()))
+        mockMvc.perform(post("/datasources/delete/" + id).with(user("u").roles("ADMIN")).with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/datasources"));
         verify(dataSourceService).deleteDataSource(id);

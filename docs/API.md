@@ -185,18 +185,22 @@ Note: Stories are currently managed as part of Postmortem Holes.
 
 ---
 
-## Data Sources
+## Data Sources (ADMIN)
 
 Base Endpoint: `/api/datasources`
 
+All data-source endpoints are restricted to `ROLE_ADMIN`; other users get `403 Forbidden`.
+
+The `password` field (the integration password or token) is write-only. It is accepted in request bodies but never appears in a response, so no response contains a `password` field. Tokens are stored encrypted; see [DATABASE.md](DATABASE.md#5-data_source). On update, leave `password` out or empty to keep the stored token; a non-empty value replaces it.
+
 ### Get All Data Sources
 - **Method**: `GET`
-- **Response**: List of `DataSource` objects.
+- **Response**: List of `DataSource` objects, without `password`.
 
 ### Get Data Source by UUID
 - **Method**: `GET`
 - **Path**: `/api/datasources/{uuid}`
-- **Response**: `DataSource` object.
+- **Response**: `DataSource` object, without `password`.
 
 ### Get Template Data Sources
 - **Method**: `GET`
@@ -205,7 +209,7 @@ Base Endpoint: `/api/datasources`
 
 ### Create Data Source
 - **Method**: `POST`
-- **Example JSON Request**:
+- **Example JSON Request** (the response does not repeat `password`):
 ```json
 {
   "name": "Production Jira",
@@ -228,22 +232,24 @@ Base Endpoint: `/api/datasources`
 
 ---
 
-## Users
+## Users (ADMIN)
 
 Base Endpoint: `/api/users`
 
+The `password` field is write-only. It is accepted in request bodies, but responses never contain it or its bcrypt hash. Every supplied password is bcrypt-encoded on save, including a value that looks like a hash (such as one starting with `$2a$`). On update, leave `password` out or empty to keep the stored hash.
+
 ### Get All Users
 - **Method**: `GET`
-- **Response**: List of `User` objects.
+- **Response**: List of `User` objects, without `password`.
 
 ### Get User by UUID
 - **Method**: `GET`
 - **Path**: `/api/users/{uuid}`
-- **Response**: `User` object.
+- **Response**: `User` object, without `password`.
 
 ### Create User
 - **Method**: `POST`
-- **Example JSON Request**:
+- **Example JSON Request** (the response does not repeat `password`):
 ```json
 {
   "username": "jdoe",
@@ -279,7 +285,7 @@ Base Endpoint: `/api/admin/database`
 ### Get Table or Type Details
 - **Method**: `GET`
 - **Path**: `/api/admin/database/table/{name}`
-- **Response**: `TableInfoDTO` with the table's columns and a preview of its first 50 rows. The preview is built from the schema, so no query text is accepted from the caller. The web UI shows the returned values as plain text.
+- **Response**: `TableInfoDTO` with the table's columns and a preview of its first 50 rows. The preview is built from the schema, so no query text is accepted from the caller. A column named `password` is returned as `***`. The web UI shows the returned values as plain text.
 
 > The raw CQL query endpoint (`POST /api/admin/database/query`) has been removed. Use `cqlsh` for ad-hoc queries.
 

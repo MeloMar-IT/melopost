@@ -63,7 +63,7 @@ public class UserServiceTest {
         when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
 
-        User savedUser = userService.save(user);
+        User savedUser = userService.save(user, "password");
 
         assertEquals("encodedPassword", savedUser.getPassword());
         verify(passwordEncoder).encode("password");
@@ -71,13 +71,36 @@ public class UserServiceTest {
     }
 
     @Test
-    void save_shouldNotEncodePassword_whenPasswordIsAlreadyEncoded() {
-        user.setPassword("$2a$10$encoded");
+    void save_shouldEncodePassword_evenWhenItLooksLikeBcrypt() {
+        when(passwordEncoder.encode("$2a$10$encoded")).thenReturn("newHash");
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
 
-        User savedUser = userService.save(user);
+        User savedUser = userService.save(user, "$2a$10$encoded");
 
-        assertEquals("$2a$10$encoded", savedUser.getPassword());
+        assertEquals("newHash", savedUser.getPassword());
+        verify(passwordEncoder).encode("$2a$10$encoded");
+    }
+
+    @Test
+    void save_shouldKeepStoredHash_whenNewPasswordIsBlankOrNull() {
+        User stored = new User();
+        stored.setUuid(userId);
+        stored.setPassword("storedHash");
+        when(userRepository.findById(userId)).thenReturn(Optional.of(stored));
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        assertEquals("storedHash", userService.save(user, "").getPassword());
+        user.setPassword("ignored");
+        assertEquals("storedHash", userService.save(user, null).getPassword());
+        verify(passwordEncoder, never()).encode(anyString());
+    }
+
+    @Test
+    void save_shouldStoreNullPassword_whenNewUserHasNone() {
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        assertNull(userService.save(user, null).getPassword());
         verify(passwordEncoder, never()).encode(anyString());
     }
 

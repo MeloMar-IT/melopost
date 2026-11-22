@@ -88,7 +88,8 @@
                         </div>
                         <div class="space-y-2">
                             <label for="password" class="block text-sm font-semibold text-gray-700">Password / Token</label>
-                            <input type="password" id="password" th:field="*{password}"
+                            <input type="password" id="password" name="password" value="" autocomplete="new-password"
+                                   th:placeholder="${datasource.password != null and !datasource.password.isEmpty()} ? 'Leave empty to keep the stored token' : ''"
                                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none">
                         </div>
                     </div>

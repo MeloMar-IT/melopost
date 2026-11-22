@@ -4,6 +4,7 @@ import org.springframework.data.cassandra.core.mapping.PrimaryKey;
 import org.springframework.data.cassandra.core.mapping.Table;
 import org.springframework.data.cassandra.core.mapping.Column;
 import org.springframework.data.cassandra.core.mapping.Indexed;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.util.Set;
 import java.util.HashSet;
@@ -21,6 +22,7 @@ public class User {
     private String username;
 
     @Column("password")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @Column("email")

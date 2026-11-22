@@ -43,8 +43,17 @@ class StartupDataSafetyIT extends AbstractCassandraIntegrationTest {
         return name;
     }
 
+    private static final String KEY = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
+
+    /** Starts with the test key; use the 5-argument form to choose the key. */
     private static ConfigurableApplicationContext start(String keyspace, String profile, String seedFlag, String adminPassword) {
+        return start(keyspace, profile, seedFlag, adminPassword, KEY);
+    }
+
+    private static ConfigurableApplicationContext start(String keyspace, String profile, String seedFlag,
+                                                        String adminPassword, String datasourceKey) {
         return new SpringApplication(MelopostApplication.class).run(
+                "--melopost.datasource.key=" + datasourceKey,
                 "--spring.profiles.active=" + profile,
                 "--spring.cassandra.contact-points=" + cassandraHost(),
                 "--spring.cassandra.port=" + cassandraPort(),
@@ -148,6 +157,82 @@ class StartupDataSafetyIT extends AbstractCassandraIntegrationTest {
                     "stored password must belong to one of the attempts");
         } finally {
             pool.shutdownNow();
+            dropKeyspace(keyspace);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"prod", "acc"})
+    void prodOrAccWithoutDatasourceKeyFailsToStart(String profile) {
+        String keyspace = keyspace("nokey_" + profile);
+        try {
+            ConfigurableApplicationContext ctx = null;
+            Throwable failure = null;
+            try {
+                ctx = start(keyspace, profile, "false", "", "");
+            } catch (Exception e) {
+                failure = e;
+            }
+            if (ctx != null) {
+                ctx.close();
+                fail("the app must not start in " + profile + " without MELOPOST_DATASOURCE_KEY");
+            }
+            boolean found = false;
+            for (Throwable t = failure; t != null; t = t.getCause()) {
+                if (t.getMessage() != null && t.getMessage().contains("MELOPOST_DATASOURCE_KEY must be set")) {
+                    found = true;
+                    break;
+                }
+            }
+            assertTrue(found, "startup failure must name the missing key");
+        } finally {
+            dropKeyspace(keyspace);
+        }
+    }
+
+    @Test
+    void existingPlaintextTokenIsEncryptedOnStart() {
+        String keyspace = keyspace("enc");
+        UUID dsId = UUID.randomUUID();
+        try {
+            try (ConfigurableApplicationContext first = start(keyspace, "test", "false", "", "")) {
+                DataSource ds = new DataSource();
+                ds.setUuid(dsId);
+                ds.setName("Legacy");
+                ds.setPassword("plain-token");
+                first.getBean(DataSourceRepository.class).save(ds);
+            }
+            String afterSecond;
+            try (ConfigurableApplicationContext second = start(keyspace, "test", "false", "", KEY)) {
+                afterSecond = second.getBean(DataSourceRepository.class).findById(dsId).orElseThrow().getPassword();
+                assertTrue(afterSecond.startsWith("enc:v1:"));
+                assertEquals("plain-token", new com.melomarit.melopost.service.SecretCipher(KEY, new org.springframework.mock.env.MockEnvironment()).decrypt(afterSecond));
+                assertEquals("Legacy", second.getBean(DataSourceRepository.class).findById(dsId).orElseThrow().getName());
+            }
+            try (ConfigurableApplicationContext third = start(keyspace, "test", "false", "", KEY)) {
+                assertEquals(afterSecond, third.getBean(DataSourceRepository.class).findById(dsId).orElseThrow().getPassword());
+            }
+        } finally {
+            dropKeyspace(keyspace);
+        }
+    }
+
+    @Test
+    void prefixedUndecryptableTokenIsLeftUntouchedOnStart() {
+        String keyspace = keyspace("garb");
+        UUID dsId = UUID.randomUUID();
+        try {
+            try (ConfigurableApplicationContext first = start(keyspace, "test", "false", "", "")) {
+                DataSource ds = new DataSource();
+                ds.setUuid(dsId);
+                ds.setName("Odd");
+                ds.setPassword("enc:v1:garbage");
+                first.getBean(DataSourceRepository.class).save(ds);
+            }
+            try (ConfigurableApplicationContext second = start(keyspace, "test", "false", "", KEY)) {
+                assertEquals("enc:v1:garbage", second.getBean(DataSourceRepository.class).findById(dsId).orElseThrow().getPassword());
+            }
+        } finally {
             dropKeyspace(keyspace);
         }
     }

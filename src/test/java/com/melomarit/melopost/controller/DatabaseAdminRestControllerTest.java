@@ -175,4 +175,50 @@ public class DatabaseAdminRestControllerTest {
                 .andExpect(jsonPath("$.data.rows[0][0]").value("Test Service"))
                 .andExpect(jsonPath("$.data.message").value(org.hamcrest.Matchers.containsString("Found 1 unique instances")));
     }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    public void queryEndpoint_isRemoved() throws Exception {
+        mockMvc.perform(post("/api/admin/database/query").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"sql\":\"TRUNCATE users\"}"))
+                .andExpect(status().is4xxClientError());
+
+        org.mockito.Mockito.verify(session, org.mockito.Mockito.never()).execute(anyString());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    public void getTableInfoForTable_previewsWithQuotedName() throws Exception {
+        CqlIdentifier keyspace = CqlIdentifier.fromInternal("melopost");
+        when(session.getKeyspace()).thenReturn(Optional.of(keyspace));
+
+        Metadata metadata = mock(Metadata.class);
+        when(session.getMetadata()).thenReturn(metadata);
+
+        KeyspaceMetadata keyspaceMetadata = mock(KeyspaceMetadata.class);
+        when(metadata.getKeyspace(anyString())).thenReturn(Optional.of(keyspaceMetadata));
+
+        TableMetadata tableMetadata = mock(TableMetadata.class);
+        when(tableMetadata.getName()).thenReturn(CqlIdentifier.fromInternal("users"));
+        when(tableMetadata.getColumns()).thenReturn(Collections.emptyMap());
+        when(tableMetadata.getPrimaryKey()).thenReturn(Collections.emptyList());
+        when(keyspaceMetadata.getTable("users")).thenReturn(Optional.of(tableMetadata));
+
+        ResultSet rs = mock(ResultSet.class);
+        ColumnDefinitions definitions = mock(ColumnDefinitions.class);
+        when(rs.getColumnDefinitions()).thenReturn(definitions);
+        ExecutionInfo executionInfo = mock(ExecutionInfo.class);
+        when(executionInfo.getWarnings()).thenReturn(Collections.emptyList());
+        when(rs.getExecutionInfo()).thenReturn(executionInfo);
+        when(rs.iterator()).thenReturn(Collections.<Row>emptyList().iterator());
+        when(session.execute("SELECT * FROM users LIMIT 50")).thenReturn(rs);
+
+        mockMvc.perform(get("/api/admin/database/table/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.type").value("TABLE"))
+                .andExpect(jsonPath("$.data.sql").value("SELECT * FROM users LIMIT 50"));
+
+        org.mockito.Mockito.verify(session).execute("SELECT * FROM users LIMIT 50");
+    }
 }

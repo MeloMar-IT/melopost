@@ -6,6 +6,10 @@ import com.melomarit.melopost.dto.StoryDTO;
 import com.melomarit.melopost.model.*;
 import com.melomarit.melopost.repository.PostmortemRepository;
 import com.melomarit.melopost.repository.UserRepository;
+import com.melomarit.melopost.service.PostmortemAccessPolicy.Action;
+import com.melomarit.melopost.service.PostmortemAccessPolicy.Subject;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -24,7 +28,7 @@ public class PostmortemService {
     }
 
     public boolean isUserAdmin(User user) {
-        return user.getRoles().contains("ADMIN");
+        return user != null && user.getRoles() != null && user.getRoles().contains("ADMIN");
     }
 
     public User getCurrentUser() {
@@ -33,29 +37,62 @@ public class PostmortemService {
         return userRepository.findByUsername(auth.getName()).orElse(null);
     }
 
-    public List<Postmortem> findAll() {
-        User user = getCurrentUser();
-        if (user == null || isUserAdmin(user)) {
-            return repository.findAll();
+    /** Who is calling: no authentication (internal call) or an admin is unrestricted. */
+    Subject currentSubject() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            return Subject.UNRESTRICTED;
         }
-        Set<String> allowedDepts = user.getAllowedDepartments();
-        return repository.findAll().stream()
-                .filter(p -> allowedDepts.contains(p.getDepartment()))
+        if (auth.getAuthorities() != null
+                && auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()))) {
+            return Subject.UNRESTRICTED;
+        }
+        User user = userRepository.findByUsername(auth.getName()).orElse(null);
+        if (user == null) {
+            return new Subject(false, Set.of());
+        }
+        if (isUserAdmin(user)) {
+            return Subject.UNRESTRICTED;
+        }
+        Set<String> depts = user.getAllowedDepartments();
+        return new Subject(false, depts == null ? Set.of() : depts);
+    }
+
+    public boolean currentUserIsUnrestricted() {
+        return currentSubject().unrestricted();
+    }
+
+    /** Single authorization entry point: department scope and the Published lock. */
+    public void authorize(Postmortem pm, Action action) {
+        PostmortemAccessPolicy.check(currentSubject(), pm, action);
+    }
+
+    /** Loads a postmortem (404 if missing) and authorizes the action on it. */
+    public Postmortem findAuthorized(UUID id, Action action) {
+        Postmortem pm = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Postmortem not found"));
+        authorize(pm, action);
+        return pm;
+    }
+
+    private List<Postmortem> visible(List<Postmortem> list) {
+        Subject subject = currentSubject();
+        if (subject.unrestricted()) {
+            return list;
+        }
+        return list.stream()
+                .filter(p -> PostmortemAccessPolicy.canAccessDepartment(subject, p.getDepartment()))
                 .collect(Collectors.toList());
     }
 
+    public List<Postmortem> findAll() {
+        return visible(repository.findAll());
+    }
+
     public List<Postmortem> findRecent() {
-        User user = getCurrentUser();
         // Since Cassandra doesn't support OrderBy across all rows without clustering keys easily,
         // we fetch all and sort in memory if the dataset is small, or use a better strategy.
-        List<Postmortem> all = repository.findAll();
-        if (user != null && !isUserAdmin(user)) {
-            Set<String> allowedDepts = user.getAllowedDepartments();
-            all = all.stream()
-                    .filter(p -> allowedDepts.contains(p.getDepartment()))
-                    .collect(Collectors.toList());
-        }
-        return all.stream()
+        return visible(repository.findAll()).stream()
                 .sorted((p1, p2) -> {
                     if (p2.getCreatedAt() == null || p1.getCreatedAt() == null) return 0;
                     return p2.getCreatedAt().compareTo(p1.getCreatedAt());
@@ -65,46 +102,74 @@ public class PostmortemService {
     }
 
     public Postmortem findById(UUID id) {
-        Postmortem pm = repository.findById(id).orElseThrow(() -> new RuntimeException("Postmortem not found"));
-        User user = getCurrentUser();
-        if (user != null && !isUserAdmin(user)) {
-            if (pm.getDepartment() != null && !user.getAllowedDepartments().contains(pm.getDepartment())) {
-                throw new RuntimeException("Access denied: You are not allowed to see postmortems from this department");
-            }
+        return findAuthorized(id, Action.VIEW);
+    }
+
+    /** Postmortems among the given ids that exist and are visible to the current user. */
+    public List<Postmortem> findVisibleByIds(Collection<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
         }
-        return pm;
+        List<Postmortem> found = new ArrayList<>();
+        repository.findAllById(ids).forEach(found::add);
+        return visible(found);
+    }
+
+    /** Creates a new postmortem; any uuid on the input is replaced by a fresh one. */
+    public Postmortem create(Postmortem postmortem) {
+        postmortem.setUuid(UUID.randomUUID());
+        return save(postmortem);
     }
 
     public Postmortem save(Postmortem postmortem) {
+        if (postmortem.getUuid() == null) {
+            postmortem.setUuid(UUID.randomUUID());
+        }
+        // Cassandra saves are upserts: read the stored row first so that a save cannot overwrite a protected row.
+        Optional<Postmortem> stored = repository.findById(postmortem.getUuid());
+        Set<UUID> knownLinks = new HashSet<>();
+        if (stored.isPresent()) {
+            Postmortem existing = stored.get();
+            authorize(existing, Action.UPDATE);
+            if (!Objects.equals(existing.getDepartment(), postmortem.getDepartment())) {
+                authorize(postmortem, Action.CREATE);
+            }
+            if (existing.getLocalPostmortemUuids() != null) {
+                knownLinks.addAll(existing.getLocalPostmortemUuids());
+            }
+        } else {
+            authorize(postmortem, Action.CREATE);
+        }
+
+        // Newly added links must point at postmortems the user may see.
+        if (!currentUserIsUnrestricted() && postmortem.getLocalPostmortemUuids() != null) {
+            for (UUID linked : postmortem.getLocalPostmortemUuids()) {
+                if (!knownLinks.contains(linked)) {
+                    findAuthorized(linked, Action.VIEW);
+                }
+            }
+        }
+
         // Ensure unique Incident Ref
         if (postmortem.getIncidentRef() != null && !postmortem.getIncidentRef().trim().isEmpty()) {
             List<Postmortem> existing = repository.findByIncidentRef(postmortem.getIncidentRef());
             for (Postmortem pm : existing) {
                 if (!pm.getUuid().equals(postmortem.getUuid())) {
-                    throw new RuntimeException("A postmortem with this Incident Ref already exists: " + postmortem.getIncidentRef());
+                    throw new DuplicateIncidentRefException(postmortem.getIncidentRef());
                 }
             }
         }
 
-        // Since we moved to UDTs, we don't need separate repository calls for layers/holes/stories
-        // Similarity check logic needs to be adapted or simplified
         return repository.save(postmortem);
     }
 
     public void deleteById(UUID id) {
+        findAuthorized(id, Action.DELETE);
         repository.deleteById(id);
     }
 
     public List<PostmortemSearchResultDTO> filter(String keyword, String type, String status, String incidentDate, String incidentDateOp, String incidentRef, String dueDate, String dueDateOp) {
-        User user = getCurrentUser();
-        List<Postmortem> all = repository.findAll();
-
-        if (user != null && !isUserAdmin(user)) {
-            Set<String> allowedDepts = user.getAllowedDepartments();
-            all = all.stream()
-                    .filter(p -> allowedDepts.contains(p.getDepartment()))
-                    .collect(Collectors.toList());
-        }
+        List<Postmortem> all = visible(repository.findAll());
 
         List<PostmortemSearchResultDTO> results = new ArrayList<>();
         String kw = (keyword != null) ? keyword.toLowerCase().trim() : "";
@@ -213,9 +278,8 @@ public class PostmortemService {
     }
 
     public List<PostmortemSearchResultDTO> search(String keyword) {
-        User user = getCurrentUser();
         String kw = keyword.toLowerCase();
-        List<Postmortem> all = repository.findAll();
+        List<Postmortem> all = visible(repository.findAll());
 
         List<PostmortemSearchResultDTO> results = new ArrayList<>();
 
@@ -296,12 +360,6 @@ public class PostmortemService {
             }
         }
 
-        if (user != null && !isUserAdmin(user)) {
-            Set<String> allowedDepts = user.getAllowedDepartments();
-            return results.stream()
-                    .filter(r -> allowedDepts.contains(r.getPostmortem().getDepartment()))
-                    .collect(Collectors.toList());
-        }
         return results;
     }
 
@@ -310,7 +368,7 @@ public class PostmortemService {
     }
 
     public List<Postmortem> findByType(String type) {
-        return repository.findByType(type);
+        return visible(repository.findByType(type));
     }
 
     public List<HoleDTO> findAllHoles(String keyword, String teamName, String actionStatus) {
@@ -364,9 +422,9 @@ public class PostmortemService {
 
     public List<Postmortem> findMajorPostmortems(UUID localUuid) {
         // This was a join query, now we need to filter in-memory or change data model
-        return repository.findAll().stream()
+        return visible(repository.findAll().stream()
                 .filter(p -> p.getLocalPostmortemUuids() != null && p.getLocalPostmortemUuids().contains(localUuid))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
     }
 
     public List<StoryDTO> findAllStories(String keyword, String teamName, String status) {

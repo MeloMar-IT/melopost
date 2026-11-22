@@ -92,9 +92,7 @@ public class ReportService {
         log.debug("Resolving local postmortems: {}", postmortem.getLocalPostmortemUuids());
         List<Postmortem> localPms = new ArrayList<>();
         if (postmortem.getLocalPostmortemUuids() != null) {
-            localPms = postmortem.getLocalPostmortemUuids().stream()
-                    .map(postmortemService::findById)
-                    .toList();
+            localPms = postmortemService.findVisibleByIds(postmortem.getLocalPostmortemUuids());
         }
 
         localPms.forEach(lp -> {

@@ -12,6 +12,7 @@ Welcome to the comprehensive Melopost User Guide. Melopost is a specialized plat
     - [Creating a Postmortem](#creating-a-postmortem)
     - [Impact Section & Documents](#impact-section--documents)
     - [Incident Notes](#incident-notes)
+    - [Department Access & the Published Lock](#department-access--the-published-lock)
 5. [Swiss Cheese Analysis](#5-swiss-cheese-analysis)
     - [Defense Layers](#defense-layers)
     - [Identifying Holes](#identifying-holes)
@@ -93,6 +94,19 @@ Melopost includes a dedicated "Incident Notes" feature (replacing legacy Loop sy
 - **Rich Text Editing**: Use the integrated Froala Editor V5 for professional documentation.
 - **Note Management**: View and filter all incident notes across the platform.
 
+
+---
+
+### Department Access & the Published Lock
+Postmortems belong to the department they are filed under. What you can see and change depends on your account:
+
+- **Your departments**: You only see postmortems, documents, and reports of the departments assigned to your account. Postmortems of other departments are left out of lists and searches. Opening one directly shows a 403 access-denied page.
+- **Moving a postmortem**: To change a postmortem's department, you must also have access to the new department.
+- **Linking postmortems**: You can only link postmortems you are allowed to see.
+- **Published postmortems are locked**: Once a postmortem is set to **Published**, only administrators can change or delete it, including its documents. Other users see a notice that the postmortem is locked when they try to save, and the change is not stored.
+- **Administrators** are not limited by department or by the lock.
+
+If you need a change to a locked or foreign-department postmortem, ask an administrator.
 
 ---
 

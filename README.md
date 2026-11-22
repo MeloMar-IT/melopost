@@ -108,7 +108,7 @@ Melopost uses Cassandra for all its data. You can interact with it using `cqlsh`
 
 ## 🔌 API Overview
 
-Melopost provides a RESTful API for all core entities. All endpoints require authentication.
+Melopost provides a RESTful API for all core entities. All endpoints require authentication. Non-admin users are limited to their own departments, and Published postmortems are locked for them; see [Access Control](docs/API.md#access-control).
 
 | Category | Base Endpoint | Description |
 | :--- | :--- | :--- |

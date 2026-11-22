@@ -3,6 +3,9 @@ package com.melomarit.melopost.controller;
 import com.melomarit.melopost.dto.PostmortemSearchResultDTO;
 import com.melomarit.melopost.model.Postmortem;
 import com.melomarit.melopost.service.DocumentImportService;
+import com.melomarit.melopost.service.DuplicateIncidentRefException;
+import com.melomarit.melopost.service.PostmortemAccessDeniedException;
+import com.melomarit.melopost.service.PostmortemAccessPolicy.Action;
 import com.melomarit.melopost.service.PostmortemService;
 import com.melomarit.melopost.service.ReportService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +35,8 @@ public class PostmortemController {
         try {
             Postmortem pm = importService.importFromDocument(file);
             return ResponseEntity.ok(pm);
+        } catch (PostmortemAccessDeniedException | DuplicateIncidentRefException e) {
+            throw e;
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
@@ -50,22 +55,18 @@ public class PostmortemController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Postmortem> getById(@PathVariable UUID id) {
-        try {
-            return ResponseEntity.ok(service.findById(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
     public Postmortem create(@RequestBody Postmortem postmortem) {
-        return service.save(postmortem);
+        return service.create(postmortem);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Postmortem> update(@PathVariable UUID id, @RequestBody Postmortem postmortem) {
-        try {
-            Postmortem existing = service.findById(id);
+        {
+            Postmortem existing = service.findAuthorized(id, Action.UPDATE);
             if (postmortem.getTitle() != null) existing.setTitle(postmortem.getTitle());
             if (postmortem.getDescription() != null) existing.setDescription(postmortem.getDescription());
             if (postmortem.getStartDate() != null) existing.setStartDate(postmortem.getStartDate());
@@ -112,8 +113,6 @@ public class PostmortemController {
             }
             
             return ResponseEntity.ok(service.save(existing));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
         }
     }
 
@@ -130,8 +129,8 @@ public class PostmortemController {
 
     @GetMapping("/{id}/report")
     public ResponseEntity<byte[]> downloadReport(@PathVariable UUID id) {
+        Postmortem postmortem = service.findById(id);
         try {
-            Postmortem postmortem = service.findById(id);
             byte[] pdfBytes = reportService.generatePostmortemPdf(postmortem);
 
             return ResponseEntity.ok()

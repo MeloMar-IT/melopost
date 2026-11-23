@@ -116,6 +116,46 @@ public class PostmortemDocumentControllerTest {
         verify(postmortemService).save(pm);
     }
 
+    private org.springframework.test.web.servlet.MockMvc mvc() {
+        return org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup(controller).build();
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"garbage", "*/*"})
+    void download_badStoredTypeIsOctetStreamWithSafeHeaders(String storedType) throws Exception {
+        doc.setContentType(storedType);
+        doc.setFileName("my \"report\".pdf");
+        when(service.findAccessible(docId, Action.VIEW)).thenReturn(doc);
+
+        org.springframework.test.web.servlet.MvcResult r = mvc().perform(
+                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/postmortem-documents/" + docId + "/download"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentType("application/octet-stream"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("X-Content-Type-Options", "nosniff"))
+                .andReturn();
+        org.springframework.http.ContentDisposition cd = org.springframework.http.ContentDisposition
+                .parse(r.getResponse().getHeader("Content-Disposition"));
+        assertTrue(cd.isAttachment());
+        assertEquals("my \"report\".pdf", cd.getFilename());
+    }
+
+    @Test
+    void upload_disallowedTypeReturns400AndPersistsNothing() throws Exception {
+        UUID pmId = UUID.randomUUID();
+        Postmortem pm = new Postmortem();
+        pm.setUuid(pmId);
+        when(postmortemService.findAuthorized(pmId, Action.UPDATE)).thenReturn(pm);
+        doThrow(new com.melomarit.melopost.service.UnsupportedDocumentTypeException())
+                .when(service).uploadDocument(any(), any());
+
+        mvc().perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .multipart("/api/postmortem-documents/upload/" + pmId)
+                        .file(new MockMultipartFile("file", "page.html", "text/html", "x".getBytes())))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest());
+        verify(postmortemService, never()).save(any());
+    }
+
     @Test
     void delete_shouldCallService() {
         ResponseEntity<Void> result = controller.delete(docId);

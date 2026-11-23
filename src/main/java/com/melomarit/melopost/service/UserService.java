@@ -27,9 +27,19 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-    public User save(User user) {
-        if (user.getPassword() != null && !user.getPassword().isEmpty() && !user.getPassword().startsWith("$2a$") && !user.getPassword().startsWith("$2b$") && !user.getPassword().startsWith("$2y$")) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
+    /**
+     * Saves a user. The password in the entity is ignored: a non-blank {@code newPassword} is always
+     * bcrypt-encoded (even if it looks like a hash); a blank one keeps the stored hash (null for a new user).
+     */
+    public User save(User user, String newPassword) {
+        if (newPassword != null && !newPassword.isEmpty()) {
+            user.setPassword(passwordEncoder.encode(newPassword));
+        } else {
+            String stored = null;
+            if (user.getUuid() != null) {
+                stored = userRepository.findById(user.getUuid()).map(User::getPassword).orElse(null);
+            }
+            user.setPassword(stored);
         }
         return userRepository.save(user);
     }

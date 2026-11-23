@@ -63,7 +63,7 @@
                             </td>
                             <td class="px-6 py-4 text-right space-x-3">
                                 <a th:href="@{/users/edit/{id}(id=${u.uuid})}" class="text-sm font-medium text-blue-600 hover:text-blue-800">Edit</a>
-                                <a th:href="@{/users/delete/{id}(id=${u.uuid})}" class="text-sm font-medium text-red-600 hover:text-red-800" onclick="return confirm('Are you sure?')">Delete</a>
+                                <form th:action="@{/users/delete/{id}(id=${u.uuid})}" method="post" class="inline" onsubmit="return confirm('Are you sure?')"><button type="submit" class="text-sm font-medium text-red-600 hover:text-red-800">Delete</button></form>
                             </td>
                         </tr>
                     </tbody>

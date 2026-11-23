@@ -84,7 +84,7 @@ A thorough postmortem requires documenting the full impact and gathering evidenc
 ![Impact Section](sceenshots/PostMortem%20create%20Impact%20section%20and%20attach%20documents.png)
 
 - **Impact Description**: Detailed narrative of the incident's effect on customers and systems.
-- **Document Attachments**: Upload logs, screenshots, or chat transcripts directly to the postmortem record.
+- **Document Attachments**: Upload logs, screenshots, or chat transcripts directly to the postmortem record. Allowed types are PDF, DOCX, XLSX, PNG, JPEG, TXT and CSV; other file types are refused and nothing is saved.
 
 ### Postmortem Notes
 Melopost includes a dedicated "Incident Notes" feature (replacing legacy Loop systems) for raw data collection.
@@ -103,6 +103,7 @@ Postmortems belong to the department they are filed under. What you can see and 
 - **Your departments**: You only see postmortems, documents, and reports of the departments assigned to your account. Postmortems of other departments are left out of lists and searches. Opening one directly shows a 403 access-denied page.
 - **Moving a postmortem**: To change a postmortem's department, you must also have access to the new department.
 - **Linking postmortems**: You can only link postmortems you are allowed to see.
+- **Saving an edit of a deleted postmortem**: If a postmortem was deleted while you were editing it, saving shows a "not found" (404) page and nothing is stored. The postmortem is not created again. To keep the content, copy it and create a new postmortem.
 - **Published postmortems are locked**: Once a postmortem is set to **Published**, only administrators can change or delete it, including its documents. Other users see a notice that the postmortem is locked when they try to save, and the change is not stored.
 - **Administrators** are not limited by department or by the lock.
 
@@ -176,6 +177,8 @@ Control access to the platform and assign roles.
 ### Data Sources
 Configure integrations with external ticket systems.
 
+Only administrators can see or change data sources. The stored password or token is never shown again: when you edit a data source, the field is empty. Leave it empty to keep the stored token, or type a new one to replace it.
+
 ![Data Sources List](sceenshots/Overview%20of%20all%20the%20Exaternal%20intergrations.png)
 ![Edit Data Source](sceenshots/Create%20:%20edit%20datasource.png)
 
@@ -184,10 +187,12 @@ For administrators, Melopost includes a built-in database management tool to ins
 
 ![Database Admin](sceenshots/Database%20overview.png)
 
-- **SQL Console**: Run CQL (Cassandra Query Language) queries directly against the database.
 - **Schema Browser**: Browse all tables and User Defined Types (UDTs).
-- **Data Export**: Export query results to CSV for external analysis.
-- **Plain-text display**: Table names, column names, schema details and query results are always shown as plain text. Data stored in the database is never run as HTML or script in your session, so you can inspect records that contain markup safely.
+- **Data Preview**: View the first 50 rows of a selected table.
+- **Data Export**: Export the previewed rows to CSV for external analysis.
+- **Plain-text display**: Table names, column names, schema details and previewed rows are always shown as plain text. Data stored in the database is never run as HTML or script in your session, so you can inspect records that contain markup safely.
+
+The web tool does not run free-form queries. For ad-hoc CQL, use `cqlsh` directly against the database.
 
 ---
 

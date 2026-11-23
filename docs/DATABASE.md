@@ -47,7 +47,7 @@ Stores metadata and content for attached files.
 | `uuid` | UUID | Primary Key |
 | `postmortem_uuid` | UUID | Reference to parent postmortem |
 | `file_name` | TEXT | Name of the file |
-| `content_type` | TEXT | MIME type |
+| `content_type` | TEXT | Canonical MIME type of an allowed file type (for example `application/pdf`), set from the file extension on upload |
 | `size` | BIGINT | File size in bytes |
 | `data` | BLOB | Binary file content |
 | `upload_date` | TIMESTAMP | When it was uploaded |
@@ -58,7 +58,7 @@ System user accounts.
 | :--- | :--- | :--- |
 | `uuid` | UUID | Primary Key |
 | `username` | TEXT | Unique username (Indexed) |
-| `password` | TEXT | Encrypted password |
+| `password` | TEXT | BCrypt hash of the password. Never returned by the API. |
 | `email` | TEXT | User email |
 | `first_name` | TEXT | User's first name |
 | `last_name` | TEXT | User's last name |
@@ -86,7 +86,7 @@ Configuration for external data sources.
 | `operation` | TEXT | Operation type |
 | `url` | TEXT | Connection URL |
 | `username` | TEXT | Login username |
-| `password` | TEXT | Login password |
+| `password` | TEXT | Login password or token, encrypted with AES-256-GCM as `enc:v1:` + Base64(IV ‖ ciphertext). The key comes from `MELOPOST_DATASOURCE_KEY`. Never returned by the API. |
 | `description` | TEXT | Purpose of source |
 | `created_at` | TIMESTAMP | Creation timestamp |
 | `updated_at` | TIMESTAMP | Last update timestamp |

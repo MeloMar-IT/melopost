@@ -1,17 +1,17 @@
 # Prerequisites and System Requirements
 
-This document outlines the necessary libraries, databases, and configurations required to run Melopost and its RAG (Retrieval Augmented Generation) system on different operating systems.
+This document outlines the necessary libraries, databases, and configurations required to run Melopost on different operating systems.
 
-## 🐍 Python Requirements
+## 🐍 Python Requirements (optional)
 
-The RAG system requires Python 3.9 or higher.
+Python is needed only for the optional local LLM helper (`llm_api.py`). It is disabled by default, so Melopost runs without Python. The helper requires Python 3.9 or higher.
 
 ### Required Libraries
 
-Install the following libraries using `pip`:
+Install the libraries listed in `requirements.txt` using `pip`:
 
 ```bash
-pip install pandas qdrant-client sentence-transformers torch transformers PyPDF2 langchain-text-splitters requests
+pip install -r requirements.txt
 ```
 
 ### OS-Specific Python Setup
@@ -87,16 +87,6 @@ Cassandra 4.0+ is required for storing structured postmortem data, users, and co
    sudo systemctl enable cassandra
    sudo systemctl start cassandra
    ```
-
-### 3. Qdrant (Vector Database for RAG)
-The RAG system uses a local Qdrant instance stored in `data/qdrant_db`.
-- No separate installation is required if using the `qdrant-client` library with the local path configuration (default).
-- If you prefer a server-based Qdrant, you can run it via Docker:
-  ```bash
-  docker run -p 6333:6333 -p 6334:6334 \
-      -v $(pwd)/qdrant_storage:/qdrant/storage:z \
-      qdrant/qdrant
-  ```
 
 ---
 

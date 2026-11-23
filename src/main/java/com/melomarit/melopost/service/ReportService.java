@@ -27,7 +27,11 @@ public class ReportService {
     private final ReportTemplateService templateService;
     private final PostmortemService postmortemService;
 
-    public ReportService(Mustache.Compiler mustacheCompiler, ResourceLoader resourceLoader, ReportTemplateService templateService, PostmortemService postmortemService) {
+    private final ReportResourcePolicy resourcePolicy;
+
+    public ReportService(Mustache.Compiler mustacheCompiler, ResourceLoader resourceLoader, ReportTemplateService templateService,
+                         PostmortemService postmortemService, ReportResourcePolicy resourcePolicy) {
+        this.resourcePolicy = resourcePolicy;
         this.mustacheCompiler = mustacheCompiler;
         this.resourceLoader = resourceLoader;
         this.templateService = templateService;
@@ -63,6 +67,18 @@ public class ReportService {
 
         Template template = mustacheCompiler.compile(templateContent);
 
+        Map<String, Object> context = buildReportContext(postmortem);
+
+        log.debug("Executing mustache template. Context keys: {}", context.keySet());
+        String html = template.execute(context);
+        log.debug("Template execution complete. HTML length: {}", html.length());
+
+        byte[] pdf = generatePdfFromHtml(html);
+        log.debug("PDF generation complete. PDF size: {} bytes", pdf.length);
+        return pdf;
+    }
+
+    Map<String, Object> buildReportContext(Postmortem postmortem) {
         Map<String, Object> context = new HashMap<>();
         context.put("title", postmortem.getTitle() != null ? postmortem.getTitle() : "N/A");
         context.put("description", postmortem.getDescription() != null ? postmortem.getDescription() : "N/A");
@@ -158,7 +174,7 @@ public class ReportService {
         context.put("hasGraphicalTimeline", !graphicalTimeline.isEmpty());
 
         // Generate Mermaid Timeline Source
-        if (!events.isEmpty()) {
+        if (resourcePolicy.isKrokiEnabled() && !events.isEmpty()) {
             StringBuilder mermaidSource = new StringBuilder("timeline\n    title Incident Timeline\n");
             Map<String, List<String>> groups = new LinkedHashMap<>();
             DateTimeFormatter mermaidDateFormatter = DateTimeFormatter.ofPattern("MMM dd HH mm");
@@ -190,7 +206,10 @@ public class ReportService {
                 String source = mermaidSource.toString();
                 try {
                     String encoded = encodeForKroki(source);
-                    context.put("mermaidSource", encoded);
+                    resourcePolicy.krokiTimelineUrl(encoded).ifPresent(url -> {
+                        context.put("mermaidSource", encoded);
+                        context.put("krokiTimelineUrl", url);
+                    });
                     log.debug("Generated and encoded Mermaid source for PDF report");
                 } catch (IOException e) {
                     log.error("Failed to encode Mermaid source for Kroki", e);
@@ -222,24 +241,7 @@ public class ReportService {
                 Map<String, Object> layer = new HashMap<>();
                 layer.put("name", l.getName());
                 layer.put("description", l.getDescription());
-                layer.put("holes", l.getHoles().stream().map(h -> {
-                    Map<String, Object> hole = new HashMap<>();
-                    hole.put("description", h.getDescription());
-                    hole.put("teamName", h.getTeamName());
-                    hole.put("remedialAction", h.getRemedialAction());
-                    hole.put("actionStatus", h.getActionStatus());
-                    hole.put("tags", h.getTags());
-                    if (h.getStory() != null) {
-                        Map<String, String> story = new HashMap<>();
-                        story.put("storyNumber", h.getStory().getStoryNumber());
-                        story.put("status", h.getStory().getStatus());
-                        story.put("whatToFix", h.getStory().getWhatToFix());
-                        story.put("priority", h.getStory().getPriority());
-                        story.put("storyLink", h.getStory().getStoryLink());
-                        hole.put("story", story);
-                    }
-                    return hole;
-                }).toList());
+                layer.put("holes", l.getHoles().stream().map(h -> mapHole(h, null)).toList());
                 return layer;
             }).toList());
             
@@ -255,20 +257,14 @@ public class ReportService {
             return pm;
         }).toList());
 
-        log.debug("Executing mustache template. Context keys: {}", context.keySet());
-        String html = template.execute(context);
-        log.debug("Template execution complete. HTML length: {}", html.length());
-        
-        byte[] pdf = generatePdfFromHtml(html);
-        log.debug("PDF generation complete. PDF size: {} bytes", pdf.length);
-        return pdf;
+        return context;
     }
 
     private Map<String, Object> mapHole(HoleUDT h, Postmortem source) {
         Map<String, Object> hole = new HashMap<>();
-        hole.put("description", h.getDescription());
+        hole.put("description", toPdfRichText(h.getDescription()));
         hole.put("teamName", h.getTeamName());
-        hole.put("remedialAction", h.getRemedialAction());
+        hole.put("remedialAction", toPdfRichText(h.getRemedialAction()));
         hole.put("actionStatus", h.getActionStatus());
         hole.put("tags", h.getTags());
         if (source != null) {
@@ -296,11 +292,93 @@ public class ReportService {
         return Base64.getUrlEncoder().encodeToString(os.toByteArray());
     }
 
+    private static final java.util.regex.Pattern NAMED_ENTITY = java.util.regex.Pattern.compile("&([a-zA-Z][a-zA-Z0-9]*);");
+    private static final java.util.regex.Pattern VOID_TAG = java.util.regex.Pattern.compile("<(br|hr)\\s*>", java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    /** Sanitizes rich text and makes the result well-formed XML so it can be embedded in the XHTML report. */
+    static String toPdfRichText(String html) {
+        String clean = RichTextSanitizer.sanitize(html);
+        clean = VOID_TAG.matcher(clean).replaceAll(m -> "<" + m.group(1).toLowerCase(Locale.ROOT) + "/>");
+        return NAMED_ENTITY.matcher(clean).replaceAll(m -> {
+            String name = m.group(1);
+            return switch (name) {
+                case "amp", "lt", "gt", "quot", "apos" -> m.group();
+                default -> XHTML_ENTITY_REFS.getOrDefault(name, "&amp;" + name + ";");
+            };
+        });
+    }
+
+    /** openhtmltopdf's bundled XHTML character entity catalog (classpath resources, no network). */
+    private static final String[] XHTML_ENTITY_FILES = {
+            "resources/schema/openhtmltopdf/char-entities-xhtml-only.ent",
+            "resources/schema/openhtmltopdf/char-entities-xhtml-mathml.ent"};
+    private static final java.util.regex.Pattern ENTITY_DECL = java.util.regex.Pattern.compile(
+            "<!ENTITY\\s+([A-Za-z][A-Za-z0-9]*)\\s+\"&#(x?)([0-9a-fA-F]+);\"");
+    private static final String XHTML_ENTITY_DECLARATIONS = loadEntityFiles();
+    /** Entity name to numeric character reference, e.g. copy to &amp;#169;. */
+    private static final Map<String, String> XHTML_ENTITY_REFS = parseEntityRefs(XHTML_ENTITY_DECLARATIONS);
+
+    private static String loadEntityFiles() {
+        StringBuilder sb = new StringBuilder();
+        for (String path : XHTML_ENTITY_FILES) {
+            try (InputStream in = ReportService.class.getClassLoader().getResourceAsStream(path)) {
+                if (in == null) {
+                    throw new IllegalStateException("openhtmltopdf entity catalog missing: " + path);
+                }
+                sb.append(new String(in.readAllBytes(), StandardCharsets.UTF_8)).append('\n');
+            } catch (IOException e) {
+                throw new java.io.UncheckedIOException(e);
+            }
+        }
+        return sb.toString();
+    }
+
+    private static Map<String, String> parseEntityRefs(String declarations) {
+        Map<String, String> refs = new HashMap<>();
+        java.util.regex.Matcher m = ENTITY_DECL.matcher(declarations);
+        while (m.find()) {
+            int codePoint = Integer.parseInt(m.group(3), m.group(2).isEmpty() ? 10 : 16);
+            refs.putIfAbsent(m.group(1), "&#" + codePoint + ";");
+        }
+        return Map.copyOf(refs);
+    }
+
+    /** Parses report HTML with external entities and DTDs disabled; only openhtmltopdf's local entity catalog is consulted. */
+    static org.w3c.dom.Document parseXhtml(String html) throws IOException {
+        try {
+            javax.xml.parsers.DocumentBuilderFactory dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware(true);
+            dbf.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", true); // the resolver below serves any DTD locally; nothing is fetched
+            dbf.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            dbf.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            dbf.setXIncludeAware(false);
+            dbf.setExpandEntityReferences(true);
+            javax.xml.parsers.DocumentBuilder db = dbf.newDocumentBuilder();
+            org.xml.sax.EntityResolver catalog = com.openhtmltopdf.resource.FSEntityResolver.instance();
+            db.setEntityResolver((publicId, systemId) -> {
+                boolean looksLikeDtd = publicId != null || (systemId != null && systemId.toLowerCase(Locale.ROOT).endsWith(".dtd"));
+                if (looksLikeDtd) {
+                    return new org.xml.sax.InputSource(new java.io.StringReader(XHTML_ENTITY_DECLARATIONS));
+                }
+                org.xml.sax.InputSource local = catalog.resolveEntity(publicId, systemId);
+                return local != null ? local : new org.xml.sax.InputSource(new java.io.StringReader(""));
+            });
+            return db.parse(new org.xml.sax.InputSource(new java.io.StringReader(html)));
+        } catch (org.xml.sax.SAXException | javax.xml.parsers.ParserConfigurationException e) {
+            throw new IOException("Report HTML is not well-formed: " + e.getMessage(), e);
+        }
+    }
+
     private byte[] generatePdfFromHtml(String html) throws IOException {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             PdfRendererBuilder builder = new PdfRendererBuilder();
             builder.useFastMode();
-            builder.withHtmlContent(html, "");
+            builder.useUriResolver(resourcePolicy::resolveUri);
+            builder.useHttpStreamImplementation(new NoRedirectStreamFactory(resourcePolicy));
+            builder.withW3cDocument(parseXhtml(html), "");
             builder.toStream(outputStream);
             builder.run();
             return outputStream.toByteArray();

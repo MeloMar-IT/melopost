@@ -18,6 +18,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -61,7 +62,7 @@ public class PostmortemFunctionalTest extends com.melomarit.melopost.support.Abs
         pm.setDescription("This is a postmortem created by a functional test.");
         pm.setDepartment("IT"); // Added department to ensure it matches user's allowed departments if needed
 
-        MvcResult createResult = mockMvc.perform(post("/api/postmortems")
+        MvcResult createResult = mockMvc.perform(post("/api/postmortems").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(pm)))
                 .andExpect(status().isOk())
@@ -80,7 +81,7 @@ public class PostmortemFunctionalTest extends com.melomarit.melopost.support.Abs
 
         // 3. Update the postmortem
         createdPm.setTitle("Updated Functional Test Postmortem");
-        mockMvc.perform(put("/api/postmortems/" + pmId)
+        mockMvc.perform(put("/api/postmortems/" + pmId).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createdPm)))
                 .andExpect(status().isOk())
@@ -94,7 +95,7 @@ public class PostmortemFunctionalTest extends com.melomarit.melopost.support.Abs
                 .andExpect(jsonPath("$[*].postmortem.title", hasItem("Updated Functional Test Postmortem")));
 
         // 5. Delete the postmortem
-        mockMvc.perform(delete("/api/postmortems/" + pmId))
+        mockMvc.perform(delete("/api/postmortems/" + pmId).with(csrf()))
                 .andExpect(status().isNoContent());
 
         // 6. Verify deletion (Service throws RuntimeException which controller translates to 404)

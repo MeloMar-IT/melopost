@@ -159,10 +159,6 @@ public class HelpController {
         // Admin Database API
         apis.add(new ApiEndpointDTO("GET", "/api/admin/database/tables", "List all Cassandra tables (ADMIN)",
                 "[{\"name\":\"postmortem\", \"rowCount\":25, \"type\":\"TABLE\"}]"));
-        apis.add(new ApiEndpointDTO("POST", "/api/admin/database/query", "Execute raw SQL query (ADMIN)",
-                "{\n" +
-                "  \"query\": \"SELECT * FROM USERS WHERE ACTIVE = TRUE\"\n" +
-                "}"));
 
         return apis;
     }

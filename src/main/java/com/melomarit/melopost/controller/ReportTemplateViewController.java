@@ -2,6 +2,7 @@ package com.melomarit.melopost.controller;
 
 import com.melomarit.melopost.model.ReportTemplate;
 import com.melomarit.melopost.service.ReportTemplateService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @Controller
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/templates")
 public class ReportTemplateViewController {
 
@@ -42,7 +44,7 @@ public class ReportTemplateViewController {
         return "templates/form";
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public String delete(@PathVariable UUID id) {
         service.deleteById(id);
         return "redirect:/templates";

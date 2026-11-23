@@ -30,7 +30,7 @@ public class ReportServiceTest {
         when(resourceLoader.getResource(any())).thenReturn(mock(org.springframework.core.io.Resource.class));
         when(compiler.compile(anyString())).thenReturn(mock(com.samskivert.mustache.Template.class));
 
-        ReportService reportService = new ReportService(compiler, resourceLoader, templateService, postmortemService);
+        ReportService reportService = new ReportService(compiler, resourceLoader, templateService, postmortemService, new ReportResourcePolicy(false, "", ""));
 
         // Set up main postmortem
         Postmortem mainPm = new Postmortem();
@@ -86,13 +86,13 @@ public class ReportServiceTest {
         String dummyTemplate = "<!DOCTYPE html><html><body>" +
                 "Timeline Size: {{graphicalTimeline.size}} " +
                 "{{#graphicalTimeline}}{{date}}-{{time}}:{{description}};{{/graphicalTimeline}}" +
-                "Mermaid: {{mermaidSource}}" +
+                "{{#mermaidSource}}Mermaid: {{mermaidSource}}{{/mermaidSource}}" +
                 "</body></html>";
         org.springframework.core.io.Resource mockResource = mock(org.springframework.core.io.Resource.class);
         when(resourceLoader.getResource(anyString())).thenReturn(mockResource);
         when(mockResource.getInputStream()).thenReturn(new java.io.ByteArrayInputStream(dummyTemplate.getBytes()));
 
-        ReportService reportService = new ReportService(compiler, resourceLoader, templateService, postmortemService);
+        ReportService reportService = new ReportService(compiler, resourceLoader, templateService, postmortemService, new ReportResourcePolicy(false, "", ""));
 
         Postmortem pm = new Postmortem();
         pm.setTitle("Timeline Test");
@@ -135,7 +135,7 @@ public class ReportServiceTest {
         when(resourceLoader.getResource(anyString())).thenReturn(mockResource);
         when(mockResource.getInputStream()).thenReturn(new java.io.ByteArrayInputStream(dummyTemplate.getBytes()));
 
-        ReportService reportService = new ReportService(compiler, resourceLoader, templateService, postmortemService);
+        ReportService reportService = new ReportService(compiler, resourceLoader, templateService, postmortemService, new ReportResourcePolicy(false, "", ""));
 
         Postmortem pm = new Postmortem();
         pm.setTitle("Note Test");

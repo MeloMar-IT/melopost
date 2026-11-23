@@ -88,9 +88,11 @@ public class PostmortemDocumentService {
 
     public void uploadDocument(Postmortem postmortem, MultipartFile file) throws IOException {
         if (!file.isEmpty()) {
+            String name = DocumentTypePolicy.cleanFileName(file.getOriginalFilename());
+            String type = DocumentTypePolicy.requireAllowed(name, file.getContentType());
             PostmortemDocument doc = new PostmortemDocument();
-            doc.setFileName(file.getOriginalFilename());
-            doc.setContentType(file.getContentType());
+            doc.setFileName(name);
+            doc.setContentType(type);
             doc.setSize(file.getSize());
             doc.setData(file.getBytes());
             doc.setPostmortemUuid(postmortem.getUuid());
@@ -100,7 +102,21 @@ public class PostmortemDocumentService {
         }
     }
 
+    /** Checks a whole batch of uploads; throws {@link UnsupportedDocumentTypeException} on the first refused file. */
+    public void validateUploads(MultipartFile[] files) {
+        if (files == null) {
+            return;
+        }
+        for (MultipartFile file : files) {
+            if (file != null && !file.isEmpty()) {
+                DocumentTypePolicy.requireAllowed(
+                        DocumentTypePolicy.cleanFileName(file.getOriginalFilename()), file.getContentType());
+            }
+        }
+    }
+
     public void processFiles(Postmortem postmortem, MultipartFile[] files) throws IOException {
+        validateUploads(files);
         if (files != null) {
             for (MultipartFile file : files) {
                 uploadDocument(postmortem, file);

@@ -44,9 +44,11 @@
                                 <a th:href="@{/templates/edit/{id}(id=${template.uuid})}" class="p-2 text-gray-400 hover:text-green-600 rounded-lg hover:bg-green-50 transition-colors" title="Edit">
                                     <i data-lucide="edit" class="w-5 h-5"></i>
                                 </a>
-                                <a th:href="@{/templates/delete/{id}(id=${template.uuid})}" class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors" title="Delete" onclick="return confirm('Are you sure you want to delete this template?')">
-                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
-                                </a>
+                                <form th:action="@{/templates/delete/{id}(id=${template.uuid})}" method="post" class="inline" onsubmit="return confirm('Are you sure you want to delete this template?')">
+                                    <button type="submit" class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors" title="Delete">
+                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>

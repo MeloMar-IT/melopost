@@ -20,6 +20,14 @@ Every postmortem, and every document attached to one, is owned by its **departme
 | `404 Not Found` | The postmortem or document does not exist, or the document is not part of the given postmortem. |
 | `409 Conflict` | Another postmortem already uses the same `incidentRef`. |
 
+### CSRF Protection
+
+Every state-changing request (`POST`, `PUT`, `DELETE`) must carry a valid CSRF token, whether the caller is logged in through the browser session or sends HTTP Basic credentials. Requests without a valid token return `403 Forbidden` and change nothing. `GET` requests never change data.
+
+- **Browser UI**: the pages include the token in `<meta name="_csrf">` and the header name in `<meta name="_csrf_header">`. Forms and `fetch` calls in the UI send it automatically.
+- **Scripts and other clients**: load a page of the web UI in the same session, read the token from the `_csrf` meta tag and the header name from `_csrf_header` (`X-CSRF-TOKEN` by default), and send that header with each write.
+- **Web UI delete actions** (users, incident notes, templates, data sources) are `POST` forms. A `GET` to a `/delete/{id}` URL returns `405 Method Not Allowed` and deletes nothing.
+
 ## Table of Contents
 1. [Postmortems](#postmortems)
 2. [Postmortem Documents](#postmortem-documents)
@@ -124,6 +132,7 @@ Base Endpoint: `/api/postmortems`
 - **Method**: `GET`
 - **Path**: `/api/postmortems/{uuid}/report`
 - **Response**: PDF File stream.
+- **Note**: The renderer loads external resources only from an allow-list and never follows redirects. Loopback, private and `file:` URLs load nothing. The Kroki timeline image is off unless configured; see [PDF Reports](../README.md#pdf-reports).
 
 ---
 
@@ -152,15 +161,19 @@ All document routes check access through the owning postmortem (see [Access Cont
 ### Download Document
 - **Method**: `GET`
 - **Path**: `/api/postmortem-documents/{uuid}/download`
-- **Response**: File stream.
+- **Response**: File stream, sent as an attachment with `Content-Disposition: attachment; filename="..."; filename*=UTF-8''...`. The `filename*` parameter carries the exact stored name; the quoted `filename` is an ASCII fallback in which quotes and backslashes are escaped.
+- **Headers**: `X-Content-Type-Options: nosniff`.
+- **Content type**: The stored type when it is one of the allowed types (see [Upload Document](#upload-document)). Otherwise, including for a missing, empty, malformed or wildcard stored type, `application/octet-stream`.
 - **Errors**: `403` or `404` as for get by UUID.
 
 ### Upload Document
 - **Method**: `POST`
 - **Path**: `/api/postmortem-documents/upload/{postmortemUuid}`
 - **Form Data**: `file` (MultipartFile)
+- **Allowed types**: PDF (`.pdf`), DOCX (`.docx`), XLSX (`.xlsx`), PNG (`.png`), JPEG (`.jpg`, `.jpeg`), plain text (`.txt`), CSV (`.csv`). The file name must end in one of these extensions. The declared Content-Type may be empty, `application/octet-stream`, the canonical type for the extension, or a known alias for it (for example `application/csv` for CSV).
+- **Stored values**: The file name is reduced to its last path segment. The stored Content-Type is always the canonical type for the extension, not the client's value.
 - **Response**: The created `PostmortemDocument` metadata.
-- **Errors**: `403` if the caller may not update the postmortem (other department, or Published for a non-admin); `404` if the postmortem does not exist.
+- **Errors**: `400 Bad Request` if the file type is not allowed; nothing is stored. `403` if the caller may not update the postmortem (other department, or Published for a non-admin); `404` if the postmortem does not exist.
 
 ### Delete Document
 - **Method**: `DELETE`
@@ -177,18 +190,22 @@ Note: Stories are currently managed as part of Postmortem Holes.
 
 ---
 
-## Data Sources
+## Data Sources (ADMIN)
 
 Base Endpoint: `/api/datasources`
 
+All data-source endpoints are restricted to `ROLE_ADMIN`; other users get `403 Forbidden`.
+
+The `password` field (the integration password or token) is write-only. It is accepted in request bodies but never appears in a response, so no response contains a `password` field. Tokens are stored encrypted; see [DATABASE.md](DATABASE.md#5-data_source). On update, leave `password` out or empty to keep the stored token; a non-empty value replaces it.
+
 ### Get All Data Sources
 - **Method**: `GET`
-- **Response**: List of `DataSource` objects.
+- **Response**: List of `DataSource` objects, without `password`.
 
 ### Get Data Source by UUID
 - **Method**: `GET`
 - **Path**: `/api/datasources/{uuid}`
-- **Response**: `DataSource` object.
+- **Response**: `DataSource` object, without `password`.
 
 ### Get Template Data Sources
 - **Method**: `GET`
@@ -197,7 +214,7 @@ Base Endpoint: `/api/datasources`
 
 ### Create Data Source
 - **Method**: `POST`
-- **Example JSON Request**:
+- **Example JSON Request** (the response does not repeat `password`):
 ```json
 {
   "name": "Production Jira",
@@ -220,22 +237,24 @@ Base Endpoint: `/api/datasources`
 
 ---
 
-## Users
+## Users (ADMIN)
 
 Base Endpoint: `/api/users`
 
+The `password` field is write-only. It is accepted in request bodies, but responses never contain it or its bcrypt hash. Every supplied password is bcrypt-encoded on save, including a value that looks like a hash (such as one starting with `$2a$`). On update, leave `password` out or empty to keep the stored hash.
+
 ### Get All Users
 - **Method**: `GET`
-- **Response**: List of `User` objects.
+- **Response**: List of `User` objects, without `password`.
 
 ### Get User by UUID
 - **Method**: `GET`
 - **Path**: `/api/users/{uuid}`
-- **Response**: `User` object.
+- **Response**: `User` object, without `password`.
 
 ### Create User
 - **Method**: `POST`
-- **Example JSON Request**:
+- **Example JSON Request** (the response does not repeat `password`):
 ```json
 {
   "username": "jdoe",
@@ -268,12 +287,12 @@ Base Endpoint: `/api/admin/database`
 - **Query Parameter**: `includeCounts` (boolean, default: true)
 - **Response**: List of `DatabaseTableDTO` containing names, types (TABLE/TYPE), row counts, and column names.
 
-### Execute Raw Query
-- **Method**: `POST`
-- **Path**: `/api/admin/database/query`
-- **Body**: `{"query": "SELECT * FROM postmortem"}`
-- **Response**: `QueryResultDTO` containing results and metadata.
-- **Note**: The endpoint is CSRF-exempt and runs any CQL it receives with admin rights, so keep it to trusted admin clients. The web UI shows the returned values as plain text.
+### Get Table or Type Details
+- **Method**: `GET`
+- **Path**: `/api/admin/database/table/{name}`
+- **Response**: `TableInfoDTO` with the table's columns and a preview of its first 50 rows. The preview is built from the schema, so no query text is accepted from the caller. A column named `password` is returned as `***`. The web UI shows the returned values as plain text.
+
+> The raw CQL query endpoint (`POST /api/admin/database/query`) has been removed. Use `cqlsh` for ad-hoc queries.
 
 ### Rich Text Fields
 Hole descriptions and remedial actions are stored exactly as submitted. The API returns them unchanged. The web UI cleans them with an allow-list sanitizer before rendering, so scripts, event-handler attributes and `javascript:` links are removed on display. API clients that render these fields as HTML must apply their own sanitizing.

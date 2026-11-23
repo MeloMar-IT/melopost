@@ -73,6 +73,8 @@ The test suite has two tiers:
 
 CI (`.github/workflows/ci.yml`) runs `./mvnw -B verify` on every push and pull request. It requires Docker on the runner, and it fails if the Cassandra test classes report any skipped test. The surefire and failsafe reports are uploaded as the `test-reports` artifact.
 
+The `python-tests` job runs the Python tests in `tests/python` (`python -m unittest discover -s tests/python`) on Python 3.9 and 3.12. It is pinned to `ubuntu-24.04` because `ubuntu-latest` no longer provides Python 3.9. The matrix uses `fail-fast: false`, so a failure on one Python version does not cancel the other.
+
 ### Running with Different Environments (DTAP)
 Melopost supports different configurations for Development, Testing, Acceptance, and Production environments using Spring Profiles.
 
@@ -99,11 +101,13 @@ Note: For **Acceptance** and **Production**, you should provide Cassandra connec
 - `SPRING_CASSANDRA_PORT` (optional, defaults to 9042)
 - `SPRING_CASSANDRA_KEYSPACE_NAME`
 - `MELOPOST_ADMIN_INITIAL_PASSWORD` (only needed on the first start, when no user exists yet)
+- `MELOPOST_DATASOURCE_KEY` (required: Base64 of a 32-byte AES key, e.g. `openssl rand -base64 32`; Melopost refuses to start without it)
 
 ### Startup Behaviour
 On every start, Melopost keeps existing data. It never deletes postmortems, data sources, incident notes or users.
 
 - **Report templates**: the built-in templates are created or updated in every profile.
+- **Data-source tokens**: passwords and tokens of data sources are encrypted with `MELOPOST_DATASOURCE_KEY` (AES-256-GCM). On start, any token still stored in plain text is encrypted in place. The key is required in the `prod` and `acc` profiles; in other profiles it is optional, and without it tokens stay in plain text and a warning is logged. Keep the key safe: if it is lost or changed, stored tokens can no longer be decrypted and must be entered again.
 - **First admin**: if the `users` table is empty and `MELOPOST_ADMIN_INITIAL_PASSWORD` is set, an `admin` user is created with that password (roles `ADMIN` and `USER`). The password must be at least 12 characters. If it is missing, too short, or users already exist, no admin is created and a message is logged. The password is never logged.
 - **Sample data**: demo users (`admin`/`admin123`, `user1`, `user2`) and sample postmortems are created only with `melopost.seed.enabled=true` under the `dev` or `test` profile. The seeder never runs under `prod` or `acc`, and it does nothing if postmortems already exist. Its demo passwords are well known: never enable it on a shared instance.
 
@@ -112,6 +116,22 @@ Example for a first start in development with sample data:
 MELOPOST_ADMIN_INITIAL_PASSWORD='choose-a-long-password' \
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.arguments=--melopost.seed.enabled=true
 ```
+
+### PDF Reports
+Report templates are managed by administrators only: the `/templates` pages and template saves return `403 Forbidden` for other users, and the sidebar link is shown to admins only.
+
+When a PDF is rendered, the renderer loads external resources only from an allow-list:
+- `data:` URIs are loaded.
+- `http`/`https` URIs are loaded only when their host is on the allow-list. Anything else (loopback, private addresses, `file:` and other schemes) is refused and logged as a warning. Redirects are not followed.
+- Hole descriptions and remedial actions are sanitized before they reach the template.
+
+The timeline image from Kroki is **off by default**, so no incident data leaves the server. When it is off, reports show the built-in HTML timeline. To use a self-hosted Kroki instead:
+
+| Property | Default | Description |
+| :--- | :--- | :--- |
+| `melopost.report.kroki.enabled` | `false` | Turns the Kroki timeline image on. |
+| `melopost.report.kroki.base-url` | (empty) | Base URL of your self-hosted Kroki, e.g. `https://kroki.internal.example`. Must be an `http`/`https` URL; otherwise Kroki stays off and a warning is logged. Its host is added to the allow-list automatically. |
+| `melopost.report.allowed-resource-hosts` | (empty) | Extra comma-separated hosts the renderer may load images or CSS from. |
 
 ### Database Management
 Melopost uses Cassandra for all its data. You can interact with it using `cqlsh`.
@@ -152,39 +172,45 @@ This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**
 
 ---
 
-## 🤖 RAG (Retrieval Augmented Generation)
+## 🤖 Optional Local LLM Helper
 
-You can create a local vector database for RAG based on the existing postmortem data in Cassandra, local documentation, and exported reports.
+Melopost can start a small local LLM helper (`llm_api.py`) as a child process. It is **off by default**, so the application starts without Python installed.
+
+The former RAG scripts in `python_scripts/` have been removed. They indexed all departments' postmortems as `admin`, which bypassed department access, so they are no longer supported.
 
 ### 1. Requirements
-Ensure you have Python installed and the required libraries:
+Python 3.9 or higher, then the libraries in `requirements.txt`:
 ```bash
-pip install pandas qdrant-client sentence-transformers torch transformers PyPDF2 langchain-text-splitters
+pip install -r requirements.txt
 ```
 
-### 2. Configuration
-The RAG system uses local models stored in the `model/` directory. Ensure the following models are available:
-- **Embedding Model**: `model/Qwen3-Embedding-0.6B`
-- **LLM Model**: `model/Qwen3.5-0.8B`
+### 2. Enable the helper
+1. Generate a token of at least 32 characters and provide it through the environment:
+   ```bash
+   export MELOPOST_LLM_API_TOKEN="$(openssl rand -base64 32)"
+   ```
+2. Start Melopost with `melopost.llm-api.enabled=true`.
 
-### 3. Ingestion
-#### Download and ingest all postmortem reports
-You can also download all postmortem reports as PDF from the application and ingest them directly into the RAG:
+Properties:
+- `melopost.llm-api.enabled` (default `false`): starts the helper when `true`.
+- `melopost.llm-api.port` (default `8000`): port the helper listens on.
+- `melopost.llm-api.python-executable` (default `python3`) and `melopost.llm-api.script-path` (default `llm_api.py`).
+
+### 3. Security
+- The helper listens on `127.0.0.1` only. It cannot be reached from another host.
+- Every endpoint requires `Authorization: Bearer <token>`. Requests without a valid token get `401 Unauthorized`.
+- The token is read only from the `MELOPOST_LLM_API_TOKEN` environment variable. A value in a property file is ignored. If the variable is unset or blank, Melopost generates a random token for each start. Only the application can then use the helper.
+- The token is passed to the helper through its environment, not on the command line.
+- The `/docs`, `/redoc` and `/openapi.json` pages are disabled.
+- Input is limited: prompt up to 8000 characters, `max_new_tokens` from 1 to 512, `temperature` from 0 to 2. Errors return a generic message; details are only logged on the server.
+- The model (`TinyLlama/TinyLlama-1.1B-Chat-v1.0`) is loaded with `trust_remote_code=False`.
+
+### 4. Manual check
+With the helper running, from the repository root:
 ```bash
-python python_scripts/download_all_postmortems.py
+LLM_API_TOKEN="$MELOPOST_LLM_API_TOKEN" python test_llm_api.py
 ```
-This script will fetch all postmortems via the API, generate their PDF reports, and ingest them into the vector database.
-
-**Note:** Ensure the Java application is running or the Cassandra database is accessible via the API (defaults to `http://localhost:8080/api`).
-
-The vector database will be created in the `data/qdrant_db` directory.
-
-### 4. Chatting with RAG
-Once the database is populated, you can interact with it using the chat script:
-```bash
-python python_scripts/chat_with_rag.py
-```
-This script uses the local Qwen model to answer questions based on the retrieved context from your postmortems and documents.
+The Python tests can be run with `python -m unittest discover -s tests/python`.
 
 ---
 

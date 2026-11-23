@@ -56,23 +56,38 @@ public class DataSourceControllerTest {
 
     @Test
     void create_shouldSaveDataSource() {
-        when(dataSourceService.saveDataSource(any(DataSource.class))).thenReturn(dataSource);
-        DataSource result = dataSourceController.create(new DataSource());
+        when(dataSourceService.saveDataSource(any(DataSource.class), any())).thenReturn(dataSource);
+        DataSource input = new DataSource();
+        input.setPassword("tok");
+        DataSource result = dataSourceController.create(input);
         assertNotNull(result);
-        verify(dataSourceService).saveDataSource(any(DataSource.class));
+        verify(dataSourceService).saveDataSource(input, "tok");
     }
 
     @Test
     void update_shouldUpdateExisting() {
         when(dataSourceService.getDataSourceById(dsId)).thenReturn(Optional.of(dataSource));
-        when(dataSourceService.saveDataSource(any(DataSource.class))).thenReturn(dataSource);
-        
+        when(dataSourceService.saveDataSource(any(DataSource.class), any())).thenReturn(dataSource);
+
         DataSource updateData = new DataSource();
         updateData.setName("Updated Source");
-        
+
         ResponseEntity<DataSource> result = dataSourceController.update(dsId, updateData);
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals("Updated Source", dataSource.getName());
+        verify(dataSourceService).saveDataSource(dataSource, null);
+    }
+
+    @Test
+    void update_shouldPassRequestPassword() {
+        when(dataSourceService.getDataSourceById(dsId)).thenReturn(Optional.of(dataSource));
+        when(dataSourceService.saveDataSource(any(DataSource.class), any())).thenReturn(dataSource);
+        DataSource updateData = new DataSource();
+        updateData.setPassword("newtok");
+
+        dataSourceController.update(dsId, updateData);
+
+        verify(dataSourceService).saveDataSource(dataSource, "newtok");
     }
 
     @Test
